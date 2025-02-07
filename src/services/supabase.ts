@@ -23,7 +23,17 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     flowType: 'pkce',
     storage: window.localStorage,
     storageKey: 'mysticballs-auth-token',
-    site_url: siteUrl
+    site_url: siteUrl,
+    // Add CSP-friendly configuration
+    cookieOptions: {
+      sameSite: 'Lax',
+      secure: true
+    }
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'mysticballs-web'
+    }
   }
 });
 

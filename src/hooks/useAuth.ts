@@ -69,11 +69,22 @@ export const useAuth = () => {
     setConfirmEmail(false);
     
     try {
+      // First check if user exists
+      const { data: existingUser } = await supabase.auth.signInWithPassword({
+        email,
+        password: 'dummy-password'
+      });
+
+      if (existingUser.user) {
+        throw new Error('Email already registered');
+      }
+
+      // If user doesn't exist, proceed with sign up
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             email_confirmed: false
           }
@@ -82,15 +93,9 @@ export const useAuth = () => {
 
       if (error) throw error;
 
-      // Check if user already exists
-      if (data?.user?.identities?.length === 0) {
-        throw new Error('Email already registered');
-      }
-
       // If email confirmation is required
       if (!data.session) {
         setConfirmEmail(true);
-        setLoading(false);
         return;
       }
 
@@ -109,12 +114,20 @@ export const useAuth = () => {
       }
 
       setUser(data.user);
-      setLoading(false);
     } catch (err) {
       console.error('Sign up error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to sign up');
-      setLoading(false);
+      if (err instanceof Error) {
+        if (err.message.includes('User already registered')) {
+          setError('This email is already registered. Please sign in instead.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Failed to sign up');
+      }
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 
