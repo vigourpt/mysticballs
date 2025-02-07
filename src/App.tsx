@@ -40,7 +40,6 @@ interface AuthCredentials {
 }
 
 const App: FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedReading, setSelectedReading] = useState<ReadingType | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -52,7 +51,7 @@ const App: FC = () => {
   
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const { usage, incrementUsage } = useUsageTracking();
-  const { isFirstVisit, isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
+  const { isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
 
   // Handle initial loading
   useEffect(() => {
@@ -64,19 +63,11 @@ const App: FC = () => {
           setIsPaymentModalOpen(true);
         }
       } catch (error) {
-        console.error('Error during initialization:', error);
+        console.error('Error during initial load:', error);
       }
     };
 
     handleInitialLoad();
-
-    // Handle browser back/forward
-    const handlePopState = () => {
-      setSelectedReading(null);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
 
   const handleSignOut = async () => {
@@ -84,11 +75,11 @@ const App: FC = () => {
       await signOut();
       window.location.href = '/'; // Redirect to home after sign out
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Sign out error:', error);
     }
   };
 
-  const handleSignIn = async ({ email, password }: AuthCredentials) => {
+  const handleSignIn = async (email: string, password: string) => {
     try {
       await signIn(email, password);
       setIsLoginModalOpen(false);
@@ -98,7 +89,7 @@ const App: FC = () => {
     }
   };
 
-  const handleSignUp = async ({ email, password }: AuthCredentials) => {
+  const handleSignUp = async (email: string, password: string) => {
     try {
       await signUp(email, password);
       setIsLoginModalOpen(false);
@@ -108,22 +99,29 @@ const App: FC = () => {
     }
   };
 
-  const handleReadingComplete = (reading: string) => {
-    incrementUsage();
-    setHasCompletedReading(true);
-  };
-
-  const handleReadingRequest = () => {
-    if (hasCompletedReading) {
-      setIsPaymentModalOpen(true);
-      return false;
-    }
-    return true;
-  };
-
   const handleSubscribe = async (plan: PaymentPlan) => {
-    setIsPaymentModalOpen(false);
+    try {
+      // Implement subscription logic
+      console.log('Subscribing to plan:', plan);
+      setIsPaymentModalOpen(false);
+    } catch (error) {
+      console.error('Subscription error:', error);
+      throw error;
+    }
   };
+
+  const handleToggleDarkMode = () => {
+    setIsDarkMode(prev => !prev);
+  };
+
+  // Show loading spinner during authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <LoadingSpinner message="Authenticating..." size="medium" showSlowLoadingMessage={false} />
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (currentPage) {
@@ -184,8 +182,14 @@ const App: FC = () => {
                     <ReadingForm
                       readingType={selectedReading}
                       isDarkMode={isDarkMode}
-                      onReadingComplete={handleReadingComplete}
-                      onReadingRequest={handleReadingRequest}
+                      onReadingComplete={() => setHasCompletedReading(true)}
+                      onReadingRequest={() => {
+                        if (hasCompletedReading) {
+                          setIsPaymentModalOpen(true);
+                          return false;
+                        }
+                        return true;
+                      }}
                     />
                   </AsyncComponent>
                   <AsyncComponent>
@@ -201,15 +205,6 @@ const App: FC = () => {
         );
     }
   };
-
-  // Show loading spinner only during authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <LoadingSpinner message="Authenticating..." showSlowLoadingMessage={false} />
-      </div>
-    );
-  }
 
   return (
     <ErrorBoundary>
@@ -274,7 +269,7 @@ const App: FC = () => {
                 )}
                 <Tooltip content={TOOLTIPS.actions.darkMode}>
                   <button
-                    onClick={toggleDarkMode}
+                    onClick={handleToggleDarkMode}
                     className={`p-2 rounded-full theme-toggle ${
                       isDarkMode ? 'bg-indigo-800 text-white' : 'bg-indigo-200 text-gray-800'
                     } hover:opacity-80 transition-opacity`}
@@ -297,6 +292,7 @@ const App: FC = () => {
                 onClose={() => setIsPaymentModalOpen(false)}
                 isDarkMode={isDarkMode}
                 onSubscribe={handleSubscribe}
+                remainingReadings={usage?.remainingReadings ?? 0}
               />
             </AsyncComponent>
 
