@@ -27,9 +27,11 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
     
     try {
       if (isSignUp) {
-        await signUpWithEmail(email, password);
+        await signUp(email, password);
       } else {
         await signIn(email, password);
+        // Close modal on successful sign in
+        onClose();
       }
     } catch (err: any) {
       console.error('Auth error:', err);
@@ -52,13 +54,23 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
     setIsLoading(true);
     
     try {
-      await signInWithGoogle();
+      const { error } = await signInWithGoogle();
+      if (error) throw error;
+      // Close modal on successful Google sign in
+      onClose();
     } catch (err: any) {
       console.error('Google sign in error:', err);
       setError(err.message || 'Failed to sign in with Google');
       setIsLoading(false);
     }
   };
+
+  // Close modal if user is authenticated
+  React.useEffect(() => {
+    if (!isLoading && !authLoading && !error && !confirmEmail) {
+      onClose();
+    }
+  }, [isLoading, authLoading, error, confirmEmail, onClose]);
 
   useEffect(() => {
     if (!isOpen) {

@@ -29,23 +29,19 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 
 export const signInWithGoogle = async () => {
   try {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    return await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: siteUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent'
-        },
-        skipBrowserRedirect: false
+        }
       }
     });
-
-    if (error) throw error;
-    return data;
   } catch (error: any) {
     console.error('Google sign in error:', error);
-    throw new Error(error.message || 'Failed to sign in with Google');
+    throw error;
   }
 };
 
