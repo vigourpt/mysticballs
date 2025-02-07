@@ -30,7 +30,6 @@ const ReadingForm = lazy(() => import('./components/ReadingForm'));
 const ReadingOutput = lazy(() => import('./components/ReadingOutput'));
 const PaymentModal = lazy(() => import('./components/PaymentModal'));
 const LoginModal = lazy(() => import('./components/LoginModal'));
-const TrialOfferModal = lazy(() => import('./components/TrialOfferModal'));
 const Advertisement = lazy(() => import('./components/Advertisement'));
 const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./components/TermsOfService'));
@@ -45,17 +44,15 @@ const App: FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isTrialModalOpen, setIsTrialModalOpen] = useState(false);
-  const [currentReading, setCurrentReading] = useState<string | undefined>();
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [hasCompletedReading, setHasCompletedReading] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'privacy' | 'terms'>('home');
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useAuthState();
   
   const { user, loading, signIn, signUp, signOut } = useAuth();
-  const { usage, incrementUsage, hasReachedLimit, remainingReadings, setPremiumStatus } = useUsageTracking(user?.uid || null);
+  const { usage, incrementUsage } = useUsageTracking();
   const { isFirstVisit, isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
 
   useEffect(() => {
@@ -87,15 +84,6 @@ const App: FC = () => {
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, [user]);
-
-  useEffect(() => {
-    if (hasCompletedReading && !user?.uid && !usage.isPremium) {
-      const timer = setTimeout(() => {
-        setIsTrialModalOpen(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [hasCompletedReading, user?.uid, usage.isPremium]);
 
   const readingTypes = [
     { id: 'tarot', name: 'Tarot', icon: ScrollText, description: 'Discover insights through the ancient wisdom of tarot cards' },
@@ -138,24 +126,18 @@ const App: FC = () => {
 
   const handleReadingComplete = (reading: string) => {
     incrementUsage();
-    setCurrentReading(reading);
     setHasCompletedReading(true);
   };
 
   const handleReadingRequest = () => {
-    if (hasReachedLimit()) {
-      if (!user) {
-        setIsLoginModalOpen(true);
-      } else {
-        setIsPaymentModalOpen(true);
-      }
+    if (hasCompletedReading) {
+      setIsPaymentModalOpen(true);
       return false;
     }
     return true;
   };
 
   const handleSubscribe = async (plan: PaymentPlan) => {
-    setPremiumStatus(true);
     setIsPaymentModalOpen(false);
   };
 
@@ -206,7 +188,6 @@ const App: FC = () => {
                   <button
                     onClick={() => {
                       setSelectedReading(null);
-                      setCurrentReading(undefined);
                     }}
                     className={`mb-6 px-4 py-2 rounded-lg ${
                       isDarkMode ? 'bg-indigo-800 text-white' : 'bg-indigo-200 text-gray-800'
@@ -226,7 +207,6 @@ const App: FC = () => {
                     <ReadingOutput
                       readingType={selectedReading}
                       isDarkMode={isDarkMode}
-                      reading={currentReading}
                     />
                   </AsyncComponent>
                 </div>
@@ -270,7 +250,7 @@ const App: FC = () => {
                             : 'bg-indigo-500 hover:bg-indigo-600'
                         } text-white transition-colors`}
                       >
-                        {usage.isPremium ? 'Premium Member' : 'Upgrade to Premium'}
+                        Upgrade to Premium
                       </button>
                     </Tooltip>
                     <Tooltip content="Sign out">
@@ -323,7 +303,6 @@ const App: FC = () => {
                 onClose={() => setIsPaymentModalOpen(false)}
                 isDarkMode={isDarkMode}
                 onSubscribe={handleSubscribe}
-                remainingReadings={remainingReadings()}
               />
             </AsyncComponent>
 
@@ -335,14 +314,6 @@ const App: FC = () => {
                 onLogin={handleSignIn}
                 onSignUp={handleSignUp}
                 isLoading={isAuthenticating}
-              />
-            </AsyncComponent>
-
-            <AsyncComponent>
-              <TrialOfferModal
-                isOpen={isTrialModalOpen}
-                onClose={() => setIsTrialModalOpen(false)}
-                isDarkMode={isDarkMode}
               />
             </AsyncComponent>
 
