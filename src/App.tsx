@@ -72,10 +72,14 @@ const App: FC = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
-      window.location.href = '/'; // Redirect to home after sign out
+      const { success } = await signOut();
+      if (success) {
+        // Only redirect after successful sign out
+        window.location.href = '/';
+      }
     } catch (error) {
       console.error('Sign out error:', error);
+      // Stay on the current page if sign out fails
     }
   };
 
@@ -117,8 +121,8 @@ const App: FC = () => {
   // Show loading spinner during authentication
   if (authLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center">
-        <LoadingSpinner message="Authenticating..." size="medium" showSlowLoadingMessage={false} />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950">
+        <LoadingSpinner message="Loading..." size="medium" showSlowLoadingMessage={false} />
       </div>
     );
   }
@@ -245,12 +249,13 @@ const App: FC = () => {
                     <Tooltip content="Sign Out">
                       <button
                         onClick={handleSignOut}
-                        className={`p-2 rounded-lg ${
+                        className={`px-4 py-2 rounded-lg ${
                           isDarkMode 
                             ? 'bg-indigo-800 hover:bg-indigo-900' 
                             : 'bg-indigo-200 hover:bg-indigo-300'
-                        } text-white transition-colors`}
+                        } text-white transition-colors flex items-center gap-2`}
                       >
+                        <span>Sign Out</span>
                         <LogOut size={20} />
                       </button>
                     </Tooltip>

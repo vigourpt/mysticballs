@@ -140,19 +140,25 @@ export const useAuth = () => {
   };
 
   const signOut = async () => {
-    setLoading(true);
-    setError(null);
-    
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Clear any auth-related storage
+      localStorage.removeItem('mysticballs-auth-token');
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+      
+      // Reset state
       setUser(null);
+      setError(null);
+      setConfirmEmail(false);
+      
+      return { success: true };
     } catch (err) {
       console.error('Sign out error:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign out');
       throw err;
-    } finally {
-      setLoading(false);
     }
   };
 
