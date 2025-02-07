@@ -242,14 +242,16 @@ const App: FC = () => {
                         Upgrade to Premium
                       </button>
                     </Tooltip>
-                    <Tooltip content="Sign out">
+                    <Tooltip content="Sign Out">
                       <button
                         onClick={handleSignOut}
-                        className={`p-2 rounded-full ${
-                          isDarkMode ? 'bg-indigo-800 text-white' : 'bg-indigo-200 text-gray-800'
-                        } hover:opacity-80 transition-opacity`}
+                        className={`p-2 rounded-lg ${
+                          isDarkMode 
+                            ? 'bg-indigo-800 hover:bg-indigo-900' 
+                            : 'bg-indigo-200 hover:bg-indigo-300'
+                        } text-white transition-colors`}
                       >
-                        <LogOut size={24} />
+                        <LogOut size={20} />
                       </button>
                     </Tooltip>
                   </>
