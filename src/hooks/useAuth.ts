@@ -149,25 +149,46 @@ export const useAuth = () => {
     setConfirmEmail(false);
     
     try {
-      const result = await signUpWithEmail(email, password);
-      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            email_confirmed: false
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Check if user already exists
+      if (data?.user?.identities?.length === 0) {
+        throw new Error('Email already registered');
+      }
+
       // If email confirmation is required
-      if (result.requiresEmailConfirmation) {
+      if (!data.session) {
         setConfirmEmail(true);
         setLoading(false);
         return;
       }
-      
+
       // If email confirmation is not required, create profile
-      if (result.user) {
-        await createUserProfile(
-          result.user.id,
-          result.user.email ?? '',
-          result.user.user_metadata?.full_name ?? result.user.user_metadata?.name ?? null
-        );
+      if (data.user) {
+        try {
+          await createUserProfile(
+            data.user.id,
+            data.user.email ?? '',
+            data.user.user_metadata?.full_name ?? data.user.user_metadata?.name ?? null
+          );
+        } catch (profileError) {
+          console.error('Error creating user profile:', profileError);
+          // Don't throw here, we still want to set the user
+        }
       }
-      
-      setUser(result.user);
+
+      setUser(data.user);
       setLoading(false);
     } catch (err) {
       console.error('Sign up error:', err);

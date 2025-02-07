@@ -33,7 +33,13 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
       }
     } catch (err: any) {
       console.error('Auth error:', err);
-      setError(err.message || 'An error occurred during authentication');
+      if (err.message?.includes('Email already registered')) {
+        setError('This email is already registered. Please sign in instead.');
+      } else if (err.message?.includes('Invalid login credentials')) {
+        setError('Invalid email or password. Please try again.');
+      } else {
+        setError(err.message || 'An error occurred during authentication');
+      }
     } finally {
       setIsLoading(false);
     }

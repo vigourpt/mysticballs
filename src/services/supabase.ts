@@ -113,9 +113,22 @@ export const signInWithEmail = async (email: string, password: string) => {
 export const createUserProfile = async (userId: string, email: string, displayName: string | null) => {
   try {
     const now = new Date().toISOString();
+
+    // First check if profile exists
+    const { data: existingProfile } = await supabase
+      .from('user_profiles')
+      .select()
+      .eq('id', userId)
+      .single();
+
+    if (existingProfile) {
+      return; // Profile already exists, no need to create
+    }
+
+    // Create new profile
     const { error } = await supabase
       .from('user_profiles')
-      .upsert({
+      .insert({
         id: userId,
         email,
         display_name: displayName || email.split('@')[0],
@@ -126,7 +139,10 @@ export const createUserProfile = async (userId: string, email: string, displayNa
         updated_at: now
       });
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error creating profile:', error);
+      throw error;
+    }
   } catch (error: any) {
     console.error('Error creating user profile:', error);
     throw error;
