@@ -112,16 +112,18 @@ export const signInWithEmail = async (email: string, password: string) => {
 
 export const createUserProfile = async (userId: string, email: string, displayName: string | null) => {
   try {
+    const now = new Date().toISOString();
     const { error } = await supabase
-      .from('users')
+      .from('user_profiles')
       .upsert({
         id: userId,
         email,
         display_name: displayName || email.split('@')[0],
         readings_count: 0,
         is_premium: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        last_reading_date: null,
+        created_at: now,
+        updated_at: now
       });
 
     if (error) throw error;

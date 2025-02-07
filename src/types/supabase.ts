@@ -9,7 +9,7 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      users: {
+      user_profiles: {
         Row: {
           id: string
           email: string
@@ -58,6 +58,9 @@ export interface Database {
           updated_at: string
         }
       }
+    }
+    Enums: {
+      [_ in never]: never
     }
   }
 }
