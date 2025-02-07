@@ -11,6 +11,9 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
+// Get the site URL based on environment
+const siteUrl = import.meta.env.DEV ? 'http://localhost:5173' : PRODUCTION_URL;
+
 // Create Supabase client with minimal config
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -19,20 +22,17 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true,
     flowType: 'pkce',
     storage: window.localStorage,
-    storageKey: 'mysticballs-auth-token'
+    storageKey: 'mysticballs-auth-token',
+    site_url: siteUrl
   }
 });
 
 export const signInWithGoogle = async () => {
   try {
-    const redirectTo = import.meta.env.DEV 
-      ? window.location.origin 
-      : PRODUCTION_URL;
-
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo,
+        redirectTo: siteUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent'
@@ -49,25 +49,6 @@ export const signInWithGoogle = async () => {
   }
 };
 
-export const signInWithEmail = async (email: string, password: string) => {
-  if (!email || !password) {
-    throw new Error('Email and password are required');
-  }
-
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: password
-    });
-
-    if (error) throw error;
-    return data;
-  } catch (error: any) {
-    console.error('Email sign in error:', error);
-    throw new Error(error.message || 'Failed to sign in with email');
-  }
-};
-
 export const signUpWithEmail = async (email: string, password: string) => {
   if (!email || !password) {
     throw new Error('Email and password are required');
@@ -78,15 +59,11 @@ export const signUpWithEmail = async (email: string, password: string) => {
   }
 
   try {
-    const redirectTo = import.meta.env.DEV 
-      ? window.location.origin 
-      : PRODUCTION_URL;
-
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: password,
       options: {
-        emailRedirectTo: redirectTo,
+        emailRedirectTo: siteUrl,
         data: {
           email: email.trim(),
           email_confirmed: false
@@ -114,35 +91,42 @@ export const signUpWithEmail = async (email: string, password: string) => {
   }
 };
 
+export const signInWithEmail = async (email: string, password: string) => {
+  if (!email || !password) {
+    throw new Error('Email and password are required');
+  }
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: password
+    });
+
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    console.error('Email sign in error:', error);
+    throw new Error(error.message || 'Failed to sign in with email');
+  }
+};
+
 export const createUserProfile = async (userId: string, email: string, displayName: string | null) => {
   try {
-    // Check if user exists first
-    const { data: existingUser, error: fetchError } = await supabase
+    const { error } = await supabase
       .from('users')
-      .select()
-      .eq('id', userId)
-      .single();
+      .upsert({
+        id: userId,
+        email,
+        display_name: displayName || email.split('@')[0],
+        readings_count: 0,
+        is_premium: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
 
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      throw fetchError;
-    }
-
-    // Only create profile if user doesn't exist
-    if (!existingUser) {
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert({
-          id: userId,
-          email,
-          display_name: displayName || email.split('@')[0],
-          readings_count: 0,
-          is_premium: false
-        });
-
-      if (insertError) throw insertError;
-    }
-  } catch (error) {
-    console.error('Profile creation error:', error);
+    if (error) throw error;
+  } catch (error: any) {
+    console.error('Error creating user profile:', error);
     throw error;
   }
 };

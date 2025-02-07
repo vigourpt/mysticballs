@@ -158,7 +158,15 @@ export const useAuth = () => {
         return;
       }
       
-      // If email confirmation is not required
+      // If email confirmation is not required, create profile
+      if (result.user) {
+        await createUserProfile(
+          result.user.id,
+          result.user.email ?? '',
+          result.user.user_metadata?.full_name ?? result.user.user_metadata?.name ?? null
+        );
+      }
+      
       setUser(result.user);
       setLoading(false);
     } catch (err) {
