@@ -40,8 +40,7 @@ interface AuthCredentials {
 }
 
 const App: FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedReading, setSelectedReading] = useState<ReadingType | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -60,25 +59,13 @@ const App: FC = () => {
   useEffect(() => {
     const handleInitialLoad = async () => {
       try {
-        // Remove loading spinner once app is mounted
-        const loader = document.getElementById('initial-loader');
-        if (loader) {
-          loader.style.opacity = '0';
-          await new Promise(resolve => setTimeout(resolve, 300));
-          loader.style.display = 'none';
-        }
-        
         // Initialize app state from URL if needed
         const params = new URLSearchParams(window.location.search);
         if (params.get('showPayment') === 'true' && user) {
           setIsPaymentModalOpen(true);
         }
-        
-        setIsInitialized(true);
-        setIsLoading(false);
       } catch (error) {
         console.error('Error during initialization:', error);
-        setIsLoading(false);
       }
     };
 
@@ -86,7 +73,6 @@ const App: FC = () => {
 
     // Handle browser back/forward
     const handlePopState = () => {
-      setIsLoading(false);
       setSelectedReading(null);
     };
 
@@ -94,19 +80,9 @@ const App: FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
 
-  // Reset loading state when auth state changes
-  useEffect(() => {
-    if (!authLoading && isInitialized) {
-      setIsLoading(false);
-    }
-  }, [authLoading, isInitialized]);
-
-  if (!isInitialized || authLoading) {
-    return <LoadingSpinner message="Initializing..." />;
-  }
-
-  if (isLoading) {
-    return <LoadingSpinner />;
+  // Show loading spinner only during authentication
+  if (authLoading || isAuthenticating) {
+    return <LoadingSpinner message="Authenticating..." showSlowLoadingMessage={false} />;
   }
 
   const readingTypes = [

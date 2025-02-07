@@ -12,17 +12,13 @@ if (!rootElement) {
 
 const root = createRoot(rootElement);
 
-// Remove loading spinner once React starts to render
-const loader = document.getElementById('initial-loader');
-if (loader) {
-  loader.style.display = 'none';
-}
-
-// Handle browser navigation
+// Handle browser navigation without full page reload
 let isFirstLoad = true;
-window.addEventListener('popstate', () => {
+window.addEventListener('popstate', (event) => {
+  event.preventDefault();
   if (!isFirstLoad) {
-    window.location.reload();
+    // Update app state instead of reloading
+    window.dispatchEvent(new CustomEvent('app:navigation'));
   }
   isFirstLoad = false;
 });
