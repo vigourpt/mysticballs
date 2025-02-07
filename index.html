@@ -39,11 +39,34 @@
       <div class="loader"></div>
     </div>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
     <script>
-      window.addEventListener('load', function() {
-        document.getElementById('initial-loader').style.display = 'none';
+      console.log('Page starting to load...');
+      
+      // Debug any script loading errors
+      window.addEventListener('error', function(e) {
+        console.error('Script error:', e);
+        document.getElementById('initial-loader').innerHTML = '<div style="color: white; text-align: center;"><p>Loading error occurred.</p><p style="color: #ff6b6b;">' + e.message + '</p></div>';
       });
+
+      // Monitor the React app mounting
+      const startTime = Date.now();
+      const checkMount = setInterval(function() {
+        const root = document.getElementById('root');
+        if (root && root.children.length > 0) {
+          console.log('React app mounted after ' + (Date.now() - startTime) + 'ms');
+          document.getElementById('initial-loader').style.display = 'none';
+          clearInterval(checkMount);
+        }
+      }, 100);
+
+      // Fallback if loading takes too long
+      setTimeout(function() {
+        if (document.getElementById('initial-loader').style.display !== 'none') {
+          console.error('Loading timeout after 10s');
+          document.getElementById('initial-loader').innerHTML = '<div style="color: white; text-align: center;"><p>Loading is taking longer than expected.</p><p>Please refresh the page.</p></div>';
+        }
+      }, 10000);
     </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

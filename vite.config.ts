@@ -4,11 +4,15 @@ import { PRODUCTION_CONFIG } from './src/config/production';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    react()
-  ],
+  plugins: [react()],
   optimizeDeps: {
-    exclude: ['lucide-react'],
+    include: ['react', 'react-dom']
+  },
+  resolve: {
+    alias: {
+      'react': 'react',
+      'react-dom': 'react-dom'
+    }
   },
   build: {
     target: 'es2020',
@@ -17,31 +21,24 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
-          stripe: ['@stripe/stripe-js'],
-          supabase: ['@supabase/supabase-js'],
-          openai: ['openai']
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-stripe': ['@stripe/stripe-js'],
+          'vendor-ui': ['lucide-react']
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: true
+      }
+    }
   },
   server: {
-    headers: {
-      'Content-Security-Policy': [
-        "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
-        "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' https: data:",
-        "connect-src 'self' https://api.openai.com https://*.supabase.co https://api.stripe.com",
-        "frame-src 'self' https://js.stripe.com",
-        "font-src 'self' data:",
-        "object-src 'none'",
-        "base-uri 'self'",
-        "form-action 'self'",
-        "frame-ancestors 'none'",
-        "upgrade-insecure-requests"
-      ].join('; ')
+    hmr: {
+      overlay: true
     }
   }
 });

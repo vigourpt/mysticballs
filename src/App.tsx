@@ -1,12 +1,6 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { Moon, Sun, ScrollText, Hash, Stars, Scroll, Dice3, BookHeart, LogOut, Calculator, Sparkles, Cloud, CircleDot, Palette, Clock } from 'lucide-react';
-import ErrorBoundary from './components/ErrorBoundary';
+import * as React from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import LoadingSpinner from './components/LoadingSpinner';
-import AsyncComponent from './components/AsyncComponent';
-import Tooltip from './components/Tooltip';
-import OnboardingOverlay from './components/OnboardingOverlay';
-import TutorialButton from './components/TutorialButton';
-import Footer from './components/Footer';
 import { ReadingType, PaymentPlan } from './types';
 import { useAuth } from './hooks/useAuth';
 import { useUsageTracking } from './hooks/useUsageTracking';
@@ -15,7 +9,21 @@ import { FREE_READINGS_LIMIT } from './config/constants';
 import { ONBOARDING_STEPS, TOOLTIPS } from './config/tutorial';
 import useAuthState from './hooks/useAuthState';
 
-// Lazy load components with loading fallback
+// Import icons individually to reduce bundle size
+import { 
+  Moon, Sun, ScrollText, Hash, Stars, 
+  Scroll, Dice3, BookHeart, LogOut, 
+  Calculator, Sparkles, Cloud, CircleDot, 
+  Palette, Clock 
+} from 'lucide-react';
+
+// Lazy load components
+const ErrorBoundary = lazy(() => import('./components/ErrorBoundary'));
+const AsyncComponent = lazy(() => import('./components/AsyncComponent'));
+const Tooltip = lazy(() => import('./components/Tooltip'));
+const OnboardingOverlay = lazy(() => import('./components/OnboardingOverlay'));
+const TutorialButton = lazy(() => import('./components/TutorialButton'));
+const Footer = lazy(() => import('./components/Footer'));
 const ReadingSelector = lazy(() => import('./components/ReadingSelector'));
 const ReadingForm = lazy(() => import('./components/ReadingForm'));
 const ReadingOutput = lazy(() => import('./components/ReadingOutput'));
@@ -23,10 +31,8 @@ const PaymentModal = lazy(() => import('./components/PaymentModal'));
 const LoginModal = lazy(() => import('./components/LoginModal'));
 const TrialOfferModal = lazy(() => import('./components/TrialOfferModal'));
 const Advertisement = lazy(() => import('./components/Advertisement'));
-const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
-const TermsOfService = lazy(() => import('./components/TermsOfService'));
 
-function App() {
+const App: React.FC = () => {
   const [selectedReading, setSelectedReading] = useState<ReadingType | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -36,12 +42,33 @@ function App() {
   const [hasCompletedReading, setHasCompletedReading] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'privacy' | 'terms'>('home');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   useAuthState();
   
   const { user, loading, signIn, signUp, signOut } = useAuth();
   const { usage, incrementUsage, hasReachedLimit, remainingReadings, setPremiumStatus } = useUsageTracking(user?.uid || null);
   const { isFirstVisit, isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
+
+  useEffect(() => {
+    // Remove loading spinner once app is mounted
+    const loader = document.getElementById('initial-loader');
+    if (loader) {
+      loader.style.opacity = '0';
+      setTimeout(() => {
+        loader.style.display = 'none';
+        setIsLoading(false);
+      }, 300);
+    }
+
+    // Cleanup function
+    return () => {
+      if (loader) {
+        loader.style.display = 'flex';
+        loader.style.opacity = '1';
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Check URL parameters for showPayment
@@ -117,6 +144,10 @@ function App() {
     setPremiumStatus(true);
     setIsPaymentModalOpen(false);
   };
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   if (loading || isAuthenticating) {
     return (

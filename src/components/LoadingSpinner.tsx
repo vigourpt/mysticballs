@@ -1,20 +1,32 @@
-import React from 'react';
+import * as React from 'react';
 
-interface Props {
-  size?: 'small' | 'medium' | 'large';
-  className?: string;
+interface LoadingSpinnerProps {
+  message?: string;
 }
 
-const LoadingSpinner: React.FC<Props> = ({ size = 'medium', className = '' }) => {
-  const sizeClasses = {
-    small: 'w-6 h-6',
-    medium: 'w-12 h-12',
-    large: 'w-16 h-16'
-  };
+const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'Loading...' }) => {
+  const [showSlowLoadingMessage, setShowSlowLoadingMessage] = React.useState(false);
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSlowLoadingMessage(true);
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className={`flex justify-center items-center ${className}`}>
-      <div className={`${sizeClasses[size]} animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600 dark:border-indigo-800 dark:border-t-indigo-300`}></div>
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-gray-900 bg-opacity-90 z-50">
+      <div className="w-12 h-12 border-4 border-white border-b-transparent rounded-full animate-spin mb-4"></div>
+      <div className="text-white text-center">
+        <p className="mb-2">{message}</p>
+        {showSlowLoadingMessage && (
+          <p className="text-gray-400 text-sm">
+            This is taking longer than expected.<br />
+            Please wait a moment...
+          </p>
+        )}
+      </div>
     </div>
   );
 };
