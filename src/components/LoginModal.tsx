@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { signInWithGoogle, signUpWithEmail } from '../services/supabase';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   isDarkMode: boolean;
-  onLogin: (email?: string, password?: string) => Promise<void>;
-  onSignUp: (email: string, password: string) => Promise<void>;
 }
 
-const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode, onLogin, onSignUp }) => {
+const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
@@ -25,17 +24,17 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode, onLogin, onSignUp 
     
     setError(null);
     setIsLoading(true);
-
+    
     try {
       if (isSignUp) {
-        await onSignUp(email, password);
+        await signUpWithEmail(email, password);
       } else {
-        await onLogin(email, password);
+        await signIn(email, password);
       }
-      // Don't reset loading or close modal here - will be handled by auth state change
-    } catch (err) {
-      console.error('Authentication error:', err);
-      setError(err instanceof Error ? err.message : 'Authentication failed');
+    } catch (err: any) {
+      console.error('Auth error:', err);
+      setError(err.message || 'An error occurred during authentication');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -45,13 +44,12 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode, onLogin, onSignUp 
     
     setError(null);
     setIsLoading(true);
-
+    
     try {
-      await signIn();
-      // Don't reset loading here - will be handled by auth state change
-    } catch (err) {
-      console.error('Google authentication error:', err);
-      setError(err instanceof Error ? err.message : 'Google authentication failed');
+      await signInWithGoogle();
+    } catch (err: any) {
+      console.error('Google sign in error:', err);
+      setError(err.message || 'Failed to sign in with Google');
       setIsLoading(false);
     }
   };

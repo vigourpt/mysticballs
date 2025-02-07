@@ -93,6 +93,26 @@ export const useAuth = () => {
     };
   }, []);
 
+  const signUpWithEmail = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: {
+          email_confirmed: false
+        }
+      }
+    });
+    
+    if (error) throw error;
+    
+    return {
+      user: data.user,
+      requiresEmailConfirmation: data.session === null
+    };
+  };
+
   const signIn = async (email?: string, password?: string) => {
     setLoading(true);
     setError(null);
@@ -129,34 +149,17 @@ export const useAuth = () => {
     setConfirmEmail(false);
     
     try {
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: {
-            email_confirmed: false
-          }
-        }
-      });
-      
-      if (error) throw error;
-      
-      if (data?.user?.identities?.length === 0) {
-        setError('This email is already registered. Please sign in instead.');
-        setLoading(false);
-        return;
-      }
+      const result = await signUpWithEmail(email, password);
       
       // If email confirmation is required
-      if (!data.session) {
+      if (result.requiresEmailConfirmation) {
         setConfirmEmail(true);
         setLoading(false);
         return;
       }
       
       // If email confirmation is not required
-      setUser(data.user);
+      setUser(result.user);
       setLoading(false);
     } catch (err) {
       console.error('Sign up error:', err);

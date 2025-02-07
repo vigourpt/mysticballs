@@ -17,20 +17,27 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    storage: window.localStorage,
+    storageKey: 'mysticballs-auth-token'
   }
 });
 
 export const signInWithGoogle = async () => {
   try {
+    const redirectTo = import.meta.env.DEV 
+      ? window.location.origin 
+      : PRODUCTION_URL;
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin,
+        redirectTo,
         queryParams: {
           access_type: 'offline',
           prompt: 'consent'
-        }
+        },
+        skipBrowserRedirect: false
       }
     });
 
@@ -71,18 +78,35 @@ export const signUpWithEmail = async (email: string, password: string) => {
   }
 
   try {
+    const redirectTo = import.meta.env.DEV 
+      ? window.location.origin 
+      : PRODUCTION_URL;
+
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: password,
       options: {
-        emailRedirectTo: `${window.location.origin}?verified=true`,
+        emailRedirectTo: redirectTo,
         data: {
-          email: email.trim()
+          email: email.trim(),
+          email_confirmed: false
         }
       }
     });
 
     if (error) throw error;
+
+    // Check if user already exists
+    if (data?.user?.identities?.length === 0) {
+      throw new Error('This email is already registered. Please sign in instead.');
+    }
+
+    // Check if email confirmation is required
+    if (!data.session) {
+      // Return special flag to indicate email confirmation needed
+      return { ...data, requiresEmailConfirmation: true };
+    }
+
     return data;
   } catch (error: any) {
     console.error('Email sign up error:', error);
