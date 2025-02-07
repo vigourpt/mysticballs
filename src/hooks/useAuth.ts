@@ -112,6 +112,30 @@ export const useAuth = () => {
     }
   };
 
+  const signUp = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            email_confirmed: false
+          }
+        }
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error('Sign up error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sign up');
+      setLoading(false);
+      throw err;
+    }
+  };
+
   const signOut = async () => {
     setLoading(true);
     setError(null);
@@ -138,6 +162,7 @@ export const useAuth = () => {
     loading,
     error,
     signIn,
+    signUp,
     signOut
   };
 };
