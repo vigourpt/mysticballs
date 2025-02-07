@@ -26,6 +26,7 @@ export const useAuth = () => {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
       const user = session?.user;
       setUser(user);
 
@@ -40,6 +41,10 @@ export const useAuth = () => {
           console.error('Failed to create user profile:', err);
           setError(err instanceof Error ? err.message : 'Failed to create user profile');
         }
+      } else if (event === 'SIGNED_OUT') {
+        // Clear any cached data or local storage here
+        localStorage.removeItem('supabase.auth.token');
+        setUser(null);
       }
     });
 
@@ -84,13 +89,22 @@ export const useAuth = () => {
   const signOut = async () => {
     try {
       setError(null);
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Clear any cached data
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+      
+      // Clear user state
       setUser(null);
     } catch (err) {
       console.error('Sign out error:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign out');
       throw err;
+    } finally {
+      setLoading(false);
     }
   };
 

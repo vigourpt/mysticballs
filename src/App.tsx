@@ -80,27 +80,17 @@ const App: FC = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
 
-  // Show loading spinner only during authentication
-  if (authLoading || isAuthenticating) {
-    return <LoadingSpinner message="Authenticating..." showSlowLoadingMessage={false} />;
-  }
-
-  const readingTypes = [
-    { id: 'tarot', name: 'Tarot', icon: ScrollText, description: 'Discover insights through the ancient wisdom of tarot cards' },
-    { id: 'numerology', name: 'Numerology', icon: Hash, description: 'Unlock the meaning behind your personal numbers' },
-    { id: 'astrology', name: 'Astrology', icon: Stars, description: 'Explore your celestial connections and cosmic path' },
-    { id: 'oracle', name: 'Oracle Cards', icon: BookHeart, description: 'Receive guidance through mystical oracle messages' },
-    { id: 'runes', name: 'Runes', icon: Scroll, description: 'Ancient Norse wisdom for modern guidance' },
-    { id: 'iching', name: 'I Ching', icon: Dice3, description: 'Connect with ancient Chinese divination wisdom' },
-    { id: 'angelNumbers', name: 'Angel Numbers', icon: Calculator, description: 'Decode divine messages in recurring numbers' },
-    { id: 'horoscope', name: 'Daily Horoscope', icon: Sparkles, description: 'Your personalized daily celestial guidance' },
-    { id: 'dreams', name: 'Dream Analysis', icon: Cloud, description: 'Uncover the hidden meanings in your dreams' },
-    { id: 'magic8ball', name: 'Magic 8 Ball', icon: CircleDot, description: 'Quick answers to yes/no questions' },
-    { id: 'aura', name: 'Aura Reading', icon: Palette, description: 'Discover your energy field\'s colors and meanings' },
-    { id: 'pastLife', name: 'Past Life Reading', icon: Clock, description: 'Explore your soul\'s previous incarnations' }
-  ];
-
-  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+  const handleSignOut = async () => {
+    try {
+      setIsAuthenticating(true);
+      await signOut();
+      window.location.href = '/'; // Redirect to home after sign out
+    } catch (error) {
+      console.error('Error signing out:', error);
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
 
   const handleSignIn = async ({ email, password }: AuthCredentials) => {
     setIsAuthenticating(true);
@@ -166,7 +156,20 @@ const App: FC = () => {
               {!selectedReading ? (
                 <AsyncComponent>
                   <ReadingSelector
-                    readingTypes={readingTypes}
+                    readingTypes={[
+                      { id: 'tarot', name: 'Tarot', icon: ScrollText, description: 'Discover insights through the ancient wisdom of tarot cards' },
+                      { id: 'numerology', name: 'Numerology', icon: Hash, description: 'Unlock the meaning behind your personal numbers' },
+                      { id: 'astrology', name: 'Astrology', icon: Stars, description: 'Explore your celestial connections and cosmic path' },
+                      { id: 'oracle', name: 'Oracle Cards', icon: BookHeart, description: 'Receive guidance through mystical oracle messages' },
+                      { id: 'runes', name: 'Runes', icon: Scroll, description: 'Ancient Norse wisdom for modern guidance' },
+                      { id: 'iching', name: 'I Ching', icon: Dice3, description: 'Connect with ancient Chinese divination wisdom' },
+                      { id: 'angelNumbers', name: 'Angel Numbers', icon: Calculator, description: 'Decode divine messages in recurring numbers' },
+                      { id: 'horoscope', name: 'Daily Horoscope', icon: Sparkles, description: 'Your personalized daily celestial guidance' },
+                      { id: 'dreams', name: 'Dream Analysis', icon: Cloud, description: 'Uncover the hidden meanings in your dreams' },
+                      { id: 'magic8ball', name: 'Magic 8 Ball', icon: CircleDot, description: 'Quick answers to yes/no questions' },
+                      { id: 'aura', name: 'Aura Reading', icon: Palette, description: 'Discover your energy field\'s colors and meanings' },
+                      { id: 'pastLife', name: 'Past Life Reading', icon: Clock, description: 'Explore your soul\'s previous incarnations' }
+                    ]}
                     onSelect={setSelectedReading}
                     isDarkMode={isDarkMode}
                   />
@@ -204,6 +207,23 @@ const App: FC = () => {
         );
     }
   };
+
+  // Show loading spinner only during authentication
+  if (authLoading || isAuthenticating) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center">
+        <LoadingSpinner message="Authenticating..." showSlowLoadingMessage={false} />
+        {authLoading && (
+          <button
+            onClick={handleSignOut}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+          >
+            Cancel Sign In
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>
@@ -243,7 +263,7 @@ const App: FC = () => {
                     </Tooltip>
                     <Tooltip content="Sign out">
                       <button
-                        onClick={signOut}
+                        onClick={handleSignOut}
                         className={`p-2 rounded-full ${
                           isDarkMode ? 'bg-indigo-800 text-white' : 'bg-indigo-200 text-gray-800'
                         } hover:opacity-80 transition-opacity`}
