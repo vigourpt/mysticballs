@@ -8,17 +8,23 @@ export const useAuth = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+    
     // Check for existing session
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
-        setUser(session?.user ?? null);
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
       } catch (err) {
         console.error('Session check error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to check session');
-      } finally {
-        setLoading(false);
+        if (mounted) {
+          setError(err instanceof Error ? err.message : 'Failed to check session');
+          setLoading(false);
+        }
       }
     };
 
@@ -27,28 +33,38 @@ export const useAuth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.id);
+      
+      if (!mounted) return;
+      
+      setLoading(true);
       const user = session?.user;
-      setUser(user);
-
-      if (event === 'SIGNED_IN' && user) {
-        try {
+      
+      try {
+        if (event === 'SIGNED_IN' && user) {
           await createUserProfile(
             user.id,
             user.email ?? '',
             user.user_metadata?.full_name ?? user.user_metadata?.name ?? null
           );
-        } catch (err) {
-          console.error('Failed to create user profile:', err);
-          setError(err instanceof Error ? err.message : 'Failed to create user profile');
+          setUser(user);
+        } else if (event === 'SIGNED_OUT') {
+          localStorage.removeItem('supabase.auth.token');
+          setUser(null);
+        } else {
+          setUser(user);
         }
-      } else if (event === 'SIGNED_OUT') {
-        // Clear any cached data or local storage here
-        localStorage.removeItem('supabase.auth.token');
-        setUser(null);
+      } catch (err) {
+        console.error('Auth state change error:', err);
+        setError(err instanceof Error ? err.message : 'Authentication error');
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);

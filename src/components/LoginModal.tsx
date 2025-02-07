@@ -21,6 +21,8 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode, onLogin, onSignUp 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+    
     setError(null);
     setIsLoading(true);
 
@@ -30,22 +32,26 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode, onLogin, onSignUp 
       } else {
         await signIn(email, password);
       }
+      setIsLoading(false);
       onClose();
     } catch (err) {
+      console.error('Authentication error:', err);
       setError(err instanceof Error ? err.message : 'Authentication failed');
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleSignIn = async () => {
+    if (isLoading) return;
+    
     setError(null);
     setIsLoading(true);
 
     try {
       await signIn();
-      // Don't close modal here - it will be handled by the OAuth redirect
+      // The loading state will be handled by the auth state change listener
     } catch (err) {
+      console.error('Google authentication error:', err);
       setError(err instanceof Error ? err.message : 'Google authentication failed');
       setIsLoading(false);
     }
