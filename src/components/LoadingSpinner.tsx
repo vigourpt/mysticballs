@@ -1,13 +1,15 @@
-import * as React from 'react';
+/** @jsxImportSource react */
+import { useState, useEffect } from 'react';
+import type { FC } from 'react';
 
 interface LoadingSpinnerProps {
   message?: string;
 }
 
-const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({ message = 'Loading...' }) => {
-  const [showSlowLoadingMessage, setShowSlowLoadingMessage] = React.useState(false);
+const LoadingSpinner: FC<LoadingSpinnerProps> = ({ message = 'Loading...' }) => {
+  const [showSlowLoadingMessage, setShowSlowLoadingMessage] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       setShowSlowLoadingMessage(true);
     }, 5000);

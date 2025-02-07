@@ -1,5 +1,6 @@
-import * as React from 'react';
+/** @jsxImportSource react */
 import { useState, useEffect, lazy, Suspense } from 'react';
+import type { FC } from 'react';
 import LoadingSpinner from './components/LoadingSpinner';
 import { ReadingType, PaymentPlan } from './types';
 import { useAuth } from './hooks/useAuth';
@@ -31,8 +32,15 @@ const PaymentModal = lazy(() => import('./components/PaymentModal'));
 const LoginModal = lazy(() => import('./components/LoginModal'));
 const TrialOfferModal = lazy(() => import('./components/TrialOfferModal'));
 const Advertisement = lazy(() => import('./components/Advertisement'));
+const PrivacyPolicy = lazy(() => import('./components/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./components/TermsOfService'));
 
-const App: React.FC = () => {
+interface AuthCredentials {
+  email: string;
+  password: string;
+}
+
+const App: FC = () => {
   const [selectedReading, setSelectedReading] = useState<ReadingType | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -106,17 +114,23 @@ const App: React.FC = () => {
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
-  const handleAuthAction = async (action: 'login' | 'signup', email?: string, password?: string) => {
+  const handleSignIn = async ({ email, password }: AuthCredentials) => {
+    setIsAuthenticating(true);
     try {
-      setIsAuthenticating(true);
-      if (action === 'login') {
-        await signIn(email, password);
-      } else {
-        await signUp(email, password);
-      }
-      setIsLoginModalOpen(false);
+      await signIn(email, password);
     } catch (error) {
-      throw error;
+      console.error('Sign in error:', error);
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  const handleSignUp = async ({ email, password }: AuthCredentials) => {
+    setIsAuthenticating(true);
+    try {
+      await signUp(email, password);
+    } catch (error) {
+      console.error('Sign up error:', error);
     } finally {
       setIsAuthenticating(false);
     }
@@ -318,8 +332,8 @@ const App: React.FC = () => {
                 isOpen={isLoginModalOpen}
                 onClose={() => setIsLoginModalOpen(false)}
                 isDarkMode={isDarkMode}
-                onLogin={(email, password) => handleAuthAction('login', email, password)}
-                onSignUp={(email, password) => handleAuthAction('signup', email, password)}
+                onLogin={handleSignIn}
+                onSignUp={handleSignUp}
                 isLoading={isAuthenticating}
               />
             </AsyncComponent>

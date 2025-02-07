@@ -31,7 +31,7 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: false,
+        drop_console: PRODUCTION_CONFIG.ENABLE_PERFORMANCE_MONITORING ? false : true,
         drop_debugger: true
       }
     }
@@ -39,6 +39,13 @@ export default defineConfig({
   server: {
     hmr: {
       overlay: true
-    }
+    },
+    headers: PRODUCTION_CONFIG.ENABLE_CSP ? {
+      'Content-Security-Policy': PRODUCTION_CONFIG.CSP_DIRECTIVES
+    } : undefined
+  },
+  // Enable service worker in production
+  worker: {
+    enabled: PRODUCTION_CONFIG.ENABLE_SERVICE_WORKER
   }
 });
