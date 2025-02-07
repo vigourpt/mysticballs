@@ -13,11 +13,27 @@ export const useAuth = () => {
     // Check for existing session
     const checkSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        if (mounted) {
-          setUser(session?.user ?? null);
-          setLoading(false);
+        // First check if we have an access token in the URL (OAuth redirect)
+        const hasAccessToken = window.location.hash.includes('access_token=');
+        
+        if (hasAccessToken) {
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) throw sessionError;
+          
+          if (mounted) {
+            setUser(session?.user ?? null);
+            setLoading(false);
+            // Clean up URL after successful OAuth
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } else {
+          // Normal session check
+          const { data: { session }, error } = await supabase.auth.getSession();
+          if (error) throw error;
+          if (mounted) {
+            setUser(session?.user ?? null);
+            setLoading(false);
+          }
         }
       } catch (err) {
         console.error('Session check error:', err);
@@ -46,7 +62,7 @@ export const useAuth = () => {
           );
           setUser(session.user);
         } else if (event === 'SIGNED_OUT') {
-          localStorage.removeItem('supabase.auth.token');
+          localStorage.removeItem('mysticballs-auth-token');
           setUser(null);
         } else if (event === 'USER_UPDATED') {
           setUser(session?.user ?? null);
@@ -96,27 +112,6 @@ export const useAuth = () => {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const { error } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          emailRedirectTo: window.location.origin
-        }
-      });
-      if (error) throw error;
-    } catch (err) {
-      console.error('Sign up error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to sign up');
-      setLoading(false);
-      throw err;
-    }
-  };
-
   const signOut = async () => {
     setLoading(true);
     setError(null);
@@ -124,6 +119,11 @@ export const useAuth = () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Clear all auth-related storage
+      localStorage.removeItem('mysticballs-auth-token');
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
     } catch (err) {
       console.error('Sign out error:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign out');
@@ -138,7 +138,6 @@ export const useAuth = () => {
     loading,
     error,
     signIn,
-    signUp,
     signOut
   };
 };
