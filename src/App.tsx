@@ -15,7 +15,7 @@ import { FREE_READINGS_LIMIT } from './config/constants';
 import { ONBOARDING_STEPS, TOOLTIPS } from './config/tutorial';
 import useAuthState from './hooks/useAuthState';
 
-// Lazy load components
+// Lazy load components with loading fallback
 const ReadingSelector = lazy(() => import('./components/ReadingSelector'));
 const ReadingForm = lazy(() => import('./components/ReadingForm'));
 const ReadingOutput = lazy(() => import('./components/ReadingOutput'));
@@ -194,124 +194,130 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className={`min-h-screen transition-colors duration-300 ${
-        isDarkMode 
-          ? 'bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950' 
-          : 'bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100'
-      }`}>
-        <div className="container mx-auto px-4 py-8 relative">
-          <header className="flex justify-between items-center mb-8">
-            <h1 
-              className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'} relative cursor-pointer`}
-              onClick={() => setCurrentPage('home')}
-            >
-              <span className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 blur"></span>
-              <span className="relative">Mystic Insights</span>
-            </h1>
-            <div className="flex items-center gap-4">
-              {user ? (
-                <>
-                  <Tooltip content={TOOLTIPS.actions.premium}>
+      <Suspense fallback={
+        <div className="fixed inset-0 flex items-center justify-center bg-indigo-900 bg-opacity-50">
+          <LoadingSpinner size={48} />
+        </div>
+      }>
+        <div className={`min-h-screen transition-colors duration-300 ${
+          isDarkMode 
+            ? 'bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950' 
+            : 'bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100'
+        }`}>
+          <div className="container mx-auto px-4 py-8 relative">
+            <header className="flex justify-between items-center mb-8">
+              <h1 
+                className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'} relative cursor-pointer`}
+                onClick={() => setCurrentPage('home')}
+              >
+                <span className="absolute -inset-1 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 blur"></span>
+                <span className="relative">Mystic Insights</span>
+              </h1>
+              <div className="flex items-center gap-4">
+                {user ? (
+                  <>
+                    <Tooltip content={TOOLTIPS.actions.premium}>
+                      <button
+                        onClick={() => setIsPaymentModalOpen(true)}
+                        className={`px-4 py-2 rounded-lg ${
+                          isDarkMode 
+                            ? 'bg-indigo-600 hover:bg-indigo-700' 
+                            : 'bg-indigo-500 hover:bg-indigo-600'
+                        } text-white transition-colors`}
+                      >
+                        {usage.isPremium ? 'Premium Member' : 'Upgrade to Premium'}
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="Sign out">
+                      <button
+                        onClick={signOut}
+                        className={`p-2 rounded-full ${
+                          isDarkMode ? 'bg-indigo-800 text-white' : 'bg-indigo-200 text-gray-800'
+                        } hover:opacity-80 transition-opacity`}
+                      >
+                        <LogOut size={24} />
+                      </button>
+                    </Tooltip>
+                  </>
+                ) : (
+                  <Tooltip content={TOOLTIPS.actions.signIn}>
                     <button
-                      onClick={() => setIsPaymentModalOpen(true)}
+                      onClick={() => setIsLoginModalOpen(true)}
                       className={`px-4 py-2 rounded-lg ${
                         isDarkMode 
                           ? 'bg-indigo-600 hover:bg-indigo-700' 
                           : 'bg-indigo-500 hover:bg-indigo-600'
                       } text-white transition-colors`}
                     >
-                      {usage.isPremium ? 'Premium Member' : 'Upgrade to Premium'}
+                      Sign In
                     </button>
                   </Tooltip>
-                  <Tooltip content="Sign out">
-                    <button
-                      onClick={signOut}
-                      className={`p-2 rounded-full ${
-                        isDarkMode ? 'bg-indigo-800 text-white' : 'bg-indigo-200 text-gray-800'
-                      } hover:opacity-80 transition-opacity`}
-                    >
-                      <LogOut size={24} />
-                    </button>
-                  </Tooltip>
-                </>
-              ) : (
-                <Tooltip content={TOOLTIPS.actions.signIn}>
+                )}
+                <Tooltip content={TOOLTIPS.actions.darkMode}>
                   <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className={`px-4 py-2 rounded-lg ${
-                      isDarkMode 
-                        ? 'bg-indigo-600 hover:bg-indigo-700' 
-                        : 'bg-indigo-500 hover:bg-indigo-600'
-                    } text-white transition-colors`}
+                    onClick={toggleDarkMode}
+                    className={`p-2 rounded-full theme-toggle ${
+                      isDarkMode ? 'bg-indigo-800 text-white' : 'bg-indigo-200 text-gray-800'
+                    } hover:opacity-80 transition-opacity`}
                   >
-                    Sign In
+                    {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
                   </button>
                 </Tooltip>
-              )}
-              <Tooltip content={TOOLTIPS.actions.darkMode}>
-                <button
-                  onClick={toggleDarkMode}
-                  className={`p-2 rounded-full theme-toggle ${
-                    isDarkMode ? 'bg-indigo-800 text-white' : 'bg-indigo-200 text-gray-800'
-                  } hover:opacity-80 transition-opacity`}
-                >
-                  {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
-                </button>
-              </Tooltip>
-            </div>
-          </header>
+              </div>
+            </header>
 
-          <AsyncComponent>
-            <Advertisement isDarkMode={isDarkMode} />
-          </AsyncComponent>
+            <AsyncComponent>
+              <Advertisement isDarkMode={isDarkMode} />
+            </AsyncComponent>
 
-          {renderContent()}
+            {renderContent()}
 
-          <AsyncComponent>
-            <PaymentModal
-              isOpen={isPaymentModalOpen}
-              onClose={() => setIsPaymentModalOpen(false)}
+            <AsyncComponent>
+              <PaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                isDarkMode={isDarkMode}
+                onSubscribe={handleSubscribe}
+                remainingReadings={remainingReadings()}
+              />
+            </AsyncComponent>
+
+            <AsyncComponent>
+              <LoginModal
+                isOpen={isLoginModalOpen}
+                onClose={() => setIsLoginModalOpen(false)}
+                isDarkMode={isDarkMode}
+                onLogin={(email, password) => handleAuthAction('login', email, password)}
+                onSignUp={(email, password) => handleAuthAction('signup', email, password)}
+                isLoading={isAuthenticating}
+              />
+            </AsyncComponent>
+
+            <AsyncComponent>
+              <TrialOfferModal
+                isOpen={isTrialModalOpen}
+                onClose={() => setIsTrialModalOpen(false)}
+                isDarkMode={isDarkMode}
+              />
+            </AsyncComponent>
+
+            <TutorialButton isDarkMode={isDarkMode} onStartTutorial={startTutorial} />
+
+            <OnboardingOverlay
+              steps={ONBOARDING_STEPS}
+              isOpen={isTutorialOpen}
+              onComplete={completeTutorial}
               isDarkMode={isDarkMode}
-              onSubscribe={handleSubscribe}
-              remainingReadings={remainingReadings()}
             />
-          </AsyncComponent>
 
-          <AsyncComponent>
-            <LoginModal
-              isOpen={isLoginModalOpen}
-              onClose={() => setIsLoginModalOpen(false)}
-              isDarkMode={isDarkMode}
-              onLogin={(email, password) => handleAuthAction('login', email, password)}
-              onSignUp={(email, password) => handleAuthAction('signup', email, password)}
-              isLoading={isAuthenticating}
+            <Footer 
+              isDarkMode={isDarkMode} 
+              onPrivacyClick={() => setCurrentPage('privacy')}
+              onTermsClick={() => setCurrentPage('terms')}
             />
-          </AsyncComponent>
-
-          <AsyncComponent>
-            <TrialOfferModal
-              isOpen={isTrialModalOpen}
-              onClose={() => setIsTrialModalOpen(false)}
-              isDarkMode={isDarkMode}
-            />
-          </AsyncComponent>
-
-          <TutorialButton isDarkMode={isDarkMode} onStartTutorial={startTutorial} />
-
-          <OnboardingOverlay
-            steps={ONBOARDING_STEPS}
-            isOpen={isTutorialOpen}
-            onComplete={completeTutorial}
-            isDarkMode={isDarkMode}
-          />
-
-          <Footer 
-            isDarkMode={isDarkMode} 
-            onPrivacyClick={() => setCurrentPage('privacy')}
-            onTermsClick={() => setCurrentPage('terms')}
-          />
+          </div>
         </div>
-      </div>
+      </Suspense>
     </ErrorBoundary>
   );
 }
