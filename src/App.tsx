@@ -45,7 +45,6 @@ const App: FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [hasCompletedReading, setHasCompletedReading] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'privacy' | 'terms'>('home');
 
@@ -82,35 +81,30 @@ const App: FC = () => {
 
   const handleSignOut = async () => {
     try {
-      setIsAuthenticating(true);
       await signOut();
       window.location.href = '/'; // Redirect to home after sign out
     } catch (error) {
       console.error('Error signing out:', error);
-    } finally {
-      setIsAuthenticating(false);
     }
   };
 
   const handleSignIn = async ({ email, password }: AuthCredentials) => {
-    setIsAuthenticating(true);
     try {
       await signIn(email, password);
+      setIsLoginModalOpen(false);
     } catch (error) {
       console.error('Sign in error:', error);
-    } finally {
-      setIsAuthenticating(false);
+      throw error;
     }
   };
 
   const handleSignUp = async ({ email, password }: AuthCredentials) => {
-    setIsAuthenticating(true);
     try {
       await signUp(email, password);
+      setIsLoginModalOpen(false);
     } catch (error) {
       console.error('Sign up error:', error);
-    } finally {
-      setIsAuthenticating(false);
+      throw error;
     }
   };
 
@@ -209,18 +203,10 @@ const App: FC = () => {
   };
 
   // Show loading spinner only during authentication
-  if (authLoading || isAuthenticating) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <LoadingSpinner message="Authenticating..." showSlowLoadingMessage={false} />
-        {authLoading && (
-          <button
-            onClick={handleSignOut}
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-          >
-            Cancel Sign In
-          </button>
-        )}
       </div>
     );
   }
@@ -321,7 +307,6 @@ const App: FC = () => {
                 isDarkMode={isDarkMode}
                 onLogin={handleSignIn}
                 onSignUp={handleSignUp}
-                isLoading={isAuthenticating}
               />
             </AsyncComponent>
 

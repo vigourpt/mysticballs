@@ -36,22 +36,20 @@ export const useAuth = () => {
       
       if (!mounted) return;
       
-      setLoading(true);
-      const user = session?.user;
-      
       try {
-        if (event === 'SIGNED_IN' && user) {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setLoading(true);
           await createUserProfile(
-            user.id,
-            user.email ?? '',
-            user.user_metadata?.full_name ?? user.user_metadata?.name ?? null
+            session.user.id,
+            session.user.email ?? '',
+            session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? null
           );
-          setUser(user);
+          setUser(session.user);
         } else if (event === 'SIGNED_OUT') {
           localStorage.removeItem('supabase.auth.token');
           setUser(null);
-        } else {
-          setUser(user);
+        } else if (event === 'USER_UPDATED') {
+          setUser(session?.user ?? null);
         }
       } catch (err) {
         console.error('Auth state change error:', err);
@@ -70,51 +68,62 @@ export const useAuth = () => {
   }, []);
 
   const signIn = async (email?: string, password?: string) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setError(null);
-      setLoading(true);
-
       if (email && password) {
-        await signInWithEmail(email, password);
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
       } else {
-        await signInWithGoogle();
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent'
+            }
+          }
+        });
+        if (error) throw error;
       }
     } catch (err) {
       console.error('Sign in error:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign in');
-      throw err;
-    } finally {
       setLoading(false);
+      throw err;
     }
   };
 
   const signUp = async (email: string, password: string) => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setError(null);
-      setLoading(true);
-      await signUpWithEmail(email, password);
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
     } catch (err) {
       console.error('Sign up error:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign up');
-      throw err;
-    } finally {
       setLoading(false);
+      throw err;
     }
   };
 
   const signOut = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setError(null);
-      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
-      // Clear any cached data
-      localStorage.removeItem('supabase.auth.token');
-      sessionStorage.clear();
-      
-      // Clear user state
-      setUser(null);
     } catch (err) {
       console.error('Sign out error:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign out');

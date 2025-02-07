@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
@@ -17,7 +17,7 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode, onLogin, onSignUp 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { signIn, signUp } = useAuth();
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,12 +28,11 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode, onLogin, onSignUp 
 
     try {
       if (isSignUp) {
-        await signUp(email, password);
+        await onSignUp(email, password);
       } else {
-        await signIn(email, password);
+        await onLogin(email, password);
       }
-      setIsLoading(false);
-      onClose();
+      // Don't reset loading or close modal here - will be handled by auth state change
     } catch (err) {
       console.error('Authentication error:', err);
       setError(err instanceof Error ? err.message : 'Authentication failed');
@@ -49,13 +48,20 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode, onLogin, onSignUp 
 
     try {
       await signIn();
-      // The loading state will be handled by the auth state change listener
+      // Don't reset loading here - will be handled by auth state change
     } catch (err) {
       console.error('Google authentication error:', err);
       setError(err instanceof Error ? err.message : 'Google authentication failed');
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      setIsLoading(false);
+      setError(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
