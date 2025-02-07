@@ -8,7 +8,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please click "Connect to Supabase" to set up your project.');
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
 }
 
 // Create Supabase client with minimal config
@@ -16,7 +16,8 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   }
 });
 
@@ -25,7 +26,11 @@ export const signInWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: PRODUCTION_URL
+        redirectTo: window.location.origin,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        }
       }
     });
 
@@ -33,7 +38,7 @@ export const signInWithGoogle = async () => {
     return data;
   } catch (error: any) {
     console.error('Google sign in error:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to sign in with Google');
   }
 };
 
@@ -52,7 +57,7 @@ export const signInWithEmail = async (email: string, password: string) => {
     return data;
   } catch (error: any) {
     console.error('Email sign in error:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to sign in with email');
   }
 };
 

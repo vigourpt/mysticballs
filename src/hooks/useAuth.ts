@@ -9,10 +9,20 @@ export const useAuth = () => {
 
   useEffect(() => {
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        setUser(session?.user ?? null);
+      } catch (err) {
+        console.error('Session check error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to check session');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -24,10 +34,11 @@ export const useAuth = () => {
           await createUserProfile(
             user.id,
             user.email ?? '',
-            user.user_metadata.full_name ?? null
+            user.user_metadata?.full_name ?? user.user_metadata?.name ?? null
           );
         } catch (err) {
           console.error('Failed to create user profile:', err);
+          setError(err instanceof Error ? err.message : 'Failed to create user profile');
         }
       }
     });
@@ -48,9 +59,9 @@ export const useAuth = () => {
         await signInWithGoogle();
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to sign in';
-      setError(message);
-      throw new Error(message);
+      console.error('Sign in error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sign in');
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -62,9 +73,9 @@ export const useAuth = () => {
       setLoading(true);
       await signUpWithEmail(email, password);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to sign up';
-      setError(message);
-      throw new Error(message);
+      console.error('Sign up error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sign up');
+      throw err;
     } finally {
       setLoading(false);
     }
@@ -77,9 +88,9 @@ export const useAuth = () => {
       if (error) throw error;
       setUser(null);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to sign out';
-      setError(message);
-      throw new Error(message);
+      console.error('Sign out error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to sign out');
+      throw err;
     }
   };
 

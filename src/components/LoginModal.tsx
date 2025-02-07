@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { LogIn, Mail, Lock } from 'lucide-react';
-import LoadingSpinner from './LoadingSpinner';
+import { useState } from 'react';
+import type { FC } from 'react';
+import { useAuth } from '../hooks/useAuth';
 
 interface Props {
   isOpen: boolean;
@@ -10,236 +10,132 @@ interface Props {
   onSignUp: (email: string, password: string) => Promise<void>;
 }
 
-const LoginModal: React.FC<Props> = ({ isOpen, onClose, isDarkMode, onLogin, onSignUp }) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode, onLogin, onSignUp }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
-  const [authMethod, setAuthMethod] = useState<'email' | 'google'>('email');
-  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
-
-  if (!isOpen) return null;
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { signIn, signUp } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      setError(null);
-      setShowVerificationMessage(false);
-      setIsLoading(true);
-      
-      if (isSignUp) {
-        await onSignUp(email, password);
-        setShowVerificationMessage(true);
-      } else {
-        await onLogin(email, password);
-        onClose();
-      }
-    } catch (err: any) {
-      if (err?.name === 'EmailNotConfirmedError' || err?.name === 'EmailConfirmationRequired') {
-        setShowVerificationMessage(true);
-      } else {
-        setError(err?.message || 'Authentication failed');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    setError(null);
+    setIsLoading(true);
 
-  const handleGoogleLogin = async () => {
     try {
-      setError(null);
-      setShowVerificationMessage(false);
-      setIsLoading(true);
-      await onLogin();
+      if (isSignUp) {
+        await signUp(email, password);
+      } else {
+        await signIn(email, password);
+      }
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Google authentication failed');
+      setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const toggleAuthMethod = (method: 'email' | 'google') => {
-    setAuthMethod(method);
+  const handleGoogleSignIn = async () => {
     setError(null);
-    setShowVerificationMessage(false);
+    setIsLoading(true);
+
+    try {
+      await signIn();
+      // Don't close modal here - it will be handled by the OAuth redirect
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google authentication failed');
+      setIsLoading(false);
+    }
   };
 
-  const toggleSignUp = () => {
-    setIsSignUp(!isSignUp);
-    setError(null);
-    setShowVerificationMessage(false);
-  };
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className={`${
-        isDarkMode ? 'bg-indigo-900 text-white' : 'bg-white text-gray-800'
-      } rounded-xl p-6 max-w-md w-full shadow-xl`}>
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <LogIn className={`w-12 h-12 ${isDarkMode ? 'text-indigo-300' : 'text-indigo-600'}`} />
+    <div className="fixed inset-0 flex items-center justify-center z-50">
+      <div className="absolute inset-0 bg-black opacity-50" onClick={onClose}></div>
+      <div className={`relative w-full max-w-md p-6 rounded-lg shadow-xl ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
+        <h2 className="text-2xl font-bold mb-6">{isSignUp ? 'Create Account' : 'Welcome Back'}</h2>
+        
+        {error && (
+          <div className="mb-4 p-3 bg-red-500 bg-opacity-10 border border-red-500 text-red-500 rounded">
+            {error}
           </div>
-          
-          <h2 className="text-2xl font-bold mb-2">Welcome Back</h2>
-          <p className={`mb-6 ${isDarkMode ? 'text-indigo-200' : 'text-gray-600'}`}>
-            {isSignUp ? 'Create your account' : 'Sign in to access your readings'}
-          </p>
+        )}
 
-          {showVerificationMessage && (
-            <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 text-yellow-500 text-sm">
-              Please check your email to verify your account before signing in.
-              <br />
-              <button 
-                onClick={() => setShowVerificationMessage(false)}
-                className="text-yellow-600 hover:text-yellow-700 underline mt-2"
-              >
-                Dismiss
-              </button>
-            </div>
-          )}
-
-          {error && !showVerificationMessage && (
-            <div className="mb-4 p-3 rounded-lg bg-red-500/10 text-red-500 text-sm">
-              {error}
-            </div>
-          )}
-
-          <div className="flex gap-2 mb-6">
-            <button
-              onClick={() => toggleAuthMethod('email')}
-              className={`flex-1 py-2 px-4 rounded-lg transition-colors ${
-                authMethod === 'email'
-                  ? isDarkMode
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-indigo-500 text-white'
-                  : isDarkMode
-                    ? 'bg-indigo-800/50 text-indigo-200'
-                    : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              Email
-            </button>
-            <button
-              onClick={() => toggleAuthMethod('google')}
-              className={`flex-1 py-2 px-4 rounded-lg transition-colors ${
-                authMethod === 'google'
-                  ? isDarkMode
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-indigo-500 text-white'
-                  : isDarkMode
-                    ? 'bg-indigo-800/50 text-indigo-200'
-                    : 'bg-gray-100 text-gray-600'
-              }`}
-            >
-              Google
-            </button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={`w-full p-2 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+              required
+            />
           </div>
 
-          {authMethod === 'email' ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <div className="relative">
-                  <Mail className={`absolute left-3 top-3 w-5 h-5 ${
-                    isDarkMode ? 'text-indigo-400' : 'text-indigo-500'
-                  }`} />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Email address"
-                    className={`w-full pl-10 pr-4 py-2 rounded-lg ${
-                      isDarkMode
-                        ? 'bg-indigo-800/50 text-white placeholder:text-indigo-300'
-                        : 'bg-gray-100 text-gray-900 placeholder:text-gray-500'
-                    } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <div className="relative">
-                  <Lock className={`absolute left-3 top-3 w-5 h-5 ${
-                    isDarkMode ? 'text-indigo-400' : 'text-indigo-500'
-                  }`} />
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                    minLength={6}
-                    className={`w-full pl-10 pr-4 py-2 rounded-lg ${
-                      isDarkMode
-                        ? 'bg-indigo-800/50 text-white placeholder:text-indigo-300'
-                        : 'bg-gray-100 text-gray-900 placeholder:text-gray-500'
-                    } focus:outline-none focus:ring-2 focus:ring-indigo-500`}
-                    required
-                  />
-                </div>
-              </div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className={`w-full py-3 px-4 rounded-lg ${
-                  isDarkMode
-                    ? 'bg-indigo-600 hover:bg-indigo-700'
-                    : 'bg-indigo-500 hover:bg-indigo-600'
-                } text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2`}
-              >
-                {isLoading ? (
-                  <LoadingSpinner size="small" />
-                ) : (
-                  <>
-                    {isSignUp ? 'Sign Up' : 'Sign In'}
-                  </>
-                )}
-              </button>
-            </form>
-          ) : (
-            <button
-              onClick={handleGoogleLogin}
-              disabled={isLoading}
-              className={`w-full py-3 px-4 rounded-lg flex items-center justify-center gap-2 ${
-                isDarkMode
-                  ? 'bg-indigo-600 hover:bg-indigo-700'
-                  : 'bg-indigo-500 hover:bg-indigo-600'
-              } text-white transition-colors disabled:opacity-50`}
-            >
-              {isLoading ? (
-                <LoadingSpinner size="small" />
-              ) : (
-                <>
-                  <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
-                  Continue with Google
-                </>
-              )}
-            </button>
-          )}
-          
-          <div className="mt-4">
-            <button
-              onClick={toggleSignUp}
-              className={`text-sm ${
-                isDarkMode ? 'text-indigo-300 hover:text-indigo-200' : 'text-indigo-600 hover:text-indigo-700'
-              }`}
-            >
-              {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
-            </button>
+          <div>
+            <label className="block mb-1">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={`w-full p-2 rounded border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'}`}
+              required
+            />
           </div>
 
           <button
-            onClick={onClose}
+            type="submit"
             disabled={isLoading}
-            className={`mt-4 w-full py-2 px-4 rounded-lg ${
+            className={`w-full p-2 rounded font-semibold ${
               isDarkMode
-                ? 'bg-gray-800 hover:bg-gray-700'
-                : 'bg-gray-200 hover:bg-gray-300'
-            } transition-colors disabled:opacity-50`}
+                ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                : 'bg-indigo-500 hover:bg-indigo-600 text-white'
+            } transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
-            Cancel
+            {isLoading ? 'Loading...' : isSignUp ? 'Sign Up' : 'Sign In'}
+          </button>
+        </form>
+
+        <div className="mt-4 text-center">
+          <p className="mb-4">or</p>
+          <button
+            onClick={handleGoogleSignIn}
+            disabled={isLoading}
+            className={`w-full p-2 rounded font-semibold flex items-center justify-center ${
+              isDarkMode
+                ? 'bg-white text-gray-800 hover:bg-gray-100'
+                : 'bg-white text-gray-800 hover:bg-gray-100'
+            } border border-gray-300 transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <img src="/google-icon.svg" alt="Google" className="w-5 h-5 mr-2" />
+            Continue with Google
           </button>
         </div>
+
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setIsSignUp(!isSignUp)}
+            className="text-indigo-500 hover:text-indigo-600"
+          >
+            {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
+          </button>
+        </div>
+
+        <button
+          onClick={onClose}
+          className={`mt-4 w-full p-2 rounded ${
+            isDarkMode
+              ? 'bg-gray-700 hover:bg-gray-600 text-white'
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+          } transition-colors`}
+        >
+          Cancel
+        </button>
       </div>
     </div>
   );
