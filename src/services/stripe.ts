@@ -1,7 +1,7 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { STRIPE_CONFIG } from '../config/stripe';
 
-export const createCheckoutSession = async (priceId: string, userId: string) => {
+export const createCheckoutSession = async (priceId: string, userId: string, userEmail: string) => {
   try {
     // Initialize Stripe
     const stripe = await loadStripe(STRIPE_CONFIG.publishableKey);
@@ -16,7 +16,8 @@ export const createCheckoutSession = async (priceId: string, userId: string) => 
       mode: 'subscription',
       successUrl: `${window.location.origin}/payment/success`,
       cancelUrl: `${window.location.origin}/payment/cancel`,
-      customerEmail: userId // Pass user ID as metadata
+      customerEmail: userEmail,
+      clientReferenceId: userId // Pass user ID as metadata
     });
 
     if (error) throw error;

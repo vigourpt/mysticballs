@@ -27,6 +27,10 @@ const PaymentModal: React.FC<Props> = ({ isOpen, onClose, isDarkMode, onSubscrib
         throw new Error('Please sign in to subscribe');
       }
 
+      if (!user.email) {
+        throw new Error('No email associated with account');
+      }
+
       setIsLoading(true);
       setError(null);
       
@@ -37,7 +41,7 @@ const PaymentModal: React.FC<Props> = ({ isOpen, onClose, isDarkMode, onSubscrib
       }
 
       // Create checkout session and redirect to Stripe
-      await createCheckoutSession(priceId, user.id);
+      await createCheckoutSession(priceId, user.id, user.email);
       
       // The page will redirect to Stripe, so we don't need to close the modal
       onSubscribe(plan);
