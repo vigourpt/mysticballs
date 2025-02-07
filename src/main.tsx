@@ -18,6 +18,15 @@ if (loader) {
   loader.style.display = 'none';
 }
 
+// Handle browser navigation
+let isFirstLoad = true;
+window.addEventListener('popstate', () => {
+  if (!isFirstLoad) {
+    window.location.reload();
+  }
+  isFirstLoad = false;
+});
+
 try {
   root.render(
     <StrictMode>

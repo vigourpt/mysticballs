@@ -40,6 +40,8 @@ interface AuthCredentials {
 }
 
 const App: FC = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [selectedReading, setSelectedReading] = useState<ReadingType | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -47,43 +49,65 @@ const App: FC = () => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [hasCompletedReading, setHasCompletedReading] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'privacy' | 'terms'>('home');
-  const [isLoading, setIsLoading] = useState(true);
 
   useAuthState();
   
-  const { user, loading, signIn, signUp, signOut } = useAuth();
+  const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
   const { usage, incrementUsage } = useUsageTracking();
   const { isFirstVisit, isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
 
+  // Handle initial loading
   useEffect(() => {
-    // Remove loading spinner once app is mounted
-    const loader = document.getElementById('initial-loader');
-    if (loader) {
-      loader.style.opacity = '0';
-      setTimeout(() => {
-        loader.style.display = 'none';
+    const handleInitialLoad = async () => {
+      try {
+        // Remove loading spinner once app is mounted
+        const loader = document.getElementById('initial-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          await new Promise(resolve => setTimeout(resolve, 300));
+          loader.style.display = 'none';
+        }
+        
+        // Initialize app state from URL if needed
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('showPayment') === 'true' && user) {
+          setIsPaymentModalOpen(true);
+        }
+        
+        setIsInitialized(true);
         setIsLoading(false);
-      }, 300);
-    }
-
-    // Cleanup function
-    return () => {
-      if (loader) {
-        loader.style.display = 'flex';
-        loader.style.opacity = '1';
+      } catch (error) {
+        console.error('Error during initialization:', error);
+        setIsLoading(false);
       }
     };
-  }, []);
 
-  useEffect(() => {
-    // Check URL parameters for showPayment
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('showPayment') === 'true' && user) {
-      setIsPaymentModalOpen(true);
-      // Clean up URL
-      window.history.replaceState({}, '', window.location.pathname);
-    }
+    handleInitialLoad();
+
+    // Handle browser back/forward
+    const handlePopState = () => {
+      setIsLoading(false);
+      setSelectedReading(null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
+
+  // Reset loading state when auth state changes
+  useEffect(() => {
+    if (!authLoading && isInitialized) {
+      setIsLoading(false);
+    }
+  }, [authLoading, isInitialized]);
+
+  if (!isInitialized || authLoading) {
+    return <LoadingSpinner message="Initializing..." />;
+  }
+
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
 
   const readingTypes = [
     { id: 'tarot', name: 'Tarot', icon: ScrollText, description: 'Discover insights through the ancient wisdom of tarot cards' },
@@ -140,18 +164,6 @@ const App: FC = () => {
   const handleSubscribe = async (plan: PaymentPlan) => {
     setIsPaymentModalOpen(false);
   };
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (loading || isAuthenticating) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="large" />
-      </div>
-    );
-  }
 
   const renderContent = () => {
     switch (currentPage) {
