@@ -1,0 +1,3 @@
+export const STRIPE_CONFIG = {
+  publishableKey: 'pk_live_51QKjFbG3HGXKeksqnROELdJS3up93nqQXnqJqCwpCKuULU8TRnTTM9Rr79MiAip1ZEnPfzHtP3STiltqsKJw0kca00Ylxh1DSZ'
+};
