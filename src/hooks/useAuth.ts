@@ -6,6 +6,7 @@ export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [confirmEmail, setConfirmEmail] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -14,14 +15,21 @@ export const useAuth = () => {
     const checkSession = async () => {
       try {
         // First check if we have an access token in the URL (OAuth redirect)
-        const hasAccessToken = window.location.hash.includes('access_token=');
+        const hasAccessToken = window.location.hash.includes('access_token=') || 
+                             window.location.hash.includes('id_token=');
         
         if (hasAccessToken) {
           const { data: { session }, error: sessionError } = await supabase.auth.getSession();
           if (sessionError) throw sessionError;
           
-          if (mounted) {
-            setUser(session?.user ?? null);
+          if (mounted && session?.user) {
+            // Create user profile after OAuth sign in
+            await createUserProfile(
+              session.user.id,
+              session.user.email ?? '',
+              session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? null
+            );
+            setUser(session.user);
             setLoading(false);
             // Clean up URL after successful OAuth
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -61,9 +69,11 @@ export const useAuth = () => {
             session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? null
           );
           setUser(session.user);
+          setConfirmEmail(false);
         } else if (event === 'SIGNED_OUT') {
           localStorage.removeItem('mysticballs-auth-token');
           setUser(null);
+          setConfirmEmail(false);
         } else if (event === 'USER_UPDATED') {
           setUser(session?.user ?? null);
         }
@@ -86,6 +96,7 @@ export const useAuth = () => {
   const signIn = async (email?: string, password?: string) => {
     setLoading(true);
     setError(null);
+    setConfirmEmail(false);
     
     try {
       if (email && password) {
@@ -115,9 +126,10 @@ export const useAuth = () => {
   const signUp = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
+    setConfirmEmail(false);
     
     try {
-      const { error } = await supabase.auth.signUp({ 
+      const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
@@ -127,7 +139,25 @@ export const useAuth = () => {
           }
         }
       });
+      
       if (error) throw error;
+      
+      if (data?.user?.identities?.length === 0) {
+        setError('This email is already registered. Please sign in instead.');
+        setLoading(false);
+        return;
+      }
+      
+      // If email confirmation is required
+      if (!data.session) {
+        setConfirmEmail(true);
+        setLoading(false);
+        return;
+      }
+      
+      // If email confirmation is not required
+      setUser(data.user);
+      setLoading(false);
     } catch (err) {
       console.error('Sign up error:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign up');
@@ -139,6 +169,7 @@ export const useAuth = () => {
   const signOut = async () => {
     setLoading(true);
     setError(null);
+    setConfirmEmail(false);
     
     try {
       const { error } = await supabase.auth.signOut();
@@ -161,6 +192,7 @@ export const useAuth = () => {
     user,
     loading,
     error,
+    confirmEmail,
     signIn,
     signUp,
     signOut
