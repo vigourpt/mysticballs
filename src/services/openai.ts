@@ -2,8 +2,22 @@ import { ReadingTypeId } from '../types';
 import { OPENAI_CONFIG } from '../config/openai';
 import OpenAI from 'openai';
 
+// Add API key validation
+const validateApiKey = (apiKey: string): boolean => {
+  if (!apiKey) return false;
+  // Accept both old (sk-) and new (sk-proj-) API key formats
+  return (apiKey.startsWith('sk-') || apiKey.startsWith('sk-proj-')) && apiKey.length > 20;
+};
+
 const openai = new OpenAI({
-  apiKey: OPENAI_CONFIG.apiKey,
+  apiKey: (() => {
+    const apiKey = OPENAI_CONFIG.apiKey;
+    if (!validateApiKey(apiKey)) {
+      console.error('Invalid OpenAI API key format');
+      throw new Error('OpenAI API key is invalid. Please check your configuration.');
+    }
+    return apiKey;
+  })(),
   dangerouslyAllowBrowser: true,
   maxRetries: 3,
   timeout: 30000
@@ -19,7 +33,12 @@ export const getReading = async (
 ): Promise<string> => {
   try {
     if (!OPENAI_CONFIG.apiKey) {
-      throw new Error('OpenAI API key not configured');
+      throw new Error('OpenAI API key not configured. Please check your environment variables.');
+    }
+
+    // Validate reading type
+    if (!readingType || typeof readingType !== 'string') {
+      throw new Error(`Invalid reading type: ${JSON.stringify(readingType)}`);
     }
 
     console.log('Processing reading type:', readingType);
@@ -42,7 +61,28 @@ export const getReading = async (
     const prompt = prompts[readingType];
     if (!prompt) {
       console.error('Unhandled reading type:', readingType);
-      throw new Error(`Unhandled reading type: ${readingType}`);
+      throw new Error(`Unhandled reading type: ${readingType}. Valid types are: ${Object.keys(prompts).join(', ')}`);
+    }
+
+    // Validate required input fields
+    const requiredFields: Record<ReadingTypeId, string[]> = {
+      'tarot': ['question'],
+      'numerology': ['numbers'],
+      'pastlife': ['patterns'],
+      'magic8ball': ['question'],
+      'astrology': ['question'],
+      'oracle': ['question'],
+      'runes': ['question'],
+      'iching': ['question'],
+      'angels': ['numbers'],
+      'horoscope': ['sign'],
+      'dreams': ['dream'],
+      'aura': ['description']
+    };
+
+    const missingFields = requiredFields[readingType]?.filter(field => !userInput[field]);
+    if (missingFields?.length > 0) {
+      throw new Error(`Missing required fields for ${readingType} reading: ${missingFields.join(', ')}`);
     }
 
     console.log('Sending OpenAI request:', { readingType, userInput });
@@ -66,16 +106,26 @@ export const getReading = async (
       stream: false
     });
 
+    if (!response.choices?.[0]?.message?.content) {
+      throw new Error('OpenAI returned an empty response');
+    }
+
     console.log('OpenAI response received:', response);
-    return formatResponse(response.choices[0]?.message?.content || 'No response generated');
+    return formatResponse(response.choices[0].message.content);
   } catch (error: unknown) {
+    console.error('OpenAI API Error:', error);
+    
     if (error instanceof Error) {
-      console.error('OpenAI API Error:', {
-        error: error.message,
-        stack: error.stack
-      });
+      // Handle specific OpenAI error types
+      if (error.message.includes('API key')) {
+        throw new Error('OpenAI API key error. Please contact support.');
+      }
+      if (error.message.includes('rate limit')) {
+        throw new Error('Too many requests. Please try again in a moment.');
+      }
       throw new Error(`Reading generation failed: ${error.message}`);
     }
-    throw new Error('Reading generation failed due to unexpected error');
+    
+    throw new Error('Reading generation failed. Please try again.');
   }
 };

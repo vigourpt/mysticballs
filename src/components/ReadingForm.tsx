@@ -53,16 +53,48 @@ const ReadingForm: React.FC<Props> = ({
     setError('');
 
     try {
+      // Validate required fields based on reading type
+      const requiredFields = {
+        'numerology': ['numbers'],
+        'astrology': ['question'],
+        'angels': ['numbers'],
+        'horoscope': ['sign'],
+        'dreams': ['dream'],
+        'aura': ['description'],
+        'pastlife': ['patterns']
+      };
+
+      const fields = requiredFields[readingType.id as keyof typeof requiredFields] || ['question'];
+      const missingFields = fields.filter(field => !formValues[field]);
+
+      if (missingFields.length > 0) {
+        throw new Error(`Please fill in the required field${missingFields.length > 1 ? 's' : ''}: ${missingFields.join(', ')}`);
+      }
+
       const userInput = {
         ...formValues,
-        date: new Date().toISOString().split('T')[0] || ''  // Ensure date is never undefined
+        date: new Date().toISOString().split('T')[0] || ''
       };
 
       const reading = await getReading(readingType.id, userInput);
       onReadingComplete(reading);
     } catch (err) {
       console.error('Reading error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate reading');
+      let errorMessage = 'Failed to generate reading';
+      
+      if (err instanceof Error) {
+        if (err.message.includes('API key')) {
+          errorMessage = 'API configuration error. Please contact support.';
+        } else if (err.message.includes('rate limit')) {
+          errorMessage = 'Too many requests. Please try again in a moment.';
+        } else if (err.message.includes('required field')) {
+          errorMessage = err.message;
+        } else {
+          errorMessage = `Reading generation failed: ${err.message}`;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
