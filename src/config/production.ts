@@ -27,7 +27,8 @@ export const PRODUCTION_CONFIG = {
       "'self'",
       'https://api.openai.com',
       'https://*.supabase.co',
-      'https://api.stripe.com'
+      'https://api.stripe.com',
+      'https://api.openai.com/v1/completions'
     ],
     'frame-src': ["'self'", 'https://js.stripe.com'],
     'font-src': ["'self'", 'data:'],

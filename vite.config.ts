@@ -42,7 +42,11 @@ export default defineConfig({
     },
     headers: PRODUCTION_CONFIG.ENABLE_CSP ? {
       'Content-Security-Policy': PRODUCTION_CONFIG.CSP_DIRECTIVES
-    } : undefined
+    } : {
+      'Content-Security-Policy': Object.entries(PRODUCTION_CONFIG.CSP_DIRECTIVES)
+        .map(([key, values]) => `${key} ${values.join(' ')}`)
+        .join('; ')
+    }
   },
   // Enable service worker in production
   worker: {
