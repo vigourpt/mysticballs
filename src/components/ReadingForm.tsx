@@ -68,12 +68,12 @@ const ReadingForm: React.FC<Props> = ({
   };
 
   const getReadingTitle = (type: ReadingType) => {
-    switch (type) {
+    switch (type.id) {
       case 'iching': return 'I Ching Reading';
-      case 'angelNumbers': return 'Angel Numbers Reading';
-      case 'magic8ball': return 'Magic 8 Ball';
-      case 'pastLife': return 'Past Life Reading';
-      default: return type.charAt(0).toUpperCase() + type.slice(1) + ' Reading';
+      case 'angels': return 'Angel Numbers Reading';
+      case 'magic8': return 'Magic 8 Ball';
+      case 'pastlife': return 'Past Life Reading';
+      default: return type.name;
     }
   };
 
@@ -86,12 +86,12 @@ const ReadingForm: React.FC<Props> = ({
       onChange: handleInputChange
     };
 
-    switch (readingType) {
+    switch (readingType.id) {
       case 'numerology':
         return <NumerologyForm {...formProps} />;
       case 'astrology':
         return <AstrologyForm {...formProps} />;
-      case 'angelNumbers':
+      case 'angels':
         return <AngelNumbersForm {...formProps} />;
       case 'horoscope':
         return <HoroscopeForm {...formProps} />;
@@ -99,7 +99,7 @@ const ReadingForm: React.FC<Props> = ({
         return <DreamForm {...formProps} />;
       case 'aura':
         return <AuraForm {...formProps} />;
-      case 'pastLife':
+      case 'pastlife':
         return <PastLifeForm {...formProps} />;
       default:
         return <QuestionForm {...formProps} />;

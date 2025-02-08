@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { OPENAI_CONFIG } from '../config/openai';
+import { ReadingType } from '../types';
 
 const openai = new OpenAI({
   apiKey: OPENAI_CONFIG.apiKey,
@@ -14,7 +15,7 @@ const formatResponse = (text: string): string => {
 };
 
 export const getReading = async (
-  readingType: string,
+  readingType: ReadingType,
   userInput: Record<string, string>
 ): Promise<string> => {
   if (!OPENAI_CONFIG.apiKey) {
@@ -23,34 +24,54 @@ export const getReading = async (
 
   const prompts: Record<string, string> = {
     numerology: `As a numerology expert, provide an insightful reading for ${userInput.name}, born on ${userInput.birthdate}. Focus only on the meaningful interpretations of their Life Path Number, Destiny Number, and Soul Urge Number. Skip all calculations and technical details. Provide the insights in a clear, engaging way that focuses on personality traits, life purpose, and potential. Keep the response concise and meaningful. Use markdown headers (###) for each section, and ensure paragraphs are well-separated.`,
+    
     tarot: `As a tarot reader, provide an insightful interpretation for this question: ${userInput.question}. Draw three cards and focus only on their meaning and guidance in context. Skip technical details about the cards' positions or systems. Keep the reading engaging and practical. Use markdown headers (###) for each card's section, and ensure paragraphs are well-separated.`,
+    
     astrology: `As an astrologer, provide an insightful reading for someone born on ${userInput.birthdate}${userInput.birthTime ? ` at ${userInput.birthTime}` : ''}${userInput.location ? ` in ${userInput.location}` : ''}. Focus on personality traits, life path, and current influences. Skip technical aspects and focus on practical insights and guidance. Use markdown headers (###) for each section, and ensure paragraphs are well-separated.`,
+    
     oracle: `As an oracle card reader, provide clear guidance for this question: ${userInput.question}. Draw three cards and focus only on their message and meaning for the querent. Keep the interpretation practical and actionable. Use markdown headers (###) for each card's section, and ensure paragraphs are well-separated.`,
-    runes: `As a rune caster, provide clear guidance for this question: ${userInput.question}. Cast three runes and focus only on their message and practical meaning for the situation. Skip technical details about the runes themselves. Use markdown headers (###) for each rune's section, and ensure paragraphs are well-separated.`,
-    iching: `As an I Ching expert, provide clear guidance for this question: ${userInput.question}. Focus only on the practical interpretation and wisdom for the situation. Skip technical details about hexagram numbers and structure. Use markdown headers (###) for each section, and ensure paragraphs are well-separated.`,
-    angelNumbers: `As an angel number interpreter, analyze the number ${userInput.number} that keeps appearing to ${userInput.name}. Provide deep spiritual insights about its divine meaning and guidance. Focus on the practical messages and spiritual significance. Use markdown headers (###) for different aspects of the interpretation.`,
-    horoscope: `As an astrologer, provide a detailed daily horoscope for ${userInput.zodiacSign} on ${userInput.date}. Include insights about love, career, and personal growth. Make the guidance practical and actionable. Use markdown headers (###) for different life areas.`,
-    dreams: `As a dream interpreter, analyze this dream: ${userInput.dream}. Provide deep psychological and spiritual insights about its meaning. Focus on practical implications and guidance. Use markdown headers (###) for different symbols and overall meaning.`,
-    magic8ball: `As a mystical oracle, provide a clear yes/no answer to: ${userInput.question}. Then provide a brief, mystical explanation for the answer in an engaging way. Keep it concise but meaningful. Use markdown headers (###) for the answer and explanation.`,
-    aura: `As an aura reading expert, provide a detailed analysis for ${userInput.name} based on their personality description: "${userInput.personality}" and current emotional state: "${userInput.emotionalState}". Identify their dominant and secondary aura colors, interpret their meaning, and provide guidance for balancing and strengthening their energy field. Include practical tips for maintaining and cleansing their aura. Use markdown headers (###) for different aspects of the reading.`,
-    pastLife: `As a past life regression expert, provide a detailed reading for ${userInput.name} who feels drawn to the ${userInput.timePeriod} period and describes these feelings/memories: "${userInput.feelings}". Create a vivid narrative of their most significant past life from this period, including their role in society, key relationships, major life events, and the lessons that soul carried forward to the present life. Explain how these past experiences influence their current life path and provide guidance for integrating this wisdom. Use markdown headers (###) for different aspects of the reading.`
+    
+    runes: `As a rune caster, provide clear guidance for this question: ${userInput.question}. Cast three runes and focus only on their message and practical meaning for the situation. Skip technical details and focus on the guidance. Use markdown headers (###) for each rune's section, and ensure paragraphs are well-separated.`,
+    
+    iching: `As an I Ching expert, provide wisdom and guidance for this question: ${userInput.question}. Cast the hexagram and focus on its practical meaning and advice. Skip technical details about the casting process. Keep the interpretation clear and actionable. Use markdown headers (###) for key sections, and ensure paragraphs are well-separated.`,
+    
+    angels: `As an angel number interpreter, analyze the number sequence ${userInput.number} that has been appearing to the querent. Explain its divine message and guidance. Focus on practical meaning and spiritual insights. Use markdown headers (###) for key aspects of the interpretation, and ensure paragraphs are well-separated.`,
+    
+    horoscope: `As an astrologer, provide a detailed daily horoscope for ${userInput.zodiacSign} for today. Focus on love, career, and personal growth opportunities. Include practical advice and potential challenges. Use markdown headers (###) for each life area, and ensure paragraphs are well-separated.`,
+    
+    dreams: `As a dream interpreter, analyze this dream: ${userInput.dream}. Focus on the symbolic meaning and personal relevance to the dreamer. Provide practical insights and guidance. Skip technical dream analysis terminology. Use markdown headers (###) for key dream symbols and their meanings, and ensure paragraphs are well-separated.`,
+    
+    magic8: `As the Magic 8 Ball, provide a mystical answer to this question: ${userInput.question}. First give a clear yes/no/maybe response, then provide a short, intuitive explanation for the answer. Keep the response concise but insightful. Use markdown headers (###) for the answer and explanation sections.`,
+    
+    aura: `As an aura reader, provide an interpretation of the querent's aura based on their current emotional state and life situation: ${userInput.situation}. Describe the colors present and their meanings, energy patterns, and practical guidance for maintaining energetic health. Use markdown headers (###) for each aspect of the reading, and ensure paragraphs are well-separated.`,
+    
+    pastlife: `As a past life reader, explore the querent's most significant past life based on their current attractions and patterns: ${userInput.patterns}. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`
   };
 
-  const response = await openai.chat.completions.create({
+  const prompt = prompts[readingType.id];
+  if (!prompt) {
+    throw new Error('Invalid reading type');
+  }
+
+  const completion = await openai.chat.completions.create({
     model: OPENAI_CONFIG.model,
+    temperature: OPENAI_CONFIG.temperature,
     messages: [
       {
         role: 'system',
-        content: 'You are a wise and insightful mystic who provides clear, practical guidance. Focus on meaningful insights and skip technical details. Keep responses concise yet profound, and always maintain a supportive and encouraging tone. Use markdown formatting with ### for section headers, and ensure proper spacing between paragraphs and sections.'
+        content: 'You are a skilled spiritual guide and mystic reader. Provide clear, insightful, and practical guidance. Focus on meaningful interpretations and avoid technical jargon. Always maintain a compassionate and supportive tone.'
       },
       {
         role: 'user',
-        content: prompts[readingType]
+        content: prompt
       }
-    ],
-    temperature: OPENAI_CONFIG.temperature,
+    ]
   });
 
-  const content = response.choices[0].message.content || 'Unable to generate reading';
-  return formatResponse(content);
+  const response = completion.choices[0]?.message?.content;
+  if (!response) {
+    throw new Error('Failed to generate reading');
+  }
+
+  return formatResponse(response);
 };
