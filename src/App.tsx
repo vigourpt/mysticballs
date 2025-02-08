@@ -12,6 +12,20 @@ import Footer from './components/Footer';
 import LoginModal from './components/LoginModal';
 import PaymentModal from './components/PaymentModal';
 import TourGuide from './components/TourGuide';
+import ReadingSelector from './components/ReadingSelector';
+import ReadingForm from './components/ReadingForm';
+import ReadingOutput from './components/ReadingOutput';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
+
+const READING_TYPES: ReadingType[] = [
+  { id: 'tarot', name: 'Tarot Reading', description: 'Discover insights through the ancient wisdom of tarot cards', icon: 'tarot' },
+  { id: 'numerology', name: 'Numerology', description: 'Unlock the meaning behind your personal numbers', icon: 'numbers' },
+  { id: 'astrology', name: 'Astrology', description: 'Explore your celestial connections and cosmic path', icon: 'stars' },
+  { id: 'oracle', name: 'Oracle Cards', description: 'Receive guidance through mystical oracle messages', icon: 'cards' },
+  { id: 'runes', name: 'Runes', description: 'Ancient Norse wisdom for modern guidance', icon: 'runes' },
+  { id: 'iching', name: 'I Ching', description: 'Connect with ancient Chinese divination wisdom', icon: 'iching' }
+];
 
 const App: FC = () => {
   const [selectedReading, setSelectedReading] = useState<ReadingType | null>(null);
@@ -58,7 +72,7 @@ const App: FC = () => {
   // Show loading spinner during authentication
   if (authLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
       </div>
     );
@@ -66,7 +80,7 @@ const App: FC = () => {
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 text-white">
         <Header
           user={user}
           isDarkMode={isDarkMode}
@@ -79,18 +93,57 @@ const App: FC = () => {
           {currentPage === 'home' && (
             <>
               <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                <h1 className="text-4xl font-bold text-white mb-4">
                   Welcome to Mystic Balls
                 </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-300">
+                <p className="text-lg text-indigo-200">
                   {user ? `Welcome back, ${user.email}` : 'Sign in to start your journey'}
                 </p>
                 {usage && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  <p className="text-sm text-indigo-300 mt-2">
                     Readings remaining: {usage.readingsRemaining}
                   </p>
                 )}
               </div>
+
+              {!selectedReading ? (
+                <ReadingSelector
+                  readingTypes={READING_TYPES}
+                  onSelect={setSelectedReading}
+                  isDarkMode={isDarkMode}
+                />
+              ) : (
+                <div className="space-y-6">
+                  <button
+                    onClick={() => setSelectedReading(null)}
+                    className="mb-6 px-4 py-2 rounded-lg bg-indigo-800 text-white hover:bg-indigo-700 transition-colors"
+                  >
+                    ← Back to Reading Types
+                  </button>
+                  
+                  <ReadingForm
+                    readingType={selectedReading}
+                    isDarkMode={isDarkMode}
+                    onReadingComplete={() => setHasCompletedReading(true)}
+                    onReadingRequest={() => {
+                      if (!user) {
+                        setIsLoginModalOpen(true);
+                        return false;
+                      }
+                      if (hasCompletedReading) {
+                        setIsPaymentModalOpen(true);
+                        return false;
+                      }
+                      return true;
+                    }}
+                  />
+
+                  <ReadingOutput
+                    readingType={selectedReading}
+                    isDarkMode={isDarkMode}
+                  />
+                </div>
+              )}
 
               {selectedStep && (
                 <TourGuide
@@ -102,6 +155,30 @@ const App: FC = () => {
               )}
             </>
           )}
+
+          {currentPage === 'privacy' && (
+            <>
+              <button
+                onClick={() => setCurrentPage('home')}
+                className="mb-6 px-4 py-2 rounded-lg bg-indigo-800 text-white hover:bg-indigo-700 transition-colors"
+              >
+                ← Back to Home
+              </button>
+              <PrivacyPolicy />
+            </>
+          )}
+
+          {currentPage === 'terms' && (
+            <>
+              <button
+                onClick={() => setCurrentPage('home')}
+                className="mb-6 px-4 py-2 rounded-lg bg-indigo-800 text-white hover:bg-indigo-700 transition-colors"
+              >
+                ← Back to Home
+              </button>
+              <TermsOfService />
+            </>
+          )}
         </main>
 
         <Footer 
@@ -110,23 +187,19 @@ const App: FC = () => {
           onTermsClick={() => setCurrentPage('terms')}
         />
 
-        {isLoginModalOpen && (
-          <LoginModal
-            isOpen={isLoginModalOpen}
-            onClose={() => setIsLoginModalOpen(false)}
-            isDarkMode={isDarkMode}
-          />
-        )}
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          isDarkMode={isDarkMode}
+        />
 
-        {isPaymentModalOpen && (
-          <PaymentModal
-            isOpen={isPaymentModalOpen}
-            onClose={() => setIsPaymentModalOpen(false)}
-            user={user}
-            isDarkMode={isDarkMode}
-            onLoginRequired={() => setIsLoginModalOpen(true)}
-          />
-        )}
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          user={user}
+          isDarkMode={isDarkMode}
+          onLoginRequired={() => setIsLoginModalOpen(true)}
+        />
       </div>
     </div>
   );
