@@ -25,9 +25,9 @@ export const getReading = async (
       throw new Error('OpenAI API key not configured');
     }
 
-    if (!readingType || !readingType.id) {
+    if (!readingType) {
       console.error('Invalid reading type:', readingType);
-      throw new Error('Invalid reading type object');
+      throw new Error('Invalid reading type');
     }
 
     console.log('Sending OpenAI request:', { readingType, userInput });
@@ -58,10 +58,10 @@ export const getReading = async (
       pastlife: `As a past life reader, explore the querent's most significant past life based on their current attractions and patterns: ${userInput.patterns}. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`
     };
 
-    const prompt = prompts[readingType.id];
+    const prompt = prompts[readingType];
     if (!prompt) {
-      console.error('Invalid reading type ID:', readingType.id);
-      throw new Error(`Invalid reading type: ${readingType.id}`);
+      console.error('Invalid reading type:', readingType);
+      throw new Error(`Invalid reading type: ${readingType}`);
     }
 
     const response = await openai.chat.completions.create({
@@ -80,12 +80,15 @@ export const getReading = async (
     });
 
     console.log('OpenAI response received:', response);
-    return formatResponse(response.choices[0].message.content);
-  } catch (error) {
-    console.error('OpenAI API Error:', {
-      error: error.message,
-      stack: error.stack
-    });
-    throw new Error(`Reading generation failed: ${error.message}`);
+    return formatResponse(response.choices[0]?.message?.content || 'No response generated');
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('OpenAI API Error:', {
+        error: error.message,
+        stack: error.stack
+      });
+      throw new Error(`Reading generation failed: ${error.message}`);
+    }
+    throw new Error('Reading generation failed due to unexpected error');
   }
 };

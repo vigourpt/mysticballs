@@ -41,15 +41,16 @@ export default defineConfig({
       overlay: true
     },
     headers: PRODUCTION_CONFIG.ENABLE_CSP ? {
-      'Content-Security-Policy': PRODUCTION_CONFIG.CSP_DIRECTIVES
-    } : {
-      'Content-Security-Policy': Object.entries(PRODUCTION_CONFIG.CSP_DIRECTIVES)
-        .map(([key, values]) => `${key} ${values.join(' ')}`)
-        .join('; ')
-    }
+      'Content-Security-Policy': [
+        'default-src self',
+        'script-src self unsafe-inline',
+        `connect-src self ${PRODUCTION_CONFIG.API_URL} https://api.openai.com`
+      ].join('; ')
+    } : undefined
   },
   // Enable service worker in production
   worker: {
-    enabled: PRODUCTION_CONFIG.ENABLE_SERVICE_WORKER
+    format: 'es',
+    plugins: []
   }
 });
