@@ -19,12 +19,78 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 
 const READING_TYPES: ReadingType[] = [
-  { id: 'tarot', name: 'Tarot Reading', description: 'Discover insights through the ancient wisdom of tarot cards', icon: 'tarot' },
-  { id: 'numerology', name: 'Numerology', description: 'Unlock the meaning behind your personal numbers', icon: 'numbers' },
-  { id: 'astrology', name: 'Astrology', description: 'Explore your celestial connections and cosmic path', icon: 'stars' },
-  { id: 'oracle', name: 'Oracle Cards', description: 'Receive guidance through mystical oracle messages', icon: 'cards' },
-  { id: 'runes', name: 'Runes', description: 'Ancient Norse wisdom for modern guidance', icon: 'runes' },
-  { id: 'iching', name: 'I Ching', description: 'Connect with ancient Chinese divination wisdom', icon: 'iching' }
+  {
+    id: 'tarot',
+    name: 'Tarot Reading',
+    description: 'Discover insights through the ancient wisdom of tarot cards, dating back to the 15th century. Each card reveals hidden truths and illuminates your path forward.',
+    icon: 'cards'
+  },
+  {
+    id: 'numerology',
+    name: 'Numerology Reading',
+    description: 'Unlock the meaning behind your personal numbers. Analyze your birth date and name to reveal life path, destiny, and soul urge numbers.',
+    icon: 'numbers'
+  },
+  {
+    id: 'astrology',
+    name: 'Astrology Reading',
+    description: 'Examine celestial influences through your sun sign, moon sign, rising sign, and planetary aspects for deep personal insights.',
+    icon: 'stars'
+  },
+  {
+    id: 'oracle',
+    name: 'Oracle Cards Reading',
+    description: 'Receive divine guidance through beautifully illustrated cards. Perfect for both beginners and experienced seekers of wisdom.',
+    icon: 'oracle'
+  },
+  {
+    id: 'runes',
+    name: 'Runes Reading',
+    description: 'Ancient Norse symbols offering guidance and insight. Each of the 24 runes carries powerful meanings from Nordic wisdom.',
+    icon: 'runes'
+  },
+  {
+    id: 'iching',
+    name: 'I Ching Reading',
+    description: 'The ancient Chinese Book of Changes provides profound wisdom through hexagrams, drawing on over 3,000 years of Taoist philosophy.',
+    icon: 'iching'
+  },
+  {
+    id: 'angels',
+    name: 'Angel Numbers',
+    description: 'Interpret divine messages through recurring number sequences. Receive guidance and support from your guardian angels.',
+    icon: 'numbers'
+  },
+  {
+    id: 'horoscope',
+    name: 'Daily Horoscope',
+    description: 'Get personalized astrological guidance based on your zodiac sign and current planetary positions.',
+    icon: 'stars'
+  },
+  {
+    id: 'dreams',
+    name: 'Dream Analysis',
+    description: 'Explore the symbolic meanings within your dreams. Uncover subconscious insights and receive guidance from your inner wisdom.',
+    icon: 'moon'
+  },
+  {
+    id: 'magic8',
+    name: 'Magic 8 Ball',
+    description: 'Get quick, mystical answers to your yes/no questions. A playful way to tap into your intuition.',
+    icon: 'ball'
+  },
+  {
+    id: 'aura',
+    name: 'Aura Reading',
+    description: 'Reveal the colors and energies of your personal energy field. Gain insights into your spiritual, emotional, and physical well-being.',
+    icon: 'aura'
+  },
+  {
+    id: 'pastlife',
+    name: 'Past Life Reading',
+    description: 'Explore your soul\'s previous incarnations. Understand how past life experiences influence your present journey.',
+    icon: 'history'
+  }
 ];
 
 const App: FC = () => {
