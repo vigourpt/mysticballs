@@ -4,8 +4,7 @@ import { ReadingType } from '../types';
 
 const openai = new OpenAI({
   apiKey: OPENAI_CONFIG.apiKey,
-  dangerouslyAllowBrowser: true,
-  baseURL: 'https://api.openai.com/v1'
+  dangerouslyAllowBrowser: true
 });
 
 const formatResponse = (text: string): string => {
