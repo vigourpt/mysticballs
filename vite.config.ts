@@ -44,11 +44,13 @@ export default defineConfig({
       'Content-Security-Policy': [
         "default-src 'self'",
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://supabase.com",
-        "connect-src 'self' https://api.openai.com https://api.stripe.com https://js.stripe.com wss://realtime.supabase.co https://*.supabase.co https://supabase.com",
+        "connect-src 'self' https://api.openai.com https://api.stripe.com https://js.stripe.com wss://realtime.supabase.co https://*.supabase.co https://supabase.com https://*.openai.com",
         "frame-src 'self' https://js.stripe.com",
         "img-src 'self' data: https:",
         "style-src 'self' 'unsafe-inline'",
-        "font-src 'self' data:"
+        "font-src 'self' data:",
+        "worker-src 'self' blob:",
+        "manifest-src 'self'"
       ].join('; ')
     }
   },
