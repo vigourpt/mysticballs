@@ -1,4 +1,11 @@
-export type ReadingType = 'tarot' | 'numerology' | 'astrology' | 'oracle' | 'runes' | 'iching' | 'angelNumbers' | 'horoscope' | 'dreams' | 'magic8ball' | 'aura' | 'pastLife';
+export type ReadingTypeId = 'tarot' | 'numerology' | 'astrology' | 'oracle' | 'runes' | 'iching' | 'angels' | 'horoscope' | 'dreams' | 'magic8ball' | 'aura' | 'pastlife';
+
+export interface ReadingType {
+  id: ReadingTypeId;
+  name: string;
+  description: string;
+  icon: string;
+}
 
 export interface UserUsage {
   readingsCount: number;

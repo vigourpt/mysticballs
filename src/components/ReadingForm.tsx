@@ -55,10 +55,10 @@ const ReadingForm: React.FC<Props> = ({
     try {
       const userInput = {
         ...formValues,
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0] || ''  // Ensure date is never undefined
       };
 
-      const reading = await getReading(readingType, userInput);
+      const reading = await getReading(readingType.id, userInput);
       onReadingComplete(reading);
     } catch (err) {
       console.error('Reading error:', err);
