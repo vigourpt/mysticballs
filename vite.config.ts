@@ -43,17 +43,16 @@ export default defineConfig({
     headers: {
       'Content-Security-Policy': [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline' https://js.stripe.com",
-        "connect-src 'self' https://api.openai.com https://api.stripe.com",
-        "frame-src 'self' https://js.stripe.com",
-        "img-src 'self' data:",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.supabase.co https://*.supabase.in https://accounts.google.com",
+        "connect-src 'self' https://api.openai.com https://api.stripe.com https://*.supabase.co https://*.supabase.in",
+        "frame-src 'self' https://js.stripe.com https://accounts.google.com",
+        "img-src 'self' data: https://*.stripe.com",
         "style-src 'self' 'unsafe-inline'"
       ].join('; ')
     }
   },
   // Enable service worker in production
   worker: {
-    format: 'es',
-    plugins: []
+    format: 'es'
   }
 });
