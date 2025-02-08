@@ -1,10 +1,8 @@
-import React, { FC, useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
+import { FC, useState } from 'react';
+import { ReadingType, Step, PaymentPlan } from './types';
 import { useAuth } from './hooks/useAuth';
 import { useUsageTracking } from './hooks/useUsageTracking';
 import { useTutorial } from './hooks/useTutorial';
-import { ReadingType, Step, PaymentPlan } from './types';
-import { supabase } from './services/supabase';
 import { getReading } from './services/openai';
 
 // Components
@@ -104,20 +102,29 @@ const App: FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [readingOutput, setReadingOutput] = useState('');
 
-  const { user, loading: authLoading, signOut } = useAuth();
-  const { usage, updateUsage } = useUsageTracking(user?.id ?? null);
-  const { isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
+  const { user, signOut } = useAuth();
+  const { usage, updateUsage } = useUsageTracking(user?.id);
+  const { currentStep, setCurrentStep, isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
 
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedStep, setSelectedStep] = useState<Step | null>(null);
+  const handleStepClick = (step: Step) => {
+    setCurrentStep(step);
+  };
+
+  const handleSubscribe = async (plan: PaymentPlan) => {
+    // Implementation will be added later
+    console.log('Subscribing to plan:', plan);
+  };
+
+  const handleLoginRequired = () => {
+    setShowLoginModal(true);
+  };
 
   // Handle initial loading
   useEffect(() => {
     const handleInitialLoad = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) {
-        setIsLoginModalOpen(true);
+        setShowLoginModal(true);
       }
     };
 
@@ -144,24 +151,8 @@ const App: FC = () => {
     setIsDarkMode(prev => !prev);
   };
 
-  const handleStepClick = (step: Step) => {
-    setSelectedStep(step);
-    if (step.size) {
-      setStepSize(step.size);
-    }
-  };
-
-  const handleSubscribe = async (plan: PaymentPlan) => {
-    // Implementation will be added later
-    console.log('Subscribing to plan:', plan);
-  };
-
-  const handleLoginRequired = () => {
-    setShowLoginModal(true);
-  };
-
   // Show loading spinner during authentication
-  if (authLoading) {
+  if (user === null) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
@@ -176,7 +167,7 @@ const App: FC = () => {
           user={user}
           isDarkMode={isDarkMode}
           onDarkModeToggle={handleDarkModeToggle}
-          onLoginClick={() => setIsLoginModalOpen(true)}
+          onLoginClick={() => setShowLoginModal(true)}
           onLogoutClick={() => supabase.auth.signOut()}
         />
 
@@ -218,11 +209,11 @@ const App: FC = () => {
                     onReadingComplete={() => setHasCompletedReading(true)}
                     onReadingRequest={() => {
                       if (!user) {
-                        setIsLoginModalOpen(true);
+                        setShowLoginModal(true);
                         return false;
                       }
                       if (hasCompletedReading) {
-                        setIsPaymentModalOpen(true);
+                        setShowPaymentModal(true);
                         return false;
                       }
                       return true;
@@ -236,11 +227,11 @@ const App: FC = () => {
                 </div>
               )}
 
-              {selectedStep && (
+              {currentStep && (
                 <TourGuide
-                  steps={[selectedStep]}
-                  currentStep={selectedStep}
-                  onClose={() => setSelectedStep(null)}
+                  steps={[currentStep]}
+                  currentStep={currentStep}
+                  onClose={() => setCurrentStep(null)}
                   size={stepSize}
                 />
               )}
@@ -279,14 +270,14 @@ const App: FC = () => {
         />
 
         <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
           isDarkMode={isDarkMode}
         />
 
         <PaymentModal
-          isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
           user={user}
           isDarkMode={isDarkMode}
           onLoginRequired={handleLoginRequired}

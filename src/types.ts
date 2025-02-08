@@ -9,6 +9,7 @@ export interface ReadingType {
 
 export interface UserUsage {
   readingsCount: number;
+  readingsRemaining: number;
   isPremium: boolean;
   lastReadingDate?: string;
 }
@@ -20,4 +21,12 @@ export interface PaymentPlan {
   description: string;
   features: string[];
   readingsPerMonth: number;
+}
+
+export interface Step {
+  id: string;
+  title: string;
+  content: string;
+  target: string;
+  placement?: 'top' | 'bottom' | 'left' | 'right';
 }
