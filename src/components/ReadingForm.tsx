@@ -61,6 +61,7 @@ const ReadingForm: React.FC<Props> = ({
       const reading = await getReading(readingType, userInput);
       onReadingComplete(reading);
     } catch (err) {
+      console.error('Reading error:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate reading');
     } finally {
       setIsLoading(false);
@@ -68,13 +69,7 @@ const ReadingForm: React.FC<Props> = ({
   };
 
   const getReadingTitle = (type: ReadingType) => {
-    switch (type.id) {
-      case 'iching': return 'I Ching Reading';
-      case 'angels': return 'Angel Numbers Reading';
-      case 'magic8': return 'Magic 8 Ball';
-      case 'pastlife': return 'Past Life Reading';
-      default: return type.name;
-    }
+    return type.name;
   };
 
   const renderForm = () => {

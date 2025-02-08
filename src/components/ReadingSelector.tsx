@@ -3,11 +3,8 @@ import { DivideIcon as LucideIcon } from 'lucide-react';
 import { ReadingType } from '../types';
 import ReadingTypeInfo from './ReadingTypeInfo';
 
-interface ReadingTypeOption {
-  id: ReadingType;
-  name: string;
+interface ReadingTypeOption extends ReadingType {
   icon: LucideIcon;
-  description: string;
   instructions?: string;
 }
 
@@ -43,7 +40,7 @@ const ReadingSelector: React.FC<Props> = ({ readingTypes, onSelect, isDarkMode }
         {readingTypes.map((type) => (
           <button
             key={type.id}
-            onClick={() => onSelect(type.id)}
+            onClick={() => onSelect(type)}
             className={`group p-6 rounded-xl transition-all duration-300 transform hover:scale-105 ${
               isDarkMode
                 ? 'bg-gradient-to-br from-indigo-800/50 to-purple-800/50 hover:from-indigo-700/50 hover:to-purple-700/50'

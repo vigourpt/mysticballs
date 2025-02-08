@@ -22,6 +22,11 @@ export const getReading = async (
     throw new Error('OpenAI API key not configured');
   }
 
+  if (!readingType || !readingType.id) {
+    console.error('Invalid reading type:', readingType);
+    throw new Error('Invalid reading type object');
+  }
+
   const prompts: Record<string, string> = {
     numerology: `As a numerology expert, provide an insightful reading for ${userInput.name}, born on ${userInput.birthdate}. Focus only on the meaningful interpretations of their Life Path Number, Destiny Number, and Soul Urge Number. Skip all calculations and technical details. Provide the insights in a clear, engaging way that focuses on personality traits, life purpose, and potential. Keep the response concise and meaningful. Use markdown headers (###) for each section, and ensure paragraphs are well-separated.`,
     
@@ -48,34 +53,36 @@ export const getReading = async (
     pastlife: `As a past life reader, explore the querent's most significant past life based on their current attractions and patterns: ${userInput.patterns}. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`
   };
 
-  if (!readingType || !readingType.id) {
-    throw new Error('Invalid reading type object');
-  }
-
   const prompt = prompts[readingType.id];
   if (!prompt) {
+    console.error('Invalid reading type ID:', readingType.id);
     throw new Error(`Invalid reading type: ${readingType.id}`);
   }
 
-  const completion = await openai.chat.completions.create({
-    model: OPENAI_CONFIG.model,
-    temperature: OPENAI_CONFIG.temperature,
-    messages: [
-      {
-        role: 'system',
-        content: 'You are a skilled spiritual guide and mystic reader. Provide clear, insightful, and practical guidance. Focus on meaningful interpretations and avoid technical jargon. Always maintain a compassionate and supportive tone.'
-      },
-      {
-        role: 'user',
-        content: prompt
-      }
-    ]
-  });
+  try {
+    const completion = await openai.chat.completions.create({
+      model: OPENAI_CONFIG.model,
+      temperature: OPENAI_CONFIG.temperature,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a skilled spiritual guide and mystic reader. Provide clear, insightful, and practical guidance. Focus on meaningful interpretations and avoid technical jargon. Always maintain a compassionate and supportive tone.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    });
 
-  const response = completion.choices[0]?.message?.content;
-  if (!response) {
-    throw new Error('Failed to generate reading');
+    const response = completion.choices[0]?.message?.content;
+    if (!response) {
+      throw new Error('Failed to generate reading');
+    }
+
+    return formatResponse(response);
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    throw error;
   }
-
-  return formatResponse(response);
 };
