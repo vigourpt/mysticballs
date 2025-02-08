@@ -172,3 +172,27 @@ export const updatePremiumStatus = async (userId: string, isPremium: boolean) =>
 
   if (error) throw error;
 };
+
+export const clearAllAuthState = async () => {
+  try {
+    // Clear Supabase session
+    await supabase.auth.signOut();
+    
+    // Clear all storage
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Clear any cookies
+    document.cookie.split(";").forEach((c) => {
+      document.cookie = c
+        .replace(/^ +/, "")
+        .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+    
+    // Force reload the page
+    window.location.href = '/';
+  } catch (error) {
+    console.error('Error clearing auth state:', error);
+    throw error;
+  }
+};

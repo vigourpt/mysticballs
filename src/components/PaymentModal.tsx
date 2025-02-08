@@ -22,11 +22,13 @@ const PaymentModal: React.FC<Props> = ({ isOpen, onClose, isDarkMode, onSubscrib
   if (!isOpen) return null;
 
   const handleSubscribe = async (plan: PaymentPlan) => {
-    try {
-      if (!user) {
-        throw new Error('Please sign in to subscribe');
-      }
+    if (!user) {
+      // If not signed in, the parent component will show the login modal
+      onSubscribe(plan);
+      return;
+    }
 
+    try {
       if (!user.email) {
         throw new Error('No email associated with account');
       }
@@ -69,6 +71,13 @@ const PaymentModal: React.FC<Props> = ({ isOpen, onClose, isDarkMode, onSubscrib
           {error && (
             <div className="mt-4 p-3 rounded-lg bg-red-500/10 text-red-500 text-sm">
               {error}
+            </div>
+          )}
+          {!user && (
+            <div className="mb-6 p-4 bg-indigo-100 dark:bg-indigo-900 rounded-lg">
+              <p className="text-indigo-700 dark:text-indigo-200">
+                Please sign in to subscribe
+              </p>
             </div>
           )}
         </div>

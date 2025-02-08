@@ -49,7 +49,7 @@ const App: FC = () => {
 
   useAuthState();
   
-  const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
+  const { user, loading: authLoading, clearAllAuthState, signIn, signUp, signOut } = useAuth();
   const { usage } = useUsageTracking(user?.id);
   const { isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
 
@@ -72,14 +72,9 @@ const App: FC = () => {
 
   const handleSignOut = async () => {
     try {
-      const { success } = await signOut();
-      if (success) {
-        // Only redirect after successful sign out
-        window.location.href = '/';
-      }
+      await clearAllAuthState();
     } catch (error) {
       console.error('Sign out error:', error);
-      // Stay on the current page if sign out fails
     }
   };
 
@@ -105,6 +100,10 @@ const App: FC = () => {
 
   const handleSubscribe = async (plan: PaymentPlan) => {
     try {
+      if (!user) {
+        setIsLoginModalOpen(true);
+        return;
+      }
       // Implement subscription logic
       console.log('Subscribing to plan:', plan);
       setIsPaymentModalOpen(false);
