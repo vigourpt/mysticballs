@@ -48,9 +48,13 @@ export const getReading = async (
     pastlife: `As a past life reader, explore the querent's most significant past life based on their current attractions and patterns: ${userInput.patterns}. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`
   };
 
+  if (!readingType || !readingType.id) {
+    throw new Error('Invalid reading type object');
+  }
+
   const prompt = prompts[readingType.id];
   if (!prompt) {
-    throw new Error('Invalid reading type');
+    throw new Error(`Invalid reading type: ${readingType.id}`);
   }
 
   const completion = await openai.chat.completions.create({

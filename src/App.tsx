@@ -94,8 +94,8 @@ const READING_TYPES: ReadingType[] = [
 ];
 
 const App: FC = () => {
-  const [selectedReading, setSelectedReading] = useState<ReadingType | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [selectedReading, setSelectedReading] = useState<ReadingType | null>(null);
   const [hasCompletedReading, setHasCompletedReading] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'privacy' | 'terms'>('home');
   const [stepSize, setStepSize] = useState<'small' | 'medium' | 'large'>('medium');
