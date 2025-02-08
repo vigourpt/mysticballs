@@ -8,14 +8,18 @@ const openai = new OpenAI({
   timeout: 30000
 });
 
-export type ReadingType = 'tarot' | 'numerology' | 'pastlife';
+export enum ReadingType {
+  TAROT = 'tarot',
+  NUMEROLOGY = 'numerology',
+  PASTLIFE = 'pastlife'
+}
 
 const formatResponse = (content: string): string => {
   return content.trim();
 };
 
 export const getReading = async (
-  readingType: ReadingType,
+  readingType: ReadingType | { type: ReadingType },
   userInput: Record<string, string>
 ): Promise<string> => {
   try {
@@ -23,23 +27,26 @@ export const getReading = async (
       throw new Error('OpenAI API key not configured');
     }
 
-    if (!readingType) {
-      console.error('Invalid reading type:', readingType);
-      throw new Error('Invalid reading type');
+    // Handle both string and object reading types
+    const type = typeof readingType === 'string' ? readingType : readingType.type;
+    
+    if (!type || !Object.values(ReadingType).includes(type)) {
+      console.error('Invalid reading type:', type);
+      throw new Error(`Invalid reading type: ${type}`);
     }
 
-    console.log('Sending OpenAI request:', { readingType, userInput });
+    console.log('Sending OpenAI request:', { type, userInput });
 
     const prompts: Record<ReadingType, string> = {
-      tarot: `As a tarot reader, interpret the cards for this question: ${userInput.question}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
-      numerology: `As a numerologist, analyze the numbers and patterns in: ${userInput.numbers}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
-      pastlife: `As a past life reader, explore the querent's most significant past life based on their current attractions and patterns: ${userInput.patterns}. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`
+      [ReadingType.TAROT]: `As a tarot reader, interpret the cards for this question: ${userInput.question}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
+      [ReadingType.NUMEROLOGY]: `As a numerologist, analyze the numbers and patterns in: ${userInput.numbers}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
+      [ReadingType.PASTLIFE]: `As a past life reader, explore the querent's most significant past life based on their current attractions and patterns: ${userInput.patterns}. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`
     };
 
-    const prompt = prompts[readingType];
+    const prompt = prompts[type];
     if (!prompt) {
-      console.error('Invalid reading type:', readingType);
-      throw new Error(`Invalid reading type: ${readingType}`);
+      console.error('Invalid reading type:', type);
+      throw new Error(`Invalid reading type: ${type}`);
     }
 
     const response = await openai.chat.completions.create({
