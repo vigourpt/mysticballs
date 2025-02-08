@@ -16,7 +16,7 @@ const formatResponse = (text: string): string => {
 };
 
 export const getReading = async (
-  readingType: ReadingType,
+  readingType: string | { type: string },
   userInput: Record<string, string>
 ): Promise<string> => {
   try {
@@ -25,12 +25,15 @@ export const getReading = async (
       throw new Error('OpenAI API key not configured');
     }
 
-    if (!readingType) {
-      console.error('Invalid reading type:', readingType);
+    // Extract reading type from object if needed
+    const readingTypeStr = typeof readingType === 'string' ? readingType : readingType.type;
+
+    if (!readingTypeStr) {
+      console.error('Invalid reading type:', readingTypeStr);
       throw new Error('Invalid reading type');
     }
 
-    console.log('Sending OpenAI request:', { readingType, userInput });
+    console.log('Sending OpenAI request:', { readingType: readingTypeStr, userInput });
     
     const prompts: Record<string, string> = {
       numerology: `As a numerology expert, provide an insightful reading for ${userInput.name}, born on ${userInput.birthdate}. Focus only on the meaningful interpretations of their Life Path Number, Destiny Number, and Soul Urge Number. Skip all calculations and technical details. Provide the insights in a clear, engaging way that focuses on personality traits, life purpose, and potential. Keep the response concise and meaningful. Use markdown headers (###) for each section, and ensure paragraphs are well-separated.`,
@@ -58,10 +61,10 @@ export const getReading = async (
       pastlife: `As a past life reader, explore the querent's most significant past life based on their current attractions and patterns: ${userInput.patterns}. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`
     };
 
-    const prompt = prompts[readingType];
+    const prompt = prompts[readingTypeStr as keyof typeof prompts];
     if (!prompt) {
-      console.error('Invalid reading type:', readingType);
-      throw new Error(`Invalid reading type: ${readingType}`);
+      console.error('Invalid reading type:', readingTypeStr);
+      throw new Error(`Invalid reading type: ${readingTypeStr}`);
     }
 
     const response = await openai.chat.completions.create({

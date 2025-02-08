@@ -40,13 +40,16 @@ export default defineConfig({
     hmr: {
       overlay: true
     },
-    headers: PRODUCTION_CONFIG.ENABLE_CSP ? {
+    headers: {
       'Content-Security-Policy': [
-        'default-src self',
-        'script-src self unsafe-inline',
-        `connect-src self ${PRODUCTION_CONFIG.API_URL} https://api.openai.com`
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+        "connect-src 'self' https://api.openai.com https://api.stripe.com",
+        "frame-src 'self' https://js.stripe.com",
+        "img-src 'self' data:",
+        "style-src 'self' 'unsafe-inline'"
       ].join('; ')
-    } : undefined
+    }
   },
   // Enable service worker in production
   worker: {
