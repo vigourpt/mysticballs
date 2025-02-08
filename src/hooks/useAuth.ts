@@ -64,25 +64,23 @@ export const useAuth = () => {
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    setLoading(true);
-    setError(null);
-    setConfirmEmail(false);
-    
     try {
-      // First check if user exists
+      setLoading(true);
+      setError(null);
+
+      // Check if user exists first
       const { data: existingUser } = await supabase.auth.signInWithPassword({
-        email,
-        password: 'dummy-password'
+        email: email.trim(),
+        password: password,
       });
 
-      if (existingUser.user) {
-        throw new Error('Email already registered');
+      if (existingUser?.user) {
+        throw new Error('This email is already registered. Please sign in instead.');
       }
 
-      // If user doesn't exist, proceed with sign up
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: email.trim(),
+        password: password,
         options: {
           emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
@@ -93,37 +91,15 @@ export const useAuth = () => {
 
       if (error) throw error;
 
-      // If email confirmation is required
-      if (!data.session) {
+      if (data?.user) {
         setConfirmEmail(true);
-        return;
       }
-
-      // If email confirmation is not required, create profile
-      if (data.user) {
-        try {
-          await createUserProfile(
-            data.user.id,
-            data.user.email ?? '',
-            data.user.user_metadata?.full_name ?? data.user.user_metadata?.name ?? null
-          );
-        } catch (profileError) {
-          console.error('Error creating user profile:', profileError);
-          // Don't throw here, we still want to set the user
-        }
-      }
-
-      setUser(data.user);
     } catch (err) {
       console.error('Sign up error:', err);
       if (err instanceof Error) {
-        if (err.message.includes('User already registered')) {
-          setError('This email is already registered. Please sign in instead.');
-        } else {
-          setError(err.message);
-        }
+        setError(err.message);
       } else {
-        setError('Failed to sign up');
+        setError('An unexpected error occurred during sign up');
       }
       throw err;
     } finally {
@@ -132,20 +108,28 @@ export const useAuth = () => {
   };
 
   const signIn = async (email: string, password: string) => {
-    setLoading(true);
-    setError(null);
-    
     try {
+      setLoading(true);
+      setError(null);
+
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+        email: email.trim(),
+        password: password,
       });
 
       if (error) throw error;
-      setUser(data.user);
+
+      if (data?.user) {
+        setUser(data.user);
+        setConfirmEmail(false);
+      }
     } catch (err) {
       console.error('Sign in error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to sign in');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred during sign in');
+      }
       throw err;
     } finally {
       setLoading(false);

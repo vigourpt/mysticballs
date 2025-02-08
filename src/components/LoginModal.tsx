@@ -26,6 +26,14 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
     setIsLoading(true);
     
     try {
+      if (!email || !password) {
+        throw new Error('Please enter both email and password');
+      }
+
+      if (password.length < 6) {
+        throw new Error('Password must be at least 6 characters long');
+      }
+
       if (isSignUp) {
         await signUp(email, password);
         // Don't close modal, wait for confirmation screen
@@ -36,12 +44,12 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
       }
     } catch (err: any) {
       console.error('Auth error:', err);
-      if (err.message?.includes('already registered')) {
+      if (err.message?.toLowerCase().includes('already registered')) {
         setError('This email is already registered. Please sign in instead.');
         setIsSignUp(false); // Switch to sign in mode
-      } else if (err.message?.includes('Invalid login credentials')) {
+      } else if (err.message?.toLowerCase().includes('invalid login credentials')) {
         setError('Invalid email or password. Please try again.');
-      } else if (err.message?.includes('Email link is invalid or has expired')) {
+      } else if (err.message?.toLowerCase().includes('email link is invalid or has expired')) {
         setError('The confirmation link is invalid or has expired. Please try signing up again.');
       } else {
         setError(err.message || 'An error occurred during authentication');
