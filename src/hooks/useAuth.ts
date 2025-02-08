@@ -8,55 +8,43 @@ export const useAuth = () => {
   const [error, setError] = useState<string | null>(null);
   const [confirmEmail, setConfirmEmail] = useState(false);
 
-  // Check initial session
   useEffect(() => {
-    const checkSession = async () => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      
+      if (event === 'SIGNED_IN') {
+        setUser(session?.user ?? null);
+        setConfirmEmail(false);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setConfirmEmail(false);
+      } else if (event === 'USER_UPDATED') {
+        setUser(session?.user ?? null);
+      }
+      
+      setLoading(false);
+    });
+
+    // Get initial session
+    const initializeAuth = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
-        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          setUser(session.user);
+          setConfirmEmail(false);
+        }
       } catch (err) {
-        console.error('Session check error:', err);
-        setError(err instanceof Error ? err.message : 'Session check failed');
+        console.error('Error getting initial session:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    checkSession();
-  }, []);
-
-  // Listen for auth state changes
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
-        
-        if (event === 'SIGNED_IN') {
-          setUser(session?.user ?? null);
-          setLoading(false);
-          
-          // Create profile if needed for OAuth users
-          if (session?.user && session.user.app_metadata.provider !== 'email') {
-            try {
-              await createUserProfile(
-                session.user.id,
-                session.user.email ?? '',
-                session.user.user_metadata?.full_name ?? session.user.user_metadata?.name ?? null
-              );
-            } catch (err) {
-              console.error('Error creating profile for OAuth user:', err);
-            }
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setLoading(false);
-        } else if (event === 'USER_UPDATED') {
-          setUser(session?.user ?? null);
-          setLoading(false);
-        }
-      }
-    );
+    initializeAuth();
 
     return () => {
       subscription.unsubscribe();

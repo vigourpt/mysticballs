@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { signInWithGoogle } from '../services/supabase';
+import { signInWithGoogle, supabase } from '../services/supabase';
 
 interface Props {
   isOpen: boolean;
@@ -79,7 +79,9 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
 
   // Close modal if user is authenticated
   React.useEffect(() => {
-    if (!isLoading && !authLoading && !error && !confirmEmail) {
+    const user = supabase.auth.getUser();
+    // Only close if we have a successful auth AND no errors
+    if (!isLoading && !authLoading && !error && !confirmEmail && user) {
       onClose();
     }
   }, [isLoading, authLoading, error, confirmEmail, onClose]);
@@ -225,8 +227,8 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
             <button
               onClick={onClose}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              aria-label="Close"
             >
-              <span className="sr-only">Close</span>
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
