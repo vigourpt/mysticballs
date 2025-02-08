@@ -120,6 +120,22 @@ const App: FC = () => {
     handleInitialLoad();
   }, []);
 
+  useEffect(() => {
+    // Test OpenAI connection on mount
+    const testOpenAIConnection = async () => {
+      try {
+        const testResponse = await getReading('numerology', {
+          name: 'Test User',
+          birthdate: '2000-01-01'
+        });
+        console.log('OpenAI Connection Test Success:', testResponse);
+      } catch (error) {
+        console.error('OpenAI Connection Test Failed:', error);
+      }
+    };
+    testOpenAIConnection();
+  }, []);
+
   const handleDarkModeToggle = () => {
     setIsDarkMode(prev => !prev);
   };
