@@ -1,5 +1,4 @@
 import { ReadingTypeId } from '../types';
-import { OPENAI_CONFIG } from '../config/openai';
 import OpenAI from 'openai';
 
 // Add API key validation
@@ -9,15 +8,20 @@ const validateApiKey = (apiKey: string): boolean => {
   return (apiKey.startsWith('sk-') || apiKey.startsWith('sk-proj-')) && apiKey.length > 20;
 };
 
+// Remove API key from build output by using runtime check
+const getApiKey = () => {
+  // In development, use the environment variable
+  if (import.meta.env.DEV) {
+    return import.meta.env.VITE_OPENAI_API_KEY;
+  }
+  
+  // In production, get the key from server-side environment
+  // The key should be passed through the backend API
+  return null;
+};
+
 const openai = new OpenAI({
-  apiKey: (() => {
-    const apiKey = OPENAI_CONFIG.apiKey;
-    if (!validateApiKey(apiKey)) {
-      console.error('Invalid OpenAI API key format');
-      throw new Error('OpenAI API key is invalid. Please check your configuration.');
-    }
-    return apiKey;
-  })(),
+  apiKey: getApiKey(),
   dangerouslyAllowBrowser: true,
   maxRetries: 3,
   timeout: 30000
@@ -54,8 +58,9 @@ export const getReading = async (
   userInput: Record<string, string>
 ): Promise<string> => {
   try {
-    if (!OPENAI_CONFIG.apiKey) {
-      throw new Error('OpenAI API key not configured. Please check your environment variables.');
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error('OpenAI API key not available. Please ensure you are properly authenticated.');
     }
 
     // Validate reading type and required fields

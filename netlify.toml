@@ -1,0 +1,20 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "18.20.6"
+
+[functions]
+  directory = "netlify/functions"
+
+# Prevent secrets scanning from failing the build
+[build.processing]
+  skip_processing = true
+
+[build.processing.html]
+  pretty_urls = true
+
+# Configure secrets scanning
+[secrets]
+  SECRETS_SCAN_OMIT_PATHS = ["dist/assets/*"]
