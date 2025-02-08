@@ -31,7 +31,7 @@ const validateRequiredFields = (readingType: ReadingTypeId, userInput: Record<st
   const requiredFields: Record<ReadingTypeId, string[]> = {
     'tarot': ['question'],
     'numerology': ['name', 'birthdate'],
-    'pastlife': ['name', 'patterns'],
+    'pastlife': ['name', 'timePeriod'],
     'magic8ball': ['question'],
     'astrology': ['birthdate'],
     'oracle': ['question'],
@@ -40,7 +40,7 @@ const validateRequiredFields = (readingType: ReadingTypeId, userInput: Record<st
     'angels': ['name', 'number'],
     'horoscope': ['zodiacSign'],
     'dreams': ['dream'],
-    'aura': ['description']
+    'aura': ['name', 'personality']
   };
 
   const missing = requiredFields[readingType]?.filter(field => !userInput[field]);
@@ -69,7 +69,7 @@ export const getReading = async (
     const prompts: Record<ReadingTypeId, string> = {
       'tarot': `As a tarot reader, interpret the cards for this question: ${userInput.question}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
       'numerology': `As a numerologist, analyze the numerological significance of ${userInput.name}, born on ${userInput.birthdate}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
-      'pastlife': `As a past life reader, explore ${userInput.name}'s most significant past life based on their current attractions and patterns: ${userInput.patterns}. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`,
+      'pastlife': `As a past life reader, explore ${userInput.name}'s most significant past life based on their attraction to the ${userInput.timePeriod} period. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`,
       'magic8ball': `As a mystical Magic 8 Ball oracle, provide a clear and concise answer to this question: ${userInput.question}. Format the response as a single, direct statement in the style of a traditional Magic 8 Ball.`,
       'astrology': `As an astrologer, analyze the celestial influences for someone born on ${userInput.birthdate}${userInput.birthTime ? ` at ${userInput.birthTime}` : ''}${userInput.location ? ` in ${userInput.location}` : ''}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
       'oracle': `As an oracle card reader, interpret the cards for: ${userInput.question}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
@@ -78,7 +78,7 @@ export const getReading = async (
       'angels': `As an angel number interpreter, analyze the significance of ${userInput.number} for ${userInput.name}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
       'horoscope': `As an astrologer, provide a detailed horoscope for ${userInput.zodiacSign}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
       'dreams': `As a dream interpreter, analyze this dream: ${userInput.dream}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
-      'aura': `As an aura reader, interpret the colors and energies in: ${userInput.description}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`
+      'aura': `As an aura reader, interpret the aura and energy of ${userInput.name} based on their personality: ${userInput.personality}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`
     };
 
     const prompt = prompts[readingType];
