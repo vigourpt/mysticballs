@@ -1,67 +1,79 @@
 import React, { useState } from 'react';
-import { PaymentPlan } from '../types';
+import { User } from '@supabase/supabase-js';
+import { PaymentPlan, CheckoutResult } from '../types';
 import { PAYMENT_PLANS } from '../config/plans';
-import { Check } from 'lucide-react';
 import { createCheckoutSession } from '../services/stripe';
 import LoadingSpinner from './LoadingSpinner';
 import { useAuth } from '../hooks/useAuth';
+import { Check } from 'lucide-react';
 
-interface Props {
+interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
+  user: User | null;
   isDarkMode: boolean;
+  onLoginRequired?: () => void;
   onSubscribe: (plan: PaymentPlan) => void;
   remainingReadings: number;
 }
 
-const PaymentModal: React.FC<Props> = ({ isOpen, onClose, isDarkMode, onSubscribe, remainingReadings }) => {
+export const PaymentModal: React.FC<PaymentModalProps> = ({
+  isOpen,
+  onClose,
+  user,
+  isDarkMode,
+  onLoginRequired,
+  onSubscribe,
+  remainingReadings
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
-
-  if (!isOpen) return null;
 
   const handleSubscribe = async (plan: PaymentPlan) => {
     if (!user) {
-      // If not signed in, the parent component will show the login modal
-      onSubscribe(plan);
+      onLoginRequired?.();
       return;
     }
 
     try {
-      if (!user.email) {
-        throw new Error('No email associated with account');
-      }
-
       setIsLoading(true);
       setError(null);
       
-      // Get the price ID for the selected plan
-      const priceId = plan.priceId;
-      if (!priceId) {
-        throw new Error('Invalid plan selected');
-      }
-
-      // Create checkout session and redirect to Stripe
-      await createCheckoutSession(priceId, user.id, user.email);
+      const result: CheckoutResult = await createCheckoutSession(plan.priceId, user.id, user.email ?? '');
       
-      // The page will redirect to Stripe, so we don't need to close the modal
-      onSubscribe(plan);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
     } catch (err) {
-      console.error('Payment error:', err);
-      setError(err instanceof Error ? err.message : 'Unable to process payment. Please try again.');
+      console.error('Error creating checkout session:', err);
+      setError(err instanceof Error ? err.message : 'Failed to start checkout process');
     } finally {
       setIsLoading(false);
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className={`${
-        isDarkMode
-          ? 'bg-indigo-900 text-white'
-          : 'bg-white text-gray-800'
-      } rounded-xl p-6 max-w-4xl w-full shadow-xl overflow-y-auto max-h-[90vh]`}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isDarkMode ? 'dark' : ''}`}>
+      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
+      <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full p-6">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+          aria-label="Close"
+        >
+          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold mb-2">Upgrade Your Spiritual Journey</h2>
           <p className={`${isDarkMode ? 'text-indigo-200' : 'text-gray-600'}`}>

@@ -8,7 +8,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Validate environment variables
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+  throw new Error('Missing Supabase environment variables');
 }
 
 // Get the site URL based on environment
@@ -17,23 +17,16 @@ const siteUrl = import.meta.env.DEV ? 'http://localhost:5173' : PRODUCTION_URL;
 // Create Supabase client with minimal config
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    autoRefreshToken: true,
     persistSession: true,
+    storage: localStorage,
+    autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
-    storage: window.localStorage,
-    storageKey: 'mysticballs-auth-token',
-    cookieOptions: {
-      sameSite: 'Lax',
-      secure: true
-    }
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'mysticballs-web'
-    }
+    flowType: 'pkce'
   }
 });
+
+type Tables = Database['public']['Tables'];
+type UserProfile = Tables['user_profiles']['Row'];
 
 export const signInWithGoogle = async () => {
   try {
@@ -114,63 +107,72 @@ export const signInWithEmail = async (email: string, password: string) => {
   }
 };
 
-export const createUserProfile = async (userId: string, email: string, displayName: string | null) => {
-  const now = new Date().toISOString();
-  
-  const profile = {
+// User Profile Management
+export const createUserProfile = async (userId: string, email: string, displayName?: string): Promise<UserProfile | null> => {
+  const profile: UserProfile = {
     user_id: userId,
     email,
     display_name: displayName ?? email.split('@')[0],
     readings_count: 0,
     is_premium: false,
     last_reading_date: null,
-    created_at: now,
-    updated_at: now
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   };
 
-  const { error } = await supabase
-    .from('user_profiles')
-    .insert([profile]);
-
-  if (error) throw error;
-};
-
-export const getUserProfile = async (userId: string) => {
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('*')
-    .eq('user_id', userId)
+    .insert([profile])
+    .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error creating user profile:', error);
+    return null;
+  }
+
   return data;
 };
 
-export const incrementReadingCount = async (userId: string) => {
-  try {
-    const { error } = await supabase.rpc('increment_reading_count', {
-      user_id: userId
-    });
+export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select()
+    .eq('user_id', userId)
+    .single();
 
-    if (error) throw error;
-  } catch (error) {
-    console.error('Reading count increment error:', error);
+  if (error) {
+    console.error('Error getting user profile:', error);
+    return null;
+  }
+
+  return data;
+};
+
+export const incrementReadingCount = async (userId: string): Promise<void> => {
+  const { error } = await supabase.rpc('increment_reading_count', {
+    p_user_id: userId
+  });
+
+  if (error) {
+    console.error('Error incrementing reading count:', error);
     throw error;
   }
 };
 
-export const updatePremiumStatus = async (userId: string, isPremium: boolean) => {
-  const now = new Date().toISOString();
-  
+export const updatePremiumStatus = async (userId: string, isPremium: boolean): Promise<void> => {
   const { error } = await supabase
     .from('user_profiles')
     .update({
       is_premium: isPremium,
-      updated_at: now
-    })
+      updated_at: new Date().toISOString()
+    } as Tables['user_profiles']['Update'])
     .eq('user_id', userId);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error updating premium status:', error);
+    throw error;
+  }
 };
 
 export const clearAllAuthState = async () => {

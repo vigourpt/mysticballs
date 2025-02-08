@@ -4,14 +4,18 @@ import { supabase, createUserProfile } from '../services/supabase';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmEmail, setConfirmEmail] = useState(false);
 
   useEffect(() => {
+    let mounted = true;
+    
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
       console.log('Auth state changed:', event, session?.user?.id);
       
       if (event === 'SIGNED_IN') {
@@ -23,12 +27,12 @@ export const useAuth = () => {
       } else if (event === 'USER_UPDATED') {
         setUser(session?.user ?? null);
       }
-      
-      setLoading(false);
     });
 
     // Get initial session
     const initializeAuth = async () => {
+      if (!mounted) return;
+      
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
@@ -39,14 +43,13 @@ export const useAuth = () => {
         }
       } catch (err) {
         console.error('Error getting initial session:', err);
-      } finally {
-        setLoading(false);
       }
     };
 
     initializeAuth();
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -55,16 +58,7 @@ export const useAuth = () => {
     try {
       setLoading(true);
       setError(null);
-
-      // Check if user exists first
-      const { data: existingUser } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password,
-      });
-
-      if (existingUser?.user) {
-        throw new Error('This email is already registered. Please sign in instead.');
-      }
+      setConfirmEmail(false);
 
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
@@ -99,6 +93,7 @@ export const useAuth = () => {
     try {
       setLoading(true);
       setError(null);
+      setConfirmEmail(false);
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -109,7 +104,6 @@ export const useAuth = () => {
 
       if (data?.user) {
         setUser(data.user);
-        setConfirmEmail(false);
       }
     } catch (err) {
       console.error('Sign in error:', err);
@@ -126,6 +120,7 @@ export const useAuth = () => {
 
   const signOut = async () => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
@@ -139,14 +134,9 @@ export const useAuth = () => {
       console.error('Sign out error:', err);
       setError(err instanceof Error ? err.message : 'Failed to sign out');
       throw err;
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const clearAllAuthState = () => {
-    setUser(null);
-    setLoading(false);
-    setError(null);
-    setConfirmEmail(false);
   };
 
   return {
@@ -156,9 +146,6 @@ export const useAuth = () => {
     confirmEmail,
     signUp,
     signIn,
-    signOut,
-    clearAllAuthState
+    signOut
   };
 };
-
-export default useAuth;

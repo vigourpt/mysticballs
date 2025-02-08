@@ -11,7 +11,7 @@ export interface Database {
     Tables: {
       user_profiles: {
         Row: {
-          id: string
+          user_id: string
           email: string
           display_name: string | null
           readings_count: number
@@ -21,7 +21,7 @@ export interface Database {
           updated_at: string
         }
         Insert: {
-          id?: string
+          user_id: string
           email: string
           display_name?: string | null
           readings_count?: number
@@ -31,7 +31,7 @@ export interface Database {
           updated_at?: string
         }
         Update: {
-          id?: string
+          user_id?: string
           email?: string
           display_name?: string | null
           readings_count?: number
@@ -42,21 +42,13 @@ export interface Database {
         }
       }
     }
+    Views: {
+      [_ in never]: never
+    }
     Functions: {
       increment_reading_count: {
-        Args: {
-          user_id: string
-        }
-        Returns: {
-          id: string
-          email: string
-          display_name: string | null
-          readings_count: number
-          is_premium: boolean
-          last_reading_date: string | null
-          created_at: string
-          updated_at: string
-        }
+        Args: { p_user_id: string }
+        Returns: void
       }
     }
     Enums: {

@@ -1,30 +1,27 @@
 import { useState, useEffect } from 'react';
 import { UserUsage } from '../types';
-import { getUserProfile, incrementReadingCount, updatePremiumStatus } from '../services/supabase';
-import { FREE_READINGS_LIMIT } from '../config/constants';
+import { getUserProfile } from '../services/supabase';
 
-const ANONYMOUS_STORAGE_KEY = 'anonymous_readings_count';
+const defaultUsage: UserUsage = {
+  readingsCount: 0,
+  isPremium: false,
+  lastReadingDate: null,
+  readingsRemaining: 3
+};
 
 export const useUsageTracking = (userId: string | null) => {
-  const [usage, setUsage] = useState<UserUsage>({
-    readingsCount: 0,
-    isPremium: false,
-    readings_remaining: FREE_READINGS_LIMIT
-  });
+  const [usage, setUsage] = useState<UserUsage | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const loadUsage = async () => {
+    const fetchUsage = async () => {
       if (!userId) {
-        // For anonymous users, get count from localStorage
-        const anonymousCount = parseInt(localStorage.getItem(ANONYMOUS_STORAGE_KEY) || '0');
-        setUsage({ 
-          readingsCount: anonymousCount, 
-          isPremium: false,
-          readings_remaining: Math.max(0, FREE_READINGS_LIMIT - anonymousCount)
-        });
+        setUsage(defaultUsage);
+        setLoading(false);
         return;
       }
-      
+
       try {
         const profile = await getUserProfile(userId);
         if (profile) {
@@ -32,75 +29,18 @@ export const useUsageTracking = (userId: string | null) => {
             readingsCount: profile.readings_count,
             isPremium: profile.is_premium,
             lastReadingDate: profile.last_reading_date,
-            readings_remaining: profile.is_premium ? Infinity : Math.max(0, FREE_READINGS_LIMIT - profile.readings_count)
+            readingsRemaining: profile.is_premium ? Infinity : Math.max(0, 3 - profile.readings_count)
           });
         }
-      } catch (error) {
-        console.error('Error loading usage:', error);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to fetch usage'));
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadUsage();
+    fetchUsage();
   }, [userId]);
 
-  const incrementUsage = async () => {
-    if (!userId) {
-      // For anonymous users, store count in localStorage
-      const newCount = usage.readingsCount + 1;
-      localStorage.setItem(ANONYMOUS_STORAGE_KEY, newCount.toString());
-      setUsage(prev => ({
-        ...prev,
-        readingsCount: newCount,
-        readings_remaining: Math.max(0, FREE_READINGS_LIMIT - newCount)
-      }));
-      return;
-    }
-
-    try {
-      await incrementReadingCount(userId);
-      setUsage(prev => ({
-        ...prev,
-        readingsCount: prev.readingsCount + 1,
-        lastReadingDate: new Date().toISOString(),
-        readings_remaining: prev.isPremium ? Infinity : Math.max(0, FREE_READINGS_LIMIT - (prev.readingsCount + 1))
-      }));
-    } catch (error) {
-      console.error('Error incrementing usage:', error);
-    }
-  };
-
-  const hasReachedLimit = () => {
-    if (!userId) {
-      return usage.readingsCount >= FREE_READINGS_LIMIT;
-    }
-    return !usage.isPremium && usage.readingsCount >= FREE_READINGS_LIMIT;
-  };
-
-  const remainingReadings = () => {
-    if (usage.isPremium) return Infinity;
-    return Math.max(0, FREE_READINGS_LIMIT - usage.readingsCount);
-  };
-
-  const setPremiumStatus = async (isPremium: boolean) => {
-    if (!userId) return;
-
-    try {
-      await updatePremiumStatus(userId, isPremium);
-      setUsage(prev => ({
-        ...prev,
-        isPremium,
-        readings_remaining: isPremium ? Infinity : Math.max(0, FREE_READINGS_LIMIT - prev.readingsCount)
-      }));
-    } catch (error) {
-      console.error('Error updating premium status:', error);
-    }
-  };
-
-  return {
-    usage,
-    incrementUsage,
-    hasReachedLimit,
-    remainingReadings,
-    setPremiumStatus,
-  };
+  return { usage, loading, error };
 };
