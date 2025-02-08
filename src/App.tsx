@@ -5,6 +5,7 @@ import { useUsageTracking } from './hooks/useUsageTracking';
 import { useTutorial } from './hooks/useTutorial';
 import { ReadingType, Step, PaymentPlan } from './types';
 import { supabase } from './services/supabase';
+import { getReading } from './services/openai';
 
 // Components
 import Header from './components/Header';
@@ -74,7 +75,7 @@ const READING_TYPES: ReadingType[] = [
     icon: 'moon'
   },
   {
-    id: 'magic8',
+    id: 'magic8ball',
     name: 'Magic 8 Ball',
     description: 'Get quick, mystical answers to your yes/no questions. A playful way to tap into your intuition.',
     icon: 'ball'
@@ -99,9 +100,12 @@ const App: FC = () => {
   const [hasCompletedReading, setHasCompletedReading] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'privacy' | 'terms'>('home');
   const [stepSize, setStepSize] = useState<'small' | 'medium' | 'large'>('medium');
-  
-  const { user, loading: authLoading } = useAuth();
-  const { usage } = useUsageTracking(user?.id ?? null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [readingOutput, setReadingOutput] = useState('');
+
+  const { user, loading: authLoading, signOut } = useAuth();
+  const { usage, updateUsage } = useUsageTracking(user?.id ?? null);
   const { isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
 
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -148,7 +152,12 @@ const App: FC = () => {
   };
 
   const handleSubscribe = async (plan: PaymentPlan) => {
-    // Handle subscription logic
+    // Implementation will be added later
+    console.log('Subscribing to plan:', plan);
+  };
+
+  const handleLoginRequired = () => {
+    setShowLoginModal(true);
   };
 
   // Show loading spinner during authentication
@@ -161,7 +170,7 @@ const App: FC = () => {
   }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
       <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 text-white">
         <Header
           user={user}
@@ -280,7 +289,9 @@ const App: FC = () => {
           onClose={() => setIsPaymentModalOpen(false)}
           user={user}
           isDarkMode={isDarkMode}
-          onLoginRequired={() => setIsLoginModalOpen(true)}
+          onLoginRequired={handleLoginRequired}
+          onSubscribe={handleSubscribe}
+          remainingReadings={usage?.readingsRemaining || 0}
         />
       </div>
     </div>

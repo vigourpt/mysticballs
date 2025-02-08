@@ -1,13 +1,16 @@
 export interface FormValues {
+  [key: string]: string | undefined;
   question?: string;
   name?: string;
   birthdate?: string;
   birthTime?: string;
   location?: string;
-  number?: string;
-  zodiacSign?: string;
+  numbers?: string;
+  sign?: string;
   dream?: string;
   date?: string;
+  description?: string;
+  patterns?: string;
 }
 
 export interface FormProps {
