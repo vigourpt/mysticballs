@@ -27,6 +27,28 @@ const formatResponse = (content: string): string => {
   return content.trim();
 };
 
+const validateRequiredFields = (readingType: ReadingTypeId, userInput: Record<string, string>) => {
+  const requiredFields: Record<ReadingTypeId, string[]> = {
+    'tarot': ['question'],
+    'numerology': ['name', 'birthdate'],
+    'pastlife': ['name', 'patterns'],
+    'magic8ball': ['question'],
+    'astrology': ['birthdate'],
+    'oracle': ['question'],
+    'runes': ['question'],
+    'iching': ['question'],
+    'angels': ['name', 'number'],
+    'horoscope': ['zodiacSign'],
+    'dreams': ['dream'],
+    'aura': ['description']
+  };
+
+  const missing = requiredFields[readingType]?.filter(field => !userInput[field]);
+  if (missing?.length) {
+    throw new Error(`Missing required fields for ${readingType} reading: ${missing.join(', ')}`);
+  }
+};
+
 export const getReading = async (
   readingType: ReadingTypeId,
   userInput: Record<string, string>
@@ -36,23 +58,24 @@ export const getReading = async (
       throw new Error('OpenAI API key not configured. Please check your environment variables.');
     }
 
-    // Validate reading type
+    // Validate reading type and required fields
     if (!readingType || typeof readingType !== 'string') {
       throw new Error(`Invalid reading type: ${JSON.stringify(readingType)}`);
     }
+    validateRequiredFields(readingType, userInput);
 
     console.log('Processing reading type:', readingType);
 
     const prompts: Record<ReadingTypeId, string> = {
       'tarot': `As a tarot reader, interpret the cards for this question: ${userInput.question}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
-      'numerology': `As a numerologist, analyze the numbers and patterns in: ${userInput.numbers}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
-      'pastlife': `As a past life reader, explore the querent's most significant past life based on their current attractions and patterns: ${userInput.patterns}. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`,
+      'numerology': `As a numerologist, analyze the numerological significance of ${userInput.name}, born on ${userInput.birthdate}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
+      'pastlife': `As a past life reader, explore ${userInput.name}'s most significant past life based on their current attractions and patterns: ${userInput.patterns}. Create a detailed narrative of their past life, including historical context and how it influences their present journey. Use markdown headers (###) for different aspects of the past life reading, and ensure paragraphs are well-separated.`,
       'magic8ball': `As a mystical Magic 8 Ball oracle, provide a clear and concise answer to this question: ${userInput.question}. Format the response as a single, direct statement in the style of a traditional Magic 8 Ball.`,
-      'astrology': `As an astrologer, analyze the celestial influences for: ${userInput.birthdate}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
+      'astrology': `As an astrologer, analyze the celestial influences for someone born on ${userInput.birthdate}${userInput.birthTime ? ` at ${userInput.birthTime}` : ''}${userInput.location ? ` in ${userInput.location}` : ''}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
       'oracle': `As an oracle card reader, interpret the cards for: ${userInput.question}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
       'runes': `As a rune caster, interpret the runes for: ${userInput.question}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
       'iching': `As an I Ching interpreter, provide wisdom for: ${userInput.question}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
-      'angels': `As an angel card reader, share divine guidance for: ${userInput.question}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
+      'angels': `As an angel number interpreter, analyze the significance of ${userInput.number} for ${userInput.name}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
       'horoscope': `As an astrologer, provide a detailed horoscope for ${userInput.zodiacSign}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
       'dreams': `As a dream interpreter, analyze this dream: ${userInput.dream}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`,
       'aura': `As an aura reader, interpret the colors and energies in: ${userInput.description}. Use markdown headers (###) for different aspects of the reading, and ensure paragraphs are well-separated.`
@@ -101,6 +124,8 @@ export const getReading = async (
         userMessage += 'The service is currently experiencing high demand. Please try again in a few moments.';
       } else if (error.message.includes('network')) {
         userMessage += 'Please check your internet connection and try again.';
+      } else if (error.message.includes('Missing required fields')) {
+        userMessage += error.message;
       } else {
         userMessage += 'An unexpected error occurred. Please try again.';
       }
