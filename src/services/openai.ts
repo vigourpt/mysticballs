@@ -4,7 +4,8 @@ import { ReadingType } from '../types';
 
 const openai = new OpenAI({
   apiKey: OPENAI_CONFIG.apiKey,
-  dangerouslyAllowBrowser: true
+  dangerouslyAllowBrowser: true,
+  baseURL: 'https://api.openai.com/v1'
 });
 
 const formatResponse = (text: string): string => {
@@ -19,6 +20,7 @@ export const getReading = async (
   userInput: Record<string, string>
 ): Promise<string> => {
   if (!OPENAI_CONFIG.apiKey) {
+    console.error('OpenAI API key not configured');
     throw new Error('OpenAI API key not configured');
   }
 
@@ -72,7 +74,11 @@ export const getReading = async (
           role: 'user',
           content: prompt
         }
-      ]
+      ],
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_CONFIG.apiKey}`
+      }
     });
 
     const response = completion.choices[0]?.message?.content;
@@ -81,8 +87,11 @@ export const getReading = async (
     }
 
     return formatResponse(response);
-  } catch (error) {
+  } catch (error: any) {
     console.error('OpenAI API error:', error);
-    throw error;
+    if (error.response) {
+      console.error('OpenAI API response:', error.response.data);
+    }
+    throw new Error(error.message || 'Failed to generate reading');
   }
 };
