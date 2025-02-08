@@ -1,19 +1,16 @@
-import { FC, useState } from 'react';
-import { ReadingType, Step, PaymentPlan } from './types';
+import { FC, useState, useEffect } from 'react';
+import { ReadingType, PaymentPlan } from './types';
 import { useAuth } from './hooks/useAuth';
 import { useUsageTracking } from './hooks/useUsageTracking';
-import { useTutorial } from './hooks/useTutorial';
-import { getReading } from './services/openai';
+import { supabase } from './services/supabase';
 
 // Components
 import Header from './components/Header';
 import Footer from './components/Footer';
 import LoginModal from './components/LoginModal';
 import PaymentModal from './components/PaymentModal';
-import TourGuide from './components/TourGuide';
 import ReadingSelector from './components/ReadingSelector';
 import ReadingForm from './components/ReadingForm';
-import ReadingOutput from './components/ReadingOutput';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 
@@ -97,17 +94,31 @@ const App: FC = () => {
   const [selectedReading, setSelectedReading] = useState<ReadingType | null>(null);
   const [hasCompletedReading, setHasCompletedReading] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'privacy' | 'terms'>('home');
-  const [stepSize, setStepSize] = useState<'small' | 'medium' | 'large'>('medium');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [readingOutput, setReadingOutput] = useState('');
 
   const { user, signOut } = useAuth();
-  const { usage, updateUsage } = useUsageTracking(user?.id);
-  const { currentStep, setCurrentStep, isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
+  const { usage, loading: usageLoading } = useUsageTracking(user?.id ?? null);
 
-  const handleStepClick = (step: Step) => {
-    setCurrentStep(step);
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setShowLoginModal(true);
+      }
+    };
+
+    checkSession();
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      setShowLoginModal(false);
+    }
+  }, [user]);
+
+  const handleDarkModeToggle = () => {
+    setIsDarkMode(prev => !prev);
   };
 
   const handleSubscribe = async (plan: PaymentPlan) => {
@@ -119,40 +130,8 @@ const App: FC = () => {
     setShowLoginModal(true);
   };
 
-  // Handle initial loading
-  useEffect(() => {
-    const handleInitialLoad = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        setShowLoginModal(true);
-      }
-    };
-
-    handleInitialLoad();
-  }, []);
-
-  useEffect(() => {
-    // Test OpenAI connection on mount
-    const testOpenAIConnection = async () => {
-      try {
-        const testResponse = await getReading('numerology', {
-          name: 'Test User',
-          birthdate: '2000-01-01'
-        });
-        console.log('OpenAI Connection Test Success:', testResponse);
-      } catch (error) {
-        console.error('OpenAI Connection Test Failed:', error);
-      }
-    };
-    testOpenAIConnection();
-  }, []);
-
-  const handleDarkModeToggle = () => {
-    setIsDarkMode(prev => !prev);
-  };
-
   // Show loading spinner during authentication
-  if (user === null) {
+  if (usageLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
@@ -168,24 +147,36 @@ const App: FC = () => {
           isDarkMode={isDarkMode}
           onDarkModeToggle={handleDarkModeToggle}
           onLoginClick={() => setShowLoginModal(true)}
-          onLogoutClick={() => supabase.auth.signOut()}
+          onLogoutClick={signOut}
         />
 
         <main className="container mx-auto px-4 py-8">
-          {currentPage === 'home' && (
-            <>
+          {currentPage === 'privacy' ? (
+            <div>
+              <button
+                onClick={() => setCurrentPage('home')}
+                className="mb-6 px-4 py-2 rounded-lg bg-indigo-800 text-white hover:bg-indigo-700 transition-colors"
+              >
+                ← Back to Home
+              </button>
+              <PrivacyPolicy />
+            </div>
+          ) : currentPage === 'terms' ? (
+            <div>
+              <button
+                onClick={() => setCurrentPage('home')}
+                className="mb-6 px-4 py-2 rounded-lg bg-indigo-800 text-white hover:bg-indigo-700 transition-colors"
+              >
+                ← Back to Home
+              </button>
+              <TermsOfService />
+            </div>
+          ) : (
+            <div>
               <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold text-white mb-4">
-                  Welcome to Mystic Balls
-                </h1>
-                <p className="text-lg text-indigo-200">
-                  {user ? `Welcome back, ${user.email}` : 'Sign in to start your journey'}
-                </p>
-                {usage && (
-                  <p className="text-sm text-indigo-300 mt-2">
-                    Readings remaining: {usage.readingsRemaining}
-                  </p>
-                )}
+                <h1 className="text-4xl font-bold mb-4">Welcome to Mystic Balls</h1>
+                {user && <p className="text-lg">Welcome back, {user.email}</p>}
+                <p className="text-sm text-gray-300">Readings remaining: {usage?.readingsRemaining || 0}</p>
               </div>
 
               {!selectedReading ? (
@@ -195,10 +186,10 @@ const App: FC = () => {
                   isDarkMode={isDarkMode}
                 />
               ) : (
-                <div className="space-y-6">
+                <div className="max-w-2xl mx-auto">
                   <button
                     onClick={() => setSelectedReading(null)}
-                    className="mb-6 px-4 py-2 rounded-lg bg-indigo-800 text-white hover:bg-indigo-700 transition-colors"
+                    className="mb-4 text-purple-300 hover:text-purple-100"
                   >
                     ← Back to Reading Types
                   </button>
@@ -219,52 +210,14 @@ const App: FC = () => {
                       return true;
                     }}
                   />
-
-                  <ReadingOutput
-                    readingType={selectedReading}
-                    isDarkMode={isDarkMode}
-                  />
                 </div>
               )}
-
-              {currentStep && (
-                <TourGuide
-                  steps={[currentStep]}
-                  currentStep={currentStep}
-                  onClose={() => setCurrentStep(null)}
-                  size={stepSize}
-                />
-              )}
-            </>
-          )}
-
-          {currentPage === 'privacy' && (
-            <>
-              <button
-                onClick={() => setCurrentPage('home')}
-                className="mb-6 px-4 py-2 rounded-lg bg-indigo-800 text-white hover:bg-indigo-700 transition-colors"
-              >
-                ← Back to Home
-              </button>
-              <PrivacyPolicy />
-            </>
-          )}
-
-          {currentPage === 'terms' && (
-            <>
-              <button
-                onClick={() => setCurrentPage('home')}
-                className="mb-6 px-4 py-2 rounded-lg bg-indigo-800 text-white hover:bg-indigo-700 transition-colors"
-              >
-                ← Back to Home
-              </button>
-              <TermsOfService />
-            </>
+            </div>
           )}
         </main>
 
-        <Footer 
-          isDarkMode={isDarkMode} 
+        <Footer
+          isDarkMode={isDarkMode}
           onPrivacyClick={() => setCurrentPage('privacy')}
           onTermsClick={() => setCurrentPage('terms')}
         />
