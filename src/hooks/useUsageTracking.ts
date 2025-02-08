@@ -9,6 +9,7 @@ export const useUsageTracking = (userId: string | null) => {
   const [usage, setUsage] = useState<UserUsage>({
     readingsCount: 0,
     isPremium: false,
+    readings_remaining: FREE_READINGS_LIMIT
   });
 
   useEffect(() => {
@@ -16,7 +17,11 @@ export const useUsageTracking = (userId: string | null) => {
       if (!userId) {
         // For anonymous users, get count from localStorage
         const anonymousCount = parseInt(localStorage.getItem(ANONYMOUS_STORAGE_KEY) || '0');
-        setUsage({ readingsCount: anonymousCount, isPremium: false });
+        setUsage({ 
+          readingsCount: anonymousCount, 
+          isPremium: false,
+          readings_remaining: Math.max(0, FREE_READINGS_LIMIT - anonymousCount)
+        });
         return;
       }
       
@@ -27,6 +32,7 @@ export const useUsageTracking = (userId: string | null) => {
             readingsCount: profile.readings_count,
             isPremium: profile.is_premium,
             lastReadingDate: profile.last_reading_date,
+            readings_remaining: profile.is_premium ? Infinity : Math.max(0, FREE_READINGS_LIMIT - profile.readings_count)
           });
         }
       } catch (error) {
@@ -45,6 +51,7 @@ export const useUsageTracking = (userId: string | null) => {
       setUsage(prev => ({
         ...prev,
         readingsCount: newCount,
+        readings_remaining: Math.max(0, FREE_READINGS_LIMIT - newCount)
       }));
       return;
     }
@@ -55,6 +62,7 @@ export const useUsageTracking = (userId: string | null) => {
         ...prev,
         readingsCount: prev.readingsCount + 1,
         lastReadingDate: new Date().toISOString(),
+        readings_remaining: prev.isPremium ? Infinity : Math.max(0, FREE_READINGS_LIMIT - (prev.readingsCount + 1))
       }));
     } catch (error) {
       console.error('Error incrementing usage:', error);
@@ -81,6 +89,7 @@ export const useUsageTracking = (userId: string | null) => {
       setUsage(prev => ({
         ...prev,
         isPremium,
+        readings_remaining: isPremium ? Infinity : Math.max(0, FREE_READINGS_LIMIT - prev.readingsCount)
       }));
     } catch (error) {
       console.error('Error updating premium status:', error);

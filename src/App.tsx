@@ -50,7 +50,7 @@ const App: FC = () => {
   useAuthState();
   
   const { user, loading: authLoading, signIn, signUp, signOut } = useAuth();
-  const { usage, incrementUsage } = useUsageTracking();
+  const { usage } = useUsageTracking(user?.id);
   const { isTutorialOpen, completeTutorial, startTutorial } = useTutorial();
 
   // Handle initial loading
@@ -122,7 +122,7 @@ const App: FC = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950">
-        <LoadingSpinner message="Loading..." size="medium" showSlowLoadingMessage={false} />
+        <LoadingSpinner message="Loading..." size="medium" />
       </div>
     );
   }
@@ -299,7 +299,7 @@ const App: FC = () => {
                 onClose={() => setIsPaymentModalOpen(false)}
                 isDarkMode={isDarkMode}
                 onSubscribe={handleSubscribe}
-                remainingReadings={usage?.remainingReadings ?? 0}
+                remainingReadings={usage?.readings_remaining ?? 0}
               />
             </AsyncComponent>
 
@@ -308,15 +308,16 @@ const App: FC = () => {
                 isOpen={isLoginModalOpen}
                 onClose={() => setIsLoginModalOpen(false)}
                 isDarkMode={isDarkMode}
-                onLogin={handleSignIn}
-                onSignUp={handleSignUp}
               />
             </AsyncComponent>
 
             <TutorialButton isDarkMode={isDarkMode} onStartTutorial={startTutorial} />
 
             <OnboardingOverlay
-              steps={ONBOARDING_STEPS}
+              steps={ONBOARDING_STEPS.map(step => ({
+                ...step,
+                position: step.position as "top" | "bottom" | "left" | "right"
+              }))}
               isOpen={isTutorialOpen}
               onComplete={completeTutorial}
               isDarkMode={isDarkMode}

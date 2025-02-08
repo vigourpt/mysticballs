@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { signInWithGoogle, signUpWithEmail } from '../services/supabase';
+import { signInWithGoogle } from '../services/supabase';
 
 interface Props {
   isOpen: boolean;

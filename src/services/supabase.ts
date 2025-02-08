@@ -23,8 +23,6 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     flowType: 'pkce',
     storage: window.localStorage,
     storageKey: 'mysticballs-auth-token',
-    site_url: siteUrl,
-    // Add CSP-friendly configuration
     cookieOptions: {
       sameSite: 'Lax',
       secure: true
@@ -117,58 +115,35 @@ export const signInWithEmail = async (email: string, password: string) => {
 };
 
 export const createUserProfile = async (userId: string, email: string, displayName: string | null) => {
-  try {
-    const now = new Date().toISOString();
+  const now = new Date().toISOString();
+  
+  const profile = {
+    user_id: userId,
+    email,
+    display_name: displayName ?? email.split('@')[0],
+    readings_count: 0,
+    is_premium: false,
+    last_reading_date: null,
+    created_at: now,
+    updated_at: now
+  };
 
-    // First check if profile exists
-    const { data: existingProfile } = await supabase
-      .from('user_profiles')
-      .select()
-      .eq('id', userId)
-      .single();
+  const { error } = await supabase
+    .from('user_profiles')
+    .insert([profile]);
 
-    if (existingProfile) {
-      return; // Profile already exists, no need to create
-    }
-
-    // Create new profile
-    const { error } = await supabase
-      .from('user_profiles')
-      .insert({
-        id: userId,
-        email,
-        display_name: displayName || email.split('@')[0],
-        readings_count: 0,
-        is_premium: false,
-        last_reading_date: null,
-        created_at: now,
-        updated_at: now
-      });
-
-    if (error) {
-      console.error('Database error creating profile:', error);
-      throw error;
-    }
-  } catch (error: any) {
-    console.error('Error creating user profile:', error);
-    throw error;
-  }
+  if (error) throw error;
 };
 
 export const getUserProfile = async (userId: string) => {
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select()
-      .eq('id', userId)
-      .single();
+  const { data, error } = await supabase
+    .from('user_profiles')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
 
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Profile fetch error:', error);
-    throw error;
-  }
+  if (error) throw error;
+  return data;
 };
 
 export const incrementReadingCount = async (userId: string) => {
@@ -185,18 +160,15 @@ export const incrementReadingCount = async (userId: string) => {
 };
 
 export const updatePremiumStatus = async (userId: string, isPremium: boolean) => {
-  try {
-    const { error } = await supabase
-      .from('users')
-      .update({
-        is_premium: isPremium,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId);
+  const now = new Date().toISOString();
+  
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({
+      is_premium: isPremium,
+      updated_at: now
+    })
+    .eq('user_id', userId);
 
-    if (error) throw error;
-  } catch (error) {
-    console.error('Premium status update error:', error);
-    throw error;
-  }
+  if (error) throw error;
 };
