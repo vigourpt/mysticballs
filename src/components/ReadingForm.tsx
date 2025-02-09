@@ -53,28 +53,66 @@ const ReadingForm: React.FC<Props> = ({
     setError('');
 
     try {
-      // Validate required fields based on reading type
-      const requiredFields = {
-        'numerology': ['numbers'],
-        'astrology': ['question'],
-        'angels': ['numbers'],
-        'horoscope': ['sign'],
-        'dreams': ['dream'],
-        'aura': ['description'],
-        'pastlife': ['patterns']
-      };
+      // Map form values to expected API input fields
+      const userInput: Record<string, string> = { ...formValues };
 
-      const fields = requiredFields[readingType.id as keyof typeof requiredFields] || ['question'];
-      const missingFields = fields.filter(field => !formValues[field]);
+      // Special handling for specific reading types
+      switch (readingType.id) {
+        case 'tarot':
+        case 'oracle':
+        case 'runes':
+        case 'iching':
+        case 'magic8ball':
+          if (!userInput.question) {
+            throw new Error('Please enter your question');
+          }
+          break;
 
-      if (missingFields.length > 0) {
-        throw new Error(`Please fill in the required field${missingFields.length > 1 ? 's' : ''}: ${missingFields.join(', ')}`);
+        case 'numerology':
+          if (!userInput.name || !userInput.birthdate) {
+            throw new Error('Please enter your name and birth date');
+          }
+          break;
+
+        case 'astrology':
+          if (!userInput.sign || !userInput.birthdate) {
+            throw new Error('Please enter your zodiac sign and birth date');
+          }
+          break;
+
+        case 'angels':
+          if (!userInput.name || !userInput.number) {
+            throw new Error('Please enter your name and angel number');
+          }
+          break;
+
+        case 'horoscope':
+          if (!userInput.zodiacSign) {
+            throw new Error('Please select your zodiac sign');
+          }
+          break;
+
+        case 'dreams':
+          if (!userInput.dream) {
+            throw new Error('Please describe your dream');
+          }
+          break;
+
+        case 'aura':
+          if (!userInput.name || !userInput.personality) {
+            throw new Error('Please enter your name and personality traits');
+          }
+          break;
+
+        case 'pastlife':
+          if (!userInput.name || !userInput.timePeriod) {
+            throw new Error('Please enter your name and time period of interest');
+          }
+          break;
+
+        default:
+          throw new Error(`Unknown reading type: ${readingType.id}`);
       }
-
-      const userInput = {
-        ...formValues,
-        date: new Date().toISOString().split('T')[0] || ''
-      };
 
       const reading = await getReading(readingType.id, userInput);
       onReadingComplete(reading);
@@ -87,8 +125,6 @@ const ReadingForm: React.FC<Props> = ({
           errorMessage = 'API configuration error. Please contact support.';
         } else if (err.message.includes('rate limit')) {
           errorMessage = 'Too many requests. Please try again in a moment.';
-        } else if (err.message.includes('required field')) {
-          errorMessage = err.message;
         } else {
           errorMessage = `Reading generation failed: ${err.message}`;
         }

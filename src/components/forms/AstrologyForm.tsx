@@ -1,6 +1,12 @@
 import React from 'react';
 import { FormProps } from './types';
 
+const ZODIAC_SIGNS = [
+  'Aries', 'Taurus', 'Gemini', 'Cancer', 
+  'Leo', 'Virgo', 'Libra', 'Scorpio',
+  'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'
+];
+
 const AstrologyForm: React.FC<FormProps> = ({ 
   isDarkMode, 
   inputClassName, 
@@ -10,6 +16,22 @@ const AstrologyForm: React.FC<FormProps> = ({
 }) => (
   <>
     <div className="mb-4">
+      <label className={labelClassName}>Your Zodiac Sign</label>
+      <select
+        value={values.sign || ''}
+        onChange={(e) => onChange('sign', e.target.value)}
+        className={inputClassName}
+        required
+      >
+        <option value="">Select your sign</option>
+        {ZODIAC_SIGNS.map(sign => (
+          <option key={sign} value={sign.toLowerCase()}>
+            {sign}
+          </option>
+        ))}
+      </select>
+    </div>
+    <div className="mb-4">
       <label className={labelClassName}>Birth Date</label>
       <input
         type="date"
@@ -17,25 +39,6 @@ const AstrologyForm: React.FC<FormProps> = ({
         onChange={(e) => onChange('birthdate', e.target.value)}
         className={inputClassName}
         required
-      />
-    </div>
-    <div className="mb-4">
-      <label className={labelClassName}>Birth Time (optional)</label>
-      <input
-        type="time"
-        value={values.birthTime || ''}
-        onChange={(e) => onChange('birthTime', e.target.value)}
-        className={inputClassName}
-      />
-    </div>
-    <div className="mb-4">
-      <label className={labelClassName}>Birth Location (optional)</label>
-      <input
-        type="text"
-        value={values.location || ''}
-        onChange={(e) => onChange('location', e.target.value)}
-        className={inputClassName}
-        placeholder="City, Country"
       />
     </div>
   </>

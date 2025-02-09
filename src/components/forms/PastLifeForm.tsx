@@ -1,6 +1,15 @@
 import React from 'react';
 import { FormProps } from './types';
 
+const TIME_PERIODS = [
+  { value: 'ancient', label: 'Ancient Civilizations (Before 500 CE)' },
+  { value: 'medieval', label: 'Medieval Period (500-1500 CE)' },
+  { value: 'renaissance', label: 'Renaissance (1300-1600 CE)' },
+  { value: 'colonial', label: 'Colonial Era (1600-1800)' },
+  { value: 'victorian', label: 'Victorian Era (1837-1901)' },
+  { value: 'modern', label: 'Early Modern (1901-1950)' }
+];
+
 const PastLifeForm: React.FC<FormProps> = ({ 
   isDarkMode, 
   inputClassName, 
@@ -29,25 +38,14 @@ const PastLifeForm: React.FC<FormProps> = ({
         required
       >
         <option value="">Select a time period you feel drawn to</option>
-        <option value="ancient">Ancient Civilizations (Before 500 CE)</option>
-        <option value="medieval">Medieval Period (500-1500 CE)</option>
-        <option value="renaissance">Renaissance (1300-1600 CE)</option>
-        <option value="colonial">Colonial Era (1600-1800)</option>
-        <option value="victorian">Victorian Era (1837-1901)</option>
-        <option value="modern">Early Modern (1901-1950)</option>
+        {TIME_PERIODS.map(period => (
+          <option key={period.value} value={period.value}>
+            {period.label}
+          </option>
+        ))}
       </select>
-    </div>
-    <div className="mb-4">
-      <label className={labelClassName}>Recurring Dreams or Feelings</label>
-      <textarea
-        value={values.feelings || ''}
-        onChange={(e) => onChange('feelings', e.target.value)}
-        className={`${inputClassName} h-32 resize-none`}
-        placeholder="Describe any recurring dreams, unexplained memories, or strong connections to specific places, cultures, or time periods..."
-        required
-      />
     </div>
   </>
 );
 
-export default PastLifeForm
+export default PastLifeForm;

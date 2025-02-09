@@ -30,24 +30,7 @@ const AuraForm: React.FC<FormProps> = ({
         required
       />
     </div>
-    <div className="mb-4">
-      <label className={labelClassName}>Current Emotional State</label>
-      <select
-        value={values.emotionalState || ''}
-        onChange={(e) => onChange('emotionalState', e.target.value)}
-        className={inputClassName}
-        required
-      >
-        <option value="">Select your emotional state</option>
-        <option value="peaceful">Peaceful & Calm</option>
-        <option value="energetic">Energetic & Excited</option>
-        <option value="balanced">Balanced & Centered</option>
-        <option value="stressed">Stressed & Overwhelmed</option>
-        <option value="creative">Creative & Inspired</option>
-        <option value="spiritual">Spiritual & Connected</option>
-      </select>
-    </div>
   </>
 );
 
-export default AuraForm
+export default AuraForm;
