@@ -7,7 +7,7 @@ const validateRequiredFields = (readingType: ReadingTypeId, userInput: Record<st
     'numerology': ['name', 'birthdate'],
     'pastlife': ['name', 'timePeriod'],
     'magic8ball': ['question'],
-    'astrology': ['birthdate'],
+    'astrology': ['sign', 'birthdate'],
     'oracle': ['question'],
     'runes': ['question'],
     'iching': ['question'],
