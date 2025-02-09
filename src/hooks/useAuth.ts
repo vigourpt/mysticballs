@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase, createUserProfile } from '../services/supabase';
+import { supabase } from '../services/supabase';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -16,16 +16,17 @@ export const useAuth = () => {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
       
-      console.log('Auth state changed:', event, session?.user?.id);
-      
       if (event === 'SIGNED_IN') {
         setUser(session?.user ?? null);
         setConfirmEmail(false);
+        setError(null);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setConfirmEmail(false);
+        setError(null);
       } else if (event === 'USER_UPDATED') {
         setUser(session?.user ?? null);
+        setError(null);
       }
     });
 
@@ -40,9 +41,11 @@ export const useAuth = () => {
         if (session?.user) {
           setUser(session.user);
           setConfirmEmail(false);
+          setError(null);
         }
       } catch (err) {
-        console.error('Error getting initial session:', err);
+        setError(err instanceof Error ? err.message : 'Failed to initialize auth');
+        setUser(null);
       }
     };
 

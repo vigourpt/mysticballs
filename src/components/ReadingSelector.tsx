@@ -39,8 +39,8 @@ const ReadingSelector: React.FC<Props> = ({ readingTypes, onSelect, isDarkMode }
             onClick={() => onSelect(type)}
             className={`group p-6 rounded-xl transition-all duration-300 transform hover:scale-105 ${
               isDarkMode
-                ? 'bg-gradient-to-br from-indigo-800/50 to-purple-800/50 hover:from-indigo-700/50 hover:to-purple-700/50'
-                : 'bg-gradient-to-br from-white to-indigo-50 hover:from-indigo-50 hover:to-white'
+                ? 'bg-gradient-to-br from-purple-900/50 to-indigo-900/50 hover:from-purple-800/50 hover:to-indigo-800/50'
+                : 'bg-gradient-to-br from-purple-50 to-indigo-50 hover:from-purple-100 hover:to-indigo-100'
             } backdrop-blur-sm shadow-xl`}
           >
             <div className="flex flex-col items-center text-center space-y-4">
