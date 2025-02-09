@@ -1,11 +1,19 @@
 import { Handler } from '@netlify/functions';
 import OpenAI from 'openai';
 import { rateLimiter } from './utils/rateLimiter';
+import { createClient } from '@supabase/supabase-js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   defaultHeaders: { 'OpenAI-Project-Id': process.env.OPENAI_PROJECT_ID }
 });
+
+const MAX_FREE_READINGS = 3;
+
+const supabase = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_KEY || ''
+);
 
 const readingConfigs: Record<string, { maxTokens: number; temperature: number; systemPrompt: string }> = {
   'tarot': {
@@ -197,6 +205,47 @@ const handler: Handler = async (event, context) => {
   }
 
   try {
+    const authHeader = event.headers.authorization;
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
+    // Get user profile
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+
+    if (authError || !user) {
+      throw new Error('Unauthorized');
+    }
+
+    // Get user profile with readings count
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      throw new Error('Failed to get user profile');
+    }
+
+    // Check if user is premium or has free readings left
+    if (!profile.is_premium && profile.readings_count >= MAX_FREE_READINGS) {
+      return {
+        statusCode: 402,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        },
+        body: JSON.stringify({
+          error: 'Free trial ended',
+          message: 'You have used all your free readings. Please upgrade to continue.',
+          requiresUpgrade: true
+        })
+      };
+    }
+
     const { readingType, userInput } = JSON.parse(event.body || '{}');
     
     if (!readingType || !userInput) {
@@ -282,6 +331,21 @@ const handler: Handler = async (event, context) => {
       max_tokens: config.maxTokens
     });
 
+    // Update readings count for non-premium users
+    if (!profile.is_premium) {
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({
+          readings_count: profile.readings_count + 1,
+          last_reading_date: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Failed to update readings count:', updateError);
+      }
+    }
+
     return {
       statusCode: 200,
       headers: {
@@ -289,7 +353,8 @@ const handler: Handler = async (event, context) => {
         'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify({
-        reading: completion.choices[0]?.message?.content?.trim() || 'No response received'
+        reading: completion.choices[0]?.message?.content?.trim() || 'No response received',
+        readingsRemaining: !profile.is_premium ? MAX_FREE_READINGS - (profile.readings_count + 1) : null
       })
     };
   } catch (error: any) {

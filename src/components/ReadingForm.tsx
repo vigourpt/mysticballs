@@ -17,17 +17,23 @@ interface Props {
   isDarkMode: boolean;
   onReadingComplete: (reading: string) => void;
   onReadingRequest: () => boolean;
+  session: any;
+  setShowUpgradeModal: (show: boolean) => void;
 }
 
 const ReadingForm: React.FC<Props> = ({
   readingType,
   isDarkMode,
   onReadingComplete,
-  onReadingRequest
+  onReadingRequest,
+  session,
+  setShowUpgradeModal
 }) => {
   const [formValues, setFormValues] = useState<FormValues>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [reading, setReading] = useState('');
+  const [message, setMessage] = useState('');
 
   const inputClassName = `w-full p-3 rounded-lg bg-opacity-50 ${
     isDarkMode
@@ -45,88 +51,39 @@ const ReadingForm: React.FC<Props> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!onReadingRequest()) {
-      return;
-    }
-
-    setIsLoading(true);
     setError('');
+    setIsLoading(true);
 
     try {
-      // Map form values to expected API input fields
-      const userInput: Record<string, string> = { ...formValues };
-      console.log('Submitting form with values:', { readingType: readingType.id, userInput });
+      const response = await fetch('/.netlify/functions/getReading', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ readingType, userInput: formValues })
+      });
 
-      // Special handling for specific reading types
-      switch (readingType.id) {
-        case 'tarot':
-        case 'oracle':
-        case 'runes':
-        case 'iching':
-        case 'magic8ball':
-          if (!userInput.question) {
-            throw new Error('Please enter your question');
-          }
-          break;
+      const data = await response.json();
 
-        case 'numerology':
-          if (!userInput.name || !userInput.birthdate) {
-            throw new Error('Please enter your name and birth date');
-          }
-          break;
-
-        case 'astrology':
-          if (!userInput.sign || !userInput.birthdate) {
-            throw new Error('Please enter your zodiac sign and birth date');
-          }
-          break;
-
-        case 'angels':
-          if (!userInput.name || !userInput.number) {
-            throw new Error('Please enter your name and angel number');
-          }
-          break;
-
-        case 'horoscope':
-          if (!userInput.zodiacSign) {
-            throw new Error('Please select your zodiac sign');
-          }
-          break;
-
-        case 'dreams':
-          if (!userInput.dream) {
-            throw new Error('Please describe your dream');
-          }
-          break;
-
-        case 'aura':
-          if (!userInput.name || !userInput.personality) {
-            throw new Error('Please enter your name and personality traits');
-          }
-          break;
-
-        case 'pastlife':
-          if (!userInput.name || !userInput.timePeriod) {
-            throw new Error('Please enter your name and time period of interest');
-          }
-          break;
-
-        default:
-          throw new Error(`Unknown reading type: ${readingType.id}`);
+      if (!response.ok) {
+        if (response.status === 402) {
+          // Show upgrade modal with remaining readings info
+          setShowUpgradeModal(true);
+        } else {
+          throw new Error(data.error || 'Failed to get reading');
+        }
+        return;
       }
 
-      const reading = await getReading(readingType.id, userInput);
-      onReadingComplete(reading);
-    } catch (err) {
-      console.error('Form submission error:', err);
-      let errorMessage = 'Failed to generate reading';
+      setReading(data.reading);
       
-      if (err instanceof Error) {
-        errorMessage = err.message;
+      // Show remaining readings message for free users
+      if (data.readingsRemaining !== null) {
+        setMessage(`You have ${data.readingsRemaining} free readings remaining.`);
       }
-      
-      setError(errorMessage);
+    } catch (error: any) {
+      setError(error.message);
     } finally {
       setIsLoading(false);
     }
@@ -182,6 +139,11 @@ const ReadingForm: React.FC<Props> = ({
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-red-500/10 text-red-500 text-sm">
           {error}
+        </div>
+      )}
+      {message && (
+        <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 text-yellow-500 text-sm">
+          {message}
         </div>
       )}
       <button
