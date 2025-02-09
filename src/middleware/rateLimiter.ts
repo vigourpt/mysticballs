@@ -6,6 +6,25 @@ export const readingLimiter = rateLimit({
   message: 'Too many readings requested. Please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  // Configure for Netlify Functions environment
+  handler: (_, res) => {
+    res.status(429).json({
+      error: 'Too many readings requested. Please try again later.'
+    });
+  },
+  keyGenerator: (req) => {
+    // Get IP from Netlify-specific headers
+    const ip = 
+      req.headers['client-ip'] ||
+      req.headers['x-nf-client-connection-ip'] ||
+      'unknown';
+    return typeof ip === 'string' ? ip : 'unknown';
+  },
+  skip: (req) => {
+    // Skip rate limiting for OPTIONS requests
+    return req.method === 'OPTIONS';
+  },
+  requestWasSuccessful: () => true, // Don't count failed requests
 });
 
 export const authLimiter = rateLimit({

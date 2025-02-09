@@ -1,6 +1,5 @@
 import { Handler } from '@netlify/functions';
 import OpenAI from 'openai';
-import { readingLimiter } from '../../src/middleware/rateLimiter';
 import { rateLimiter } from './utils/rateLimiter';
 
 const openai = new OpenAI({
@@ -129,7 +128,11 @@ const handler: Handler = async (event, context) => {
   // Apply rate limiting
   try {
     // Check OpenAI rate limit first
-    const clientIp = event.headers['client-ip'] || event.headers['x-forwarded-for'] || 'unknown';
+    const clientIp = 
+      event.headers['client-ip'] ||
+      event.headers['x-nf-client-connection-ip'] ||
+      'unknown';
+
     if (rateLimiter.isRateLimited(clientIp)) {
       return {
         statusCode: 429,
@@ -138,18 +141,14 @@ const handler: Handler = async (event, context) => {
           'Access-Control-Allow-Origin': '*',
           'Retry-After': '60'
         },
-        body: JSON.stringify({ error: 'Too many requests. Please try again in 1 minute.' })
+        body: JSON.stringify({ 
+          error: 'Too many requests. Please try again in 1 minute.',
+          retryAfter: 60
+        })
       };
     }
-
-    // Then check general API rate limit
-    await new Promise((resolve, reject) => {
-      readingLimiter(event as any, context as any, (err: any) => {
-        if (err) reject(err);
-        resolve(true);
-      });
-    });
   } catch (error) {
+    console.error('Rate limit error:', error);
     return {
       statusCode: 429,
       headers: {
@@ -157,7 +156,10 @@ const handler: Handler = async (event, context) => {
         'Access-Control-Allow-Origin': '*',
         'Retry-After': '60'
       },
-      body: JSON.stringify({ error: 'Too many requests - please try again later' })
+      body: JSON.stringify({ 
+        error: 'Rate limiting error occurred',
+        retryAfter: 60
+      })
     };
   }
 
