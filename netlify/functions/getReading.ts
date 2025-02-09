@@ -2,7 +2,9 @@ import { Handler } from '@netlify/functions';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
+  defaultQuery: { 'project-id': process.env.OPENAI_PROJECT_ID },
+  defaultHeaders: { 'OpenAI-Project-Id': process.env.OPENAI_PROJECT_ID }
 });
 
 // Define response configurations for each reading type
@@ -151,15 +153,15 @@ const handler: Handler = async (event) => {
 
     console.log('Using prompt:', prompt);
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OpenAI API key is missing');
+    if (!process.env.OPENAI_API_KEY || !process.env.OPENAI_PROJECT_ID) {
+      console.error('OpenAI configuration is missing');
       return {
         statusCode: 500,
         headers: {
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*'
         },
-        body: JSON.stringify({ error: 'OpenAI API key is not configured' })
+        body: JSON.stringify({ error: 'OpenAI API key or project ID is not configured' })
       };
     }
 
