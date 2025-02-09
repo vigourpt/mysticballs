@@ -3,7 +3,6 @@ import OpenAI from 'openai';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  defaultQuery: { 'project-id': process.env.OPENAI_PROJECT_ID },
   defaultHeaders: { 'OpenAI-Project-Id': process.env.OPENAI_PROJECT_ID }
 });
 
@@ -181,7 +180,10 @@ const handler: Handler = async (event) => {
       max_tokens: config.maxTokens,
       top_p: 1,
       frequency_penalty: 0,
-      presence_penalty: 0
+      presence_penalty: 0,
+      headers: {
+        'OpenAI-Project-Id': process.env.OPENAI_PROJECT_ID
+      }
     });
 
     console.log('OpenAI response:', completion.choices[0]?.message);
@@ -201,6 +203,16 @@ const handler: Handler = async (event) => {
     
     let errorMessage = 'Reading generation failed';
     if (error instanceof Error) {
+      console.error('Error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        // @ts-ignore
+        status: error.status,
+        // @ts-ignore
+        code: error.code
+      });
+      
       errorMessage = error.message;
       
       // Check for specific OpenAI errors
@@ -208,6 +220,8 @@ const handler: Handler = async (event) => {
         errorMessage = 'OpenAI API key is invalid or expired';
       } else if (error.message.includes('rate limit')) {
         errorMessage = 'Too many requests. Please try again in a moment.';
+      } else if (error.message.includes('project')) {
+        errorMessage = 'OpenAI project configuration error';
       }
     }
 
