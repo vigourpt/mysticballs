@@ -1,16 +1,5 @@
 import React, { useState } from 'react';
 import { ReadingType } from '../types';
-import { getReading } from '../services/openai';
-import AngelNumbersForm from './forms/AngelNumbersForm';
-import AstrologyForm from './forms/AstrologyForm';
-import DreamForm from './forms/DreamForm';
-import HoroscopeForm from './forms/HoroscopeForm';
-import NumerologyForm from './forms/NumerologyForm';
-import QuestionForm from './forms/QuestionForm';
-import AuraForm from './forms/AuraForm';
-import PastLifeForm from './forms/PastLifeForm';
-import Magic8BallForm from './forms/Magic8BallForm';
-import { FormValues } from './forms/types';
 
 interface Props {
   readingType: ReadingType;
@@ -29,28 +18,31 @@ const ReadingForm: React.FC<Props> = ({
   session,
   setShowUpgradeModal
 }) => {
-  const [formValues, setFormValues] = useState<FormValues>({});
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [reading, setReading] = useState('');
   const [message, setMessage] = useState('');
 
   const inputClassName = `w-full p-3 rounded-lg bg-opacity-50 ${
     isDarkMode
-      ? 'bg-indigo-900 text-white placeholder-indigo-300 border-indigo-700'
-      : 'bg-white text-gray-800 placeholder-gray-400 border-indigo-100'
-  } border focus:outline-none focus:ring-2 focus:ring-indigo-500`;
-
-  const labelClassName = `block mb-2 ${
-    isDarkMode ? 'text-indigo-200' : 'text-gray-700'
+      ? 'bg-gray-800 text-white placeholder-gray-400'
+      : 'bg-white text-gray-900 placeholder-gray-500'
   }`;
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormValues(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormValues(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!onReadingRequest()) {
+      return;
+    }
+
     setError('');
     setIsLoading(true);
 
@@ -61,7 +53,7 @@ const ReadingForm: React.FC<Props> = ({
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({ readingType, userInput: formValues })
+        body: JSON.stringify({ readingType: readingType.id, userInput: formValues })
       });
 
       const data = await response.json();
@@ -76,7 +68,8 @@ const ReadingForm: React.FC<Props> = ({
         return;
       }
 
-      setReading(data.reading);
+      // Call onReadingComplete with the reading
+      onReadingComplete(data.reading);
       
       // Show remaining readings message for free users
       if (data.readingsRemaining !== null) {
@@ -89,53 +82,42 @@ const ReadingForm: React.FC<Props> = ({
     }
   };
 
-  const getReadingTitle = (type: ReadingType) => {
-    return type.name;
-  };
-
-  const renderForm = () => {
-    const formProps = {
-      isDarkMode,
-      inputClassName,
-      labelClassName,
-      values: formValues,
-      onChange: handleInputChange
-    };
-
-    switch (readingType.id) {
-      case 'numerology':
-        return <NumerologyForm {...formProps} />;
-      case 'astrology':
-        return <AstrologyForm {...formProps} />;
-      case 'angels':
-        return <AngelNumbersForm {...formProps} />;
-      case 'horoscope':
-        return <HoroscopeForm {...formProps} />;
-      case 'dreams':
-        return <DreamForm {...formProps} />;
-      case 'aura':
-        return <AuraForm {...formProps} />;
-      case 'pastlife':
-        return <PastLifeForm {...formProps} />;
-      case 'magic8ball':
-        return <Magic8BallForm {...formProps} />;
-      default:
-        return <QuestionForm {...formProps} />;
-    }
-  };
-
   return (
-    <form onSubmit={handleSubmit} className={`p-6 rounded-xl reading-form ${
-      isDarkMode
-        ? 'bg-indigo-900/30 backdrop-blur-sm'
-        : 'bg-white/80 backdrop-blur-sm'
-    } shadow-xl`}>
-      <h2 className={`text-2xl font-semibold mb-6 ${
-        isDarkMode ? 'text-white' : 'text-gray-800'
-      }`}>
-        {getReadingTitle(readingType)}
-      </h2>
-      {renderForm()}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {readingType.fields.map((field) => (
+        <div key={field.name} className="space-y-2">
+          <label
+            htmlFor={field.name}
+            className={`block text-sm font-medium ${
+              isDarkMode ? 'text-gray-200' : 'text-gray-700'
+            }`}
+          >
+            {field.label}
+          </label>
+          {field.type === 'textarea' ? (
+            <textarea
+              id={field.name}
+              name={field.name}
+              placeholder={field.placeholder}
+              required={field.required}
+              value={formValues[field.name] || ''}
+              onChange={handleInputChange}
+              className={`${inputClassName} min-h-[100px]`}
+            />
+          ) : (
+            <input
+              type={field.type}
+              id={field.name}
+              name={field.name}
+              placeholder={field.placeholder}
+              required={field.required}
+              value={formValues[field.name] || ''}
+              onChange={handleInputChange}
+              className={inputClassName}
+            />
+          )}
+        </div>
+      ))}
       {error && (
         <div className="mb-4 p-3 rounded-lg bg-red-500/10 text-red-500 text-sm">
           {error}
@@ -149,16 +131,14 @@ const ReadingForm: React.FC<Props> = ({
       <button
         type="submit"
         disabled={isLoading}
-        className={`w-full py-3 px-6 rounded-lg ${
-          isDarkMode
-            ? 'bg-indigo-600 hover:bg-indigo-700'
-            : 'bg-indigo-500 hover:bg-indigo-600'
-        } text-white transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed`}
+        className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-colors ${
+          isLoading
+            ? 'bg-gray-400 cursor-not-allowed'
+            : 'bg-indigo-600 hover:bg-indigo-700'
+        }`}
       >
-        {isLoading ? 'Generating Reading...' : 'Get Your Reading'}
+        {isLoading ? 'Getting Your Reading...' : 'Get Reading'}
       </button>
     </form>
   );
 };
-
-export default ReadingForm;
