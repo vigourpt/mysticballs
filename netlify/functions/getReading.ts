@@ -277,8 +277,7 @@ const handler: Handler = async (event, context) => {
         { role: "user", content: prompt }
       ],
       temperature: config.temperature,
-      max_tokens: config.maxTokens,
-      timeout: 9000
+      max_tokens: config.maxTokens
     });
 
     return {

@@ -112,7 +112,7 @@ export const createUserProfile = async (userId: string, email: string, displayNa
   const profile: UserProfile = {
     id: userId,
     email,
-    display_name: displayName ?? email.split('@')[0],
+    display_name: displayName || null,
     readings_count: 0,
     is_premium: false,
     last_reading_date: null,
