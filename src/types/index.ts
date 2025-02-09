@@ -30,7 +30,7 @@ export interface PricingPlan {
 }
 
 // Form Types
-export interface FormField {
+export interface ReadingField {
   name: string;
   label: string;
   type: 'text' | 'textarea' | 'date' | 'email' | 'number';
@@ -42,8 +42,8 @@ export interface ReadingType {
   id: string;
   name: string;
   description: string;
-  formFields: FormField[];
-  icon?: string;
+  icon: string;
+  fields: ReadingField[];
 }
 
 export interface Step {
