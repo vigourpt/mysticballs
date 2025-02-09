@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ReadingType, ReadingField } from '../types';
+import { ReadingType, FormField } from '../types';
 
 interface Props {
   readingType: ReadingType;
@@ -84,7 +84,7 @@ const ReadingForm: React.FC<Props> = ({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {readingType.fields.map((field: ReadingField) => (
+      {readingType.formFields.map((field: FormField) => (
         <div key={field.name} className="space-y-2">
           <label
             htmlFor={field.name}

@@ -1,8 +1,13 @@
-export interface UserUsage {
-  readingsCount: number;
-  isPremium: boolean;
-  lastReadingDate?: string | null;
-  readingsRemaining: number;
+// Database Types
+export interface User {
+  id: string;
+  email: string;
+  display_name: string | null;
+  readings_count: number;
+  is_premium: boolean;
+  last_reading_date: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface UserProfile {
@@ -16,15 +21,16 @@ export interface UserProfile {
   updated_at: string;
 }
 
-export interface PaymentPlan {
+export interface PricingPlan {
   id: string;
   name: string;
   price: number;
-  priceId: string;
+  description: string;
   features: string[];
 }
 
-export interface ReadingField {
+// Form Types
+export interface FormField {
   name: string;
   label: string;
   type: 'text' | 'textarea' | 'date' | 'email' | 'number';
@@ -36,16 +42,20 @@ export interface ReadingType {
   id: string;
   name: string;
   description: string;
-  fields: ReadingField[];
+  formFields: FormField[];
   icon?: string;
 }
 
 export interface Step {
   target: string;
-  title: string;
   content: string;
-  position: "top" | "bottom" | "left" | "right";
-  size?: "small" | "medium" | "large";
+}
+
+export interface UserUsage {
+  readingsCount: number;
+  isPremium: boolean;
+  lastReadingDate?: string | null;
+  readingsRemaining: number;
 }
 
 export interface CheckoutResult {
