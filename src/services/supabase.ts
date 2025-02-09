@@ -110,7 +110,7 @@ export const signInWithEmail = async (email: string, password: string) => {
 // User Profile Management
 export const createUserProfile = async (userId: string, email: string, displayName?: string): Promise<UserProfile | null> => {
   const profile: UserProfile = {
-    user_id: userId,
+    id: userId,
     email,
     display_name: displayName ?? email.split('@')[0],
     readings_count: 0,
@@ -138,7 +138,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
   const { data, error } = await supabase
     .from('user_profiles')
     .select()
-    .eq('user_id', userId)
+    .eq('id', userId)
     .single();
 
   if (error) {
@@ -151,7 +151,7 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 
 export const incrementReadingCount = async (userId: string): Promise<void> => {
   const { error } = await supabase.rpc('increment_reading_count', {
-    p_user_id: userId
+    p_id: userId
   });
 
   if (error) {
@@ -167,7 +167,7 @@ export const updatePremiumStatus = async (userId: string, isPremium: boolean): P
       is_premium: isPremium,
       updated_at: new Date().toISOString()
     } as Tables['user_profiles']['Update'])
-    .eq('user_id', userId);
+    .eq('id', userId);
 
   if (error) {
     console.error('Error updating premium status:', error);

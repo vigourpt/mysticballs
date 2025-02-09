@@ -11,7 +11,7 @@ export interface Database {
     Tables: {
       user_profiles: {
         Row: {
-          user_id: string
+          id: string
           email: string
           display_name: string | null
           readings_count: number
@@ -21,7 +21,7 @@ export interface Database {
           updated_at: string
         }
         Insert: {
-          user_id: string
+          id: string
           email: string
           display_name?: string | null
           readings_count?: number
@@ -31,7 +31,7 @@ export interface Database {
           updated_at?: string
         }
         Update: {
-          user_id?: string
+          id?: string
           email?: string
           display_name?: string | null
           readings_count?: number
@@ -47,7 +47,7 @@ export interface Database {
     }
     Functions: {
       increment_reading_count: {
-        Args: { p_user_id: string }
+        Args: { p_id: string }
         Returns: void
       }
     }

@@ -6,7 +6,7 @@ export interface UserUsage {
 }
 
 export interface UserProfile {
-  user_id: string;
+  id: string;
   email: string;
   display_name?: string;
   readings_count: number;
