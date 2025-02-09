@@ -34,7 +34,7 @@ export const getReading = async (
     }
     validateRequiredFields(readingType, userInput);
 
-    console.log('Processing reading type:', readingType);
+    console.log('Processing reading type:', readingType, 'with input:', userInput);
     
     const response = await fetch('/.netlify/functions/getReading', {
       method: 'POST',
@@ -47,12 +47,18 @@ export const getReading = async (
       })
     });
 
+    const data = await response.json();
+    
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Reading generation failed');
+      console.error('API error:', data);
+      throw new Error(data.error || 'Reading generation failed');
     }
 
-    const data = await response.json();
+    if (!data.reading) {
+      console.error('No reading in response:', data);
+      throw new Error('No reading generated');
+    }
+
     return data.reading;
   } catch (error) {
     console.error('Error in getReading:', error);
@@ -61,9 +67,13 @@ export const getReading = async (
     let userMessage = 'Reading generation failed. ';
     if (error instanceof Error) {
       if (error.message.includes('Missing required fields')) {
-        userMessage += error.message;
+        userMessage = error.message;
+      } else if (error.message.includes('API key')) {
+        userMessage = 'API configuration error. Please contact support.';
+      } else if (error.message.includes('rate limit')) {
+        userMessage = 'Too many requests. Please try again in a moment.';
       } else {
-        userMessage += 'Please try again later.';
+        userMessage += error.message;
       }
     }
     

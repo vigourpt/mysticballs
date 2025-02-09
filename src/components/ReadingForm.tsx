@@ -9,6 +9,7 @@ import NumerologyForm from './forms/NumerologyForm';
 import QuestionForm from './forms/QuestionForm';
 import AuraForm from './forms/AuraForm';
 import PastLifeForm from './forms/PastLifeForm';
+import Magic8BallForm from './forms/Magic8BallForm';
 import { FormValues } from './forms/types';
 
 interface Props {
@@ -55,6 +56,7 @@ const ReadingForm: React.FC<Props> = ({
     try {
       // Map form values to expected API input fields
       const userInput: Record<string, string> = { ...formValues };
+      console.log('Submitting form with values:', { readingType: readingType.id, userInput });
 
       // Special handling for specific reading types
       switch (readingType.id) {
@@ -117,17 +119,11 @@ const ReadingForm: React.FC<Props> = ({
       const reading = await getReading(readingType.id, userInput);
       onReadingComplete(reading);
     } catch (err) {
-      console.error('Reading error:', err);
+      console.error('Form submission error:', err);
       let errorMessage = 'Failed to generate reading';
       
       if (err instanceof Error) {
-        if (err.message.includes('API key')) {
-          errorMessage = 'API configuration error. Please contact support.';
-        } else if (err.message.includes('rate limit')) {
-          errorMessage = 'Too many requests. Please try again in a moment.';
-        } else {
-          errorMessage = `Reading generation failed: ${err.message}`;
-        }
+        errorMessage = err.message;
       }
       
       setError(errorMessage);
@@ -164,6 +160,8 @@ const ReadingForm: React.FC<Props> = ({
         return <AuraForm {...formProps} />;
       case 'pastlife':
         return <PastLifeForm {...formProps} />;
+      case 'magic8ball':
+        return <Magic8BallForm {...formProps} />;
       default:
         return <QuestionForm {...formProps} />;
     }

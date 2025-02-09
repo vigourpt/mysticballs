@@ -14,7 +14,7 @@ const QuestionForm: React.FC<FormProps> = ({
       value={values.question || ''}
       onChange={(e) => onChange('question', e.target.value)}
       className={`${inputClassName} h-32 resize-none`}
-      placeholder="What would you like to know?"
+      placeholder="What would you like to know? Feel free to provide context and details for a more meaningful reading."
       required
     />
   </div>
