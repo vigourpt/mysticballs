@@ -8,7 +8,7 @@ export interface UserUsage {
 export interface UserProfile {
   id: string;
   email: string;
-  display_name?: string;
+  display_name: string | null;
   readings_count: number;
   is_premium: boolean;
   last_reading_date: string | null;
@@ -24,12 +24,21 @@ export interface PaymentPlan {
   features: string[];
 }
 
-export type ReadingType = {
+export interface ReadingField {
+  name: string;
+  label: string;
+  type: 'text' | 'textarea' | 'date' | 'email' | 'number';
+  placeholder: string;
+  required: boolean;
+}
+
+export interface ReadingType {
   id: string;
   name: string;
   description: string;
-  icon: string;
-};
+  fields: ReadingField[];
+  icon?: string;
+}
 
 export interface Step {
   target: string;
