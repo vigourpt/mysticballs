@@ -1,5 +1,5 @@
 // Database Types
-export interface User {
+export type User = {
   id: string;
   email: string;
   display_name: string | null;
@@ -8,9 +8,9 @@ export interface User {
   last_reading_date: string | null;
   created_at: string;
   updated_at: string;
-}
+};
 
-export interface UserProfile {
+export type UserProfile = {
   id: string;
   email: string;
   display_name: string | null;
@@ -19,15 +19,7 @@ export interface UserProfile {
   last_reading_date: string | null;
   created_at: string;
   updated_at: string;
-}
-
-export interface PricingPlan {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  features: string[];
-}
+};
 
 // Form Types
 export interface ReadingField {
@@ -46,19 +38,48 @@ export interface ReadingType {
   fields: ReadingField[];
 }
 
-export interface Step {
-  target: string;
-  content: string;
+export interface PricingPlan {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  features: string[];
 }
 
-export interface UserUsage {
+export type Step = {
+  target: string;
+  content: string;
+};
+
+export type UserUsage = {
   readingsCount: number;
   isPremium: boolean;
   lastReadingDate?: string | null;
   readingsRemaining: number;
-}
+};
 
 export interface CheckoutResult {
-  url?: string;
-  error?: string;
+  sessionId: string;
 }
+
+export interface PricingPlan {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  features: string[];
+}
+
+export interface ReadingField {
+  name: string;
+  label: string;
+  type: 'text' | 'textarea' | 'date' | 'email' | 'number';
+  placeholder: string;
+  required: boolean;
+}
+
+export type Session = {
+  access_token: string;
+  refresh_token: string;
+  user: User;
+};

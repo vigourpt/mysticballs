@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { ReadingType, ReadingField } from '../types';
 
 interface Props {
-  readingType: ReadingType;
   isDarkMode: boolean;
+  readingType: ReadingType;
   onReadingComplete: (reading: string) => void;
   onReadingRequest: () => boolean;
   session: any;

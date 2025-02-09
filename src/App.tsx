@@ -1,5 +1,5 @@
 import { FC, useState, useEffect } from 'react';
-import { ReadingType, PaymentPlan } from './types';
+import { ReadingType, PricingPlan } from './types';
 import { useAuth } from './hooks/useAuth';
 import { useUsageTracking } from './hooks/useUsageTracking';
 import { supabase } from './services/supabase';
@@ -23,9 +23,9 @@ const READING_TYPES: ReadingType[] = [
     fields: [
       {
         name: 'topic',
-        label: 'Area of Focus',
+        label: 'Focus Area',
         type: 'text',
-        placeholder: 'e.g. Love, Career, Personal Growth',
+        placeholder: 'Love, Career...',
         required: true
       },
       {
@@ -323,13 +323,18 @@ const READING_TYPES: ReadingType[] = [
   }
 ];
 
+interface Props {
+  isDarkMode: boolean;
+}
+
 const App: FC = () => {
-  const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedReading, setSelectedReading] = useState<ReadingType | null>(null);
-  const [hasCompletedReading, setHasCompletedReading] = useState(false);
   const [currentPage, setCurrentPage] = useState<'home' | 'privacy' | 'terms'>('home');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
+
+  const handleDarkModeToggle = () => setIsDarkMode(!isDarkMode);
 
   const { user, signOut } = useAuth();
   const { usage, loading: usageLoading } = useUsageTracking(user?.id ?? null);
@@ -351,11 +356,7 @@ const App: FC = () => {
     }
   }, [user]);
 
-  const handleDarkModeToggle = () => {
-    setIsDarkMode(prev => !prev);
-  };
-
-  const handleSubscribe = async (plan: PaymentPlan) => {
+  const handleSubscribe = async (plan: PricingPlan) => {
     // Implementation will be added later
     console.log('Subscribing to plan:', plan);
   };
@@ -364,9 +365,8 @@ const App: FC = () => {
     setShowLoginModal(true);
   };
 
-  const handleReadingComplete = (reading: string) => {
+  const handleReadingComplete = () => {
     setSelectedReading(null);
-    setHasCompletedReading(true);
   };
 
   const handleReadingRequest = () => {
@@ -380,103 +380,74 @@ const App: FC = () => {
   // Show loading spinner during authentication
   if (usageLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-500"></div>
+      <div className={`min-h-screen flex items-center justify-center bg-gray-900`}>
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'dark bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 text-white">
-        <Header
-          user={user}
-          isDarkMode={isDarkMode}
-          onDarkModeToggle={handleDarkModeToggle}
-          onLoginClick={() => setShowLoginModal(true)}
-          onLogoutClick={signOut}
-        />
+    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+      <Header
+        isDarkMode={isDarkMode}
+        onDarkModeToggle={handleDarkModeToggle}
+        user={user}
+        onSignOut={signOut}
+      />
 
-        <main className="container mx-auto px-4 py-8">
-          {currentPage === 'privacy' ? (
-            <div>
-              <button
-                onClick={() => setCurrentPage('home')}
-                className="mb-6 px-4 py-2 rounded-lg bg-indigo-800 text-white hover:bg-indigo-700 transition-colors"
-              >
-                ← Back to Home
-              </button>
-              <PrivacyPolicy />
-            </div>
-          ) : currentPage === 'terms' ? (
-            <div>
-              <button
-                onClick={() => setCurrentPage('home')}
-                className="mb-6 px-4 py-2 rounded-lg bg-indigo-800 text-white hover:bg-indigo-700 transition-colors"
-              >
-                ← Back to Home
-              </button>
-              <TermsOfService />
-            </div>
-          ) : (
-            <div>
-              <div className="text-center mb-8">
-                <h1 className="text-4xl font-bold mb-4">Welcome to Mystic Balls</h1>
-                {user && <p className="text-lg">Welcome back, {user.email}</p>}
-                <p className="text-sm text-gray-300">Readings remaining: {usage?.readingsRemaining || 0}</p>
-              </div>
-
-              {!selectedReading ? (
-                <ReadingSelector
-                  readingTypes={READING_TYPES}
-                  onSelect={setSelectedReading}
+      <main className="container mx-auto px-4 py-8">
+        {currentPage === 'home' ? (
+          <>
+            {selectedReading ? (
+              <div className="max-w-2xl mx-auto">
+                <button
+                  onClick={() => setSelectedReading(null)}
+                  className={`mb-8 flex items-center space-x-2 text-gray-300 hover:text-white`}
+                >
+                  <span>← Back to Reading Types</span>
+                </button>
+                <ReadingForm
+                  readingType={selectedReading}
+                  onReadingComplete={handleReadingComplete}
+                  onReadingRequest={handleReadingRequest}
+                  session={supabase.auth.getSession()}
+                  setShowUpgradeModal={setShowPaymentModal}
                   isDarkMode={isDarkMode}
                 />
-              ) : (
-                <div className="max-w-2xl mx-auto">
-                  <button
-                    onClick={() => setSelectedReading(null)}
-                    className="mb-4 text-purple-300 hover:text-purple-100"
-                  >
-                    ← Back to Reading Types
-                  </button>
-                  
-                  <ReadingForm
-                    readingType={selectedReading}
-                    isDarkMode={isDarkMode}
-                    onReadingComplete={handleReadingComplete}
-                    onReadingRequest={handleReadingRequest}
-                    session={supabase.auth.session()}
-                    setShowUpgradeModal={setShowPaymentModal}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-        </main>
+              </div>
+            ) : (
+              <ReadingSelector
+                readingTypes={READING_TYPES}
+                onSelect={setSelectedReading}
+              />
+            )}
+          </>
+        ) : currentPage === 'privacy' ? (
+          <PrivacyPolicy />
+        ) : (
+          <TermsOfService />
+        )}
+      </main>
 
-        <Footer
-          isDarkMode={isDarkMode}
-          onPrivacyClick={() => setCurrentPage('privacy')}
-          onTermsClick={() => setCurrentPage('terms')}
-        />
+      <Footer
+        onPrivacyClick={() => setCurrentPage('privacy')}
+        onTermsClick={() => setCurrentPage('terms')}
+      />
 
-        <LoginModal
-          isOpen={showLoginModal}
-          onClose={() => setShowLoginModal(false)}
-          isDarkMode={isDarkMode}
-        />
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+      />
 
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          user={user}
-          isDarkMode={isDarkMode}
-          onLoginRequired={handleLoginRequired}
-          onSubscribe={handleSubscribe}
-          remainingReadings={usage?.readingsRemaining || 0}
-        />
-      </div>
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        user={user}
+        onLoginRequired={handleLoginRequired}
+        onSubscribe={handleSubscribe}
+        remainingReadings={usage?.readingsRemaining || 0}
+        isDarkMode={isDarkMode}
+      />
     </div>
   );
 };

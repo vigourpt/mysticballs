@@ -1,35 +1,34 @@
 import React, { useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { PaymentPlan, CheckoutResult } from '../types';
+import { PricingPlan } from '../types';
 import { PAYMENT_PLANS } from '../config/plans';
-import { createCheckoutSession } from '../services/stripe';
 import LoadingSpinner from './LoadingSpinner';
 import { useAuth } from '../hooks/useAuth';
 import { Check } from 'lucide-react';
 
 interface PaymentModalProps {
   isOpen: boolean;
+  isDarkMode: boolean;
   onClose: () => void;
   user: User | null;
-  isDarkMode: boolean;
-  onLoginRequired?: () => void;
-  onSubscribe: (plan: PaymentPlan) => void;
+  onSubscribe: (plan: PricingPlan) => Promise<void>;
   remainingReadings: number;
+  onLoginRequired?: () => void;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
   isOpen,
+  isDarkMode,
   onClose,
   user,
-  isDarkMode,
-  onLoginRequired,
   onSubscribe,
-  remainingReadings
+  remainingReadings,
+  onLoginRequired
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubscribe = async (plan: PaymentPlan) => {
+  const handleSubscribe = async (plan: PricingPlan) => {
     if (!user) {
       onLoginRequired?.();
       return;
@@ -39,7 +38,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       setIsLoading(true);
       setError(null);
       
-      const result: CheckoutResult = await createCheckoutSession(plan.priceId, user.id, user.email ?? '');
+      const response = await fetch('/.netlify/functions/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ price: plan.price, customerId: user?.id })
+      });
+      const result = await response.json();
       
       if (result.error) {
         throw new Error(result.error);

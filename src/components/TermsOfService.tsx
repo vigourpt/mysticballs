@@ -1,8 +1,12 @@
 import React from 'react';
 
-const TermsOfService: React.FC = () => {
+interface Props {
+  isDarkMode: boolean;
+}
+
+const TermsOfService: React.FC<Props> = ({ isDarkMode }) => {
   return (
-    <div className="container mx-auto px-4 py-8 text-indigo-200">
+    <div className={`container mx-auto px-4 py-8 text-indigo-200 ${isDarkMode ? 'dark-mode' : ''}`}>
       <h1 className="text-3xl font-bold text-white mb-6">Terms of Service</h1>
       
       <div className="space-y-6">

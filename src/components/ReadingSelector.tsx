@@ -1,16 +1,12 @@
 import React from 'react';
-import { DivideIcon as LucideIcon } from 'lucide-react';
+import type { LucideProps } from 'lucide-react';
 import { ReadingType } from '../types';
 import ReadingTypeInfo from './ReadingTypeInfo';
-
-interface ReadingTypeOption extends ReadingType {
-  icon: LucideIcon;
-  instructions?: string;
-}
+import { Dispatch, SetStateAction } from 'react';
 
 interface Props {
-  readingTypes: ReadingTypeOption[];
-  onSelect: (type: ReadingType) => void;
+  readingTypes: (ReadingType & { icon: React.FC<LucideProps> })[];
+  onSelect: Dispatch<SetStateAction<ReadingType | null>>;
   isDarkMode: boolean;
 }
 

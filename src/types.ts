@@ -5,6 +5,14 @@ export interface ReadingType {
   name: string;
   description: string;
   icon: string;
+  fields?: ReadingField[];
+}
+
+export interface ReadingField {
+  name: string;
+  type: 'text' | 'number' | 'date' | 'select';
+  options?: string[];
+  required: boolean;
 }
 
 export interface UserUsage {
@@ -21,6 +29,11 @@ export interface PaymentPlan {
   description: string;
   features: string[];
   readingsPerMonth: number;
+}
+
+export interface PricingPlan extends PaymentPlan {
+  stripePriceId: string;
+  recommended?: boolean;
 }
 
 export interface Step {
