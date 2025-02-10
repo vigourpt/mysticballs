@@ -69,10 +69,6 @@ const ReadingSelector: React.FC<Props> = ({ READING_TYPES, onSelect, isDarkMode 
         ))}
       </div>
 
-      {/* Reading Type Information for SEO */}
-      <ReadingTypeInfo isDarkMode={isDarkMode} />
-
-      {/* Instructions Section */}
       <div className={`p-6 rounded-xl ${
         isDarkMode
           ? 'bg-indigo-900/30 backdrop-blur-sm'
@@ -93,8 +89,6 @@ const ReadingSelector: React.FC<Props> = ({ READING_TYPES, onSelect, isDarkMode 
           <li>Approach the reading with an open mind and heart</li>
         </ul>
       </div>
-
-      {/* FAQ Section */}
       <div className={`p-6 rounded-xl ${
         isDarkMode
           ? 'bg-indigo-900/30 backdrop-blur-sm'
