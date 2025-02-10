@@ -18,7 +18,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'daily-guidance',
     name: 'Daily Guidance',
-    description: 'Get spiritual guidance for your day ahead',
+    description: 'Receive spiritual insights and guidance tailored to your day ahead, helping you navigate challenges and opportunities with clarity and purpose.',
     icon: Scroll,
     fields: [
       {
@@ -33,7 +33,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'love-reading',
     name: 'Love Reading',
-    description: 'Insights into your love life and relationships',
+    description: 'Explore the depths of your relationships, understand romantic patterns, and receive guidance on matters of the heart to foster deeper connections.',
     icon: Heart,
     fields: [
       {
@@ -54,7 +54,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'career-guidance',
     name: 'Career Path',
-    description: 'Navigate your professional journey',
+    description: 'Gain clarity on your professional journey, identify opportunities for growth, and align your career with your soul's purpose and talents.',
     icon: Compass,
     fields: [
       {
@@ -76,7 +76,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'spiritual-journey',
     name: 'Spiritual Journey',
-    description: 'Explore your spiritual path and growth',
+    description: 'Deepen your spiritual connection, understand your soul's evolution, and receive guidance on your path to higher consciousness and enlightenment.',
     icon: Star,
     fields: [
       {
@@ -91,7 +91,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'past-life',
     name: 'Past Life',
-    description: 'Discover connections to your past lives',
+    description: 'Uncover the mysteries of your past lives, understand karmic patterns, and gain insights into how previous incarnations influence your present journey.',
     icon: Hourglass,
     fields: [
       {
@@ -106,7 +106,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'chakra-reading',
     name: 'Chakra Reading',
-    description: 'Analyze and balance your energy centers',
+    description: 'Examine your energy centers, identify blockages, and receive guidance on balancing and harmonizing your chakras for optimal wellbeing.',
     icon: Sparkles,
     fields: [
       {
@@ -121,7 +121,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'angel-guidance',
     name: 'Angel Guidance',
-    description: 'Connect with your guardian angels',
+    description: 'Connect with your guardian angels and spiritual guides to receive divine messages, protection, and guidance on your life's journey.',
     icon: Crown,
     fields: [
       {
@@ -136,7 +136,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'crystal-reading',
     name: 'Crystal Reading',
-    description: 'Discover which crystals can help you',
+    description: 'Discover which crystals resonate with your energy and learn how to harness their healing properties for spiritual growth and emotional balance.',
     icon: Gem,
     fields: [
       {
@@ -151,7 +151,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'manifestation',
     name: 'Manifestation',
-    description: 'Learn how to manifest your desires',
+    description: 'Learn powerful techniques to manifest your desires, align with universal energy, and create positive changes in your life through spiritual practice.',
     icon: Wand2,
     fields: [
       {
@@ -166,7 +166,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'numerology',
     name: 'Numerology',
-    description: 'Understand the numbers in your life',
+    description: 'Decode the spiritual significance of numbers in your life, understand your life path number, and gain insights into your destiny and personal cycles.',
     icon: Moon,
     fields: [
       {
@@ -180,7 +180,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'aura-reading',
     name: 'Aura Reading',
-    description: 'Understand your energy field',
+    description: 'Explore the colors and energies of your aura, understand their meanings, and learn how to maintain and strengthen your energetic field.',
     icon: Sun,
     fields: [
       {
@@ -195,7 +195,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'life-purpose',
     name: 'Life Purpose',
-    description: 'Discover your soul\'s mission',
+    description: 'Uncover your soul's mission, identify your unique gifts, and receive guidance on aligning your life with your higher purpose and spiritual calling.',
     icon: Flower2,
     fields: [
       {

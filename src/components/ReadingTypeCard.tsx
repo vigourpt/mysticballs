@@ -3,49 +3,23 @@ import { ReadingType } from '../types';
 
 interface Props {
   readingType: ReadingType;
-  selected: boolean;
   onClick: () => void;
-  isDarkMode: boolean;
 }
 
-const ReadingTypeCard: React.FC<Props> = ({ readingType, selected, onClick, isDarkMode }) => {
+const ReadingTypeCard: React.FC<Props> = ({ readingType, onClick }) => {
   const Icon = readingType.icon;
   
   return (
-    <div
+    <button
       onClick={onClick}
-      className={`p-6 rounded-lg cursor-pointer transition-all transform hover:scale-105
-        ${selected
-          ? isDarkMode
-            ? 'bg-purple-900 ring-2 ring-purple-400'
-            : 'bg-purple-100 ring-2 ring-purple-500'
-          : isDarkMode
-            ? 'bg-gray-800 hover:bg-gray-700'
-            : 'bg-white hover:bg-gray-50'
-        }
-        ${isDarkMode ? 'text-white' : 'text-gray-900'}
-      `}
+      className="w-full h-full flex flex-col items-center text-center p-8 bg-indigo-900/40 rounded-xl transition-all duration-300 hover:bg-indigo-800/40 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 group"
     >
-      <div className="flex items-center space-x-4">
-        <div className={`p-3 rounded-full ${
-          selected
-            ? isDarkMode
-              ? 'bg-purple-800 text-purple-200'
-              : 'bg-purple-200 text-purple-700'
-            : isDarkMode
-              ? 'bg-gray-700 text-gray-300'
-              : 'bg-gray-100 text-gray-600'
-        }`}>
-          <Icon size={24} strokeWidth={2} />
-        </div>
-        <div>
-          <h3 className="font-semibold">{readingType.name}</h3>
-          <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            {readingType.description}
-          </p>
-        </div>
+      <div className="p-4 mb-4 bg-indigo-800/40 rounded-xl group-hover:bg-indigo-700/40">
+        <Icon className="w-8 h-8 text-purple-200" />
       </div>
-    </div>
+      <h3 className="text-lg font-semibold text-white mb-2">{readingType.name}</h3>
+      <p className="text-sm text-gray-300">{readingType.description}</p>
+    </button>
   );
 };
 
