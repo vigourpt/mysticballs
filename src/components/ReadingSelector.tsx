@@ -77,26 +77,6 @@ const ReadingSelector: React.FC<Props> = ({ READING_TYPES, onSelect, isDarkMode 
         <h3 className={`text-xl font-semibold mb-4 ${
           isDarkMode ? 'text-white' : 'text-gray-800'
         }`}>
-          How to Get the Most from Your Reading
-        </h3>
-        <ul className={`list-disc list-inside space-y-2 ${
-          isDarkMode ? 'text-indigo-200' : 'text-gray-600'
-        }`}>
-          <li>Find a quiet, peaceful space where you won't be disturbed</li>
-          <li>Take a few deep breaths to center yourself before starting</li>
-          <li>Focus on your question or intention with clarity and openness</li>
-          <li>Be specific in your questions, but avoid yes/no formats</li>
-          <li>Approach the reading with an open mind and heart</li>
-        </ul>
-      </div>
-      <div className={`p-6 rounded-xl ${
-        isDarkMode
-          ? 'bg-indigo-900/30 backdrop-blur-sm'
-          : 'bg-white/80 backdrop-blur-sm'
-      } shadow-xl`}>
-        <h3 className={`text-xl font-semibold mb-4 ${
-          isDarkMode ? 'text-white' : 'text-gray-800'
-        }`}>
           Frequently Asked Questions
         </h3>
         <div className="space-y-4">
