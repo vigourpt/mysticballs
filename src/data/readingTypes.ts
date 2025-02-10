@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import type { ReadingType } from '../types';
 
-export const readingTypes: ReadingType[] = [
+export const READING_TYPES: ReadingType[] = [
   {
     id: 'daily-guidance',
     name: 'Daily Guidance',
