@@ -1,6 +1,6 @@
 import {
   Scroll,
-  Cards,
+  Layout,
   Hash,
   Star,
   Sparkles,
@@ -19,7 +19,7 @@ export const READING_TYPES: ReadingType[] = [
     id: 'tarot',
     name: 'Tarot Reading',
     description: 'Use a deck of 78 cards rich with symbolism to gain insights into your life path, relationships, and future possibilities.',
-    icon: Cards,
+    icon: Layout,
     fields: [
       {
         name: 'question',
