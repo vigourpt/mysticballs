@@ -54,7 +54,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'career-guidance',
     name: 'Career Path',
-    description: 'Gain clarity on your professional journey, identify opportunities for growth, and align your career with your soul's purpose and talents.',
+    description: 'Gain clarity on your professional journey, identify opportunities for growth, and align your career with your soul\'s purpose and talents.',
     icon: Compass,
     fields: [
       {
