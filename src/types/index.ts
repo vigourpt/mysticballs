@@ -1,10 +1,13 @@
 // Database Types
-import { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 export interface User {
   id: string;
   email: string;
-  access_token: string;
+  subscription?: {
+    status: 'active' | 'inactive';
+    plan: string;
+  };
 }
 
 export interface UserProfile {
@@ -19,27 +22,26 @@ export interface UserProfile {
 }
 
 // Form Types
-export interface ReadingField {
-  name: string;
-  type: 'text' | 'number' | 'date' | 'select' | 'textarea';
-  displayName: string;
-  placeholder?: string;
-  required: boolean;
-}
-
 export type ReadingTypeId = 
   | 'daily-guidance'
   | 'love-reading'
   | 'career-guidance'
   | 'spiritual-journey'
-  | 'past-life'
   | 'chakra-reading'
-  | 'angel-guidance'
   | 'crystal-reading'
   | 'manifestation'
-  | 'numerology'
   | 'aura-reading'
   | 'life-purpose';
+
+export interface ReadingField {
+  name: string;
+  type: 'text' | 'textarea' | 'number' | 'date' | 'select';
+  label: string;
+  displayName: string;
+  placeholder?: string;
+  required: boolean;
+  options?: string[];
+}
 
 export interface ReadingType {
   id: ReadingTypeId;
@@ -57,10 +59,9 @@ export type Step = {
 };
 
 export type UserUsage = {
-  readingsCount: number;
-  isPremium: boolean;
-  lastReadingDate?: string | null;
   readingsRemaining: number;
+  totalReadings: number;
+  lastReadingDate: string | null;
 };
 
 export interface CheckoutResult {
@@ -83,8 +84,23 @@ export interface PaymentModalProps {
   remainingReadings: number;
 }
 
-export type Session = {
+export interface Session {
   access_token: string;
   refresh_token: string;
   user: User;
-};
+}
+
+export interface Reading {
+  id: string;
+  userId: string;
+  readingTypeId: ReadingTypeId;
+  formData: Record<string, string>;
+  createdAt: Date;
+  response?: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  loading: boolean;
+  error: Error | null;
+}

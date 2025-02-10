@@ -5,12 +5,14 @@ import type { User } from '../types';
 interface AuthState {
   user: User | null;
   loading: boolean;
+  error: Error | null;
 }
 
 export const useAuthState = (): AuthState => {
   const [state, setState] = useState<AuthState>({
     user: null,
-    loading: true
+    loading: true,
+    error: null
   });
 
   useEffect(() => {
@@ -33,11 +35,12 @@ export const useAuthState = (): AuthState => {
               email: session.user.email || '',
               access_token: session.access_token
             },
-            loading: false
+            loading: false,
+            error: null
           });
         }
       } else if (event === 'SIGNED_OUT') {
-        setState({ user: null, loading: false });
+        setState({ user: null, loading: false, error: null });
       }
     });
 
@@ -51,10 +54,11 @@ export const useAuthState = (): AuthState => {
             email: session.user.email || '',
             access_token: session.access_token
           },
-          loading: false
+          loading: false,
+          error: null
         });
       } else {
-        setState({ user: null, loading: false });
+        setState({ user: null, loading: false, error: null });
       }
     };
 

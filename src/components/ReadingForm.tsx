@@ -1,98 +1,111 @@
-import React from 'react';
-import { ReadingType, ReadingField } from '../types';
+import { useState } from 'react';
+import type { ReadingType, ReadingField } from '../types';
 
 interface Props {
   readingType: ReadingType;
-  onSubmit: (formData: Record<string, string>) => void;
-  isDarkMode: boolean;
+  onSubmit: (formData: Record<string, string>) => Promise<void>;
+  onClose: () => void;
+  isDarkMode?: boolean;
 }
 
-const ReadingForm: React.FC<Props> = ({ readingType, onSubmit, isDarkMode }) => {
-  const [formData, setFormData] = React.useState<Record<string, string>>({});
+export const ReadingForm = ({ readingType, onSubmit, onClose, isDarkMode = true }: Props) => {
+  const [formData, setFormData] = useState<Record<string, string>>({});
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    await onSubmit(formData);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (field: ReadingField, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [e.target.name]: e.target.value
+      [field.name]: value
     }));
   };
 
-  const renderField = (field: ReadingField) => {
-    const baseClasses = `w-full p-2 rounded-lg border ${
-      isDarkMode
-        ? 'bg-gray-800 border-gray-600 text-white'
-        : 'bg-white border-gray-300 text-gray-900'
-    }`;
-
-    switch (field.type) {
-      case 'textarea':
-        return (
-          <textarea
-            name={field.name}
-            value={formData[field.name] || ''}
-            onChange={handleChange}
-            required={field.required}
-            className={`${baseClasses} h-32`}
-            placeholder={field.placeholder}
-          />
-        );
-      case 'select':
-        return (
-          <select
-            name={field.name}
-            value={formData[field.name] || ''}
-            onChange={handleChange}
-            required={field.required}
-            className={baseClasses}
-          >
-            <option value="">Select your zodiac sign</option>
-            {['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'].map(sign => (
-              <option key={sign} value={sign.toLowerCase()}>{sign}</option>
-            ))}
-          </select>
-        );
-      default:
-        return (
-          <input
-            type={field.type}
-            name={field.name}
-            value={formData[field.name] || ''}
-            onChange={handleChange}
-            required={field.required}
-            className={baseClasses}
-            placeholder={field.placeholder}
-          />
-        );
-    }
-  };
+  const baseInputClasses = isDarkMode
+    ? 'bg-indigo-800/50 border-indigo-700 text-white placeholder-gray-400'
+    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500';
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {readingType.fields.map(field => (
-        <div key={field.name} className="space-y-2">
-          <label className={`block font-medium ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>
-            {field.label}
-            {field.required && <span className="text-red-500 ml-1">*</span>}
-          </label>
-          {renderField(field)}
-        </div>
-      ))}
-      <button
-        type="submit"
-        className={`w-full py-2 px-4 rounded-lg font-medium transition-colors
-          ${isDarkMode
-            ? 'bg-purple-600 hover:bg-purple-700 text-white'
-            : 'bg-purple-500 hover:bg-purple-600 text-white'
-          }`}
-      >
-        Get Your Reading
-      </button>
-    </form>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+      <div className={`p-8 rounded-xl max-w-xl w-full ${
+        isDarkMode ? 'bg-indigo-900/90' : 'bg-white'
+      }`}>
+        <h2 className={`text-2xl font-bold mb-6 ${
+          isDarkMode ? 'text-white' : 'text-gray-900'
+        }`}>
+          {readingType.name}
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {readingType.fields.map((field) => (
+            <div key={field.name}>
+              <label 
+                htmlFor={field.name}
+                className={`block text-sm font-medium mb-2 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}
+              >
+                {field.displayName}
+              </label>
+              {field.type === 'textarea' ? (
+                <textarea
+                  id={field.name}
+                  value={formData[field.name] || ''}
+                  onChange={(e) => handleChange(field, e.target.value)}
+                  placeholder={field.placeholder}
+                  required={field.required}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 ${baseInputClasses}`}
+                  rows={4}
+                />
+              ) : field.type === 'select' ? (
+                <select
+                  id={field.name}
+                  value={formData[field.name] || ''}
+                  onChange={(e) => handleChange(field, e.target.value)}
+                  required={field.required}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 ${baseInputClasses}`}
+                >
+                  <option value="">Select an option</option>
+                  {field.options?.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type={field.type}
+                  id={field.name}
+                  value={formData[field.name] || ''}
+                  onChange={(e) => handleChange(field, e.target.value)}
+                  placeholder={field.placeholder}
+                  required={field.required}
+                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 ${baseInputClasses}`}
+                />
+              )}
+            </div>
+          ))}
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className={`px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 ${
+                isDarkMode 
+                  ? 'bg-indigo-800/50 text-white hover:bg-indigo-700/50' 
+                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+              }`}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-400"
+            >
+              Get Reading
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 
