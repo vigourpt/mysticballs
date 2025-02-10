@@ -1,0 +1,217 @@
+import {
+  Scroll,
+  Moon,
+  Sun,
+  Heart,
+  Star,
+  Compass,
+  Crown,
+  Gem,
+  Wand2,
+  Flower2,
+  Hourglass,
+  Sparkles
+} from 'lucide-react';
+import { ReadingType } from '../types';
+
+export const READING_TYPES: ReadingType[] = [
+  {
+    id: 'daily-guidance',
+    name: 'Daily Guidance',
+    description: 'Get spiritual guidance for your day ahead',
+    icon: Scroll,
+    fields: [
+      {
+        name: 'question',
+        type: 'text',
+        displayName: 'What specific guidance are you seeking today?',
+        placeholder: 'Enter your question...',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'love-reading',
+    name: 'Love Reading',
+    description: 'Insights into your love life and relationships',
+    icon: Heart,
+    fields: [
+      {
+        name: 'relationship_status',
+        type: 'select',
+        displayName: 'What is your current relationship status?',
+        required: true
+      },
+      {
+        name: 'question',
+        type: 'text',
+        displayName: 'What would you like to know about your love life?',
+        placeholder: 'Enter your question...',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'career-guidance',
+    name: 'Career Path',
+    description: 'Navigate your professional journey',
+    icon: Compass,
+    fields: [
+      {
+        name: 'current_role',
+        type: 'text',
+        displayName: 'What is your current role or situation?',
+        placeholder: 'e.g., Software Engineer, Student, etc.',
+        required: true
+      },
+      {
+        name: 'question',
+        type: 'text',
+        displayName: 'What career guidance are you seeking?',
+        placeholder: 'Enter your question...',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'spiritual-journey',
+    name: 'Spiritual Journey',
+    description: 'Explore your spiritual path and growth',
+    icon: Star,
+    fields: [
+      {
+        name: 'question',
+        type: 'text',
+        displayName: 'What spiritual insights are you seeking?',
+        placeholder: 'Enter your question...',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'past-life',
+    name: 'Past Life',
+    description: 'Discover connections to your past lives',
+    icon: Hourglass,
+    fields: [
+      {
+        name: 'area_of_interest',
+        type: 'text',
+        displayName: 'What aspect of your past lives interests you most?',
+        placeholder: 'e.g., relationships, talents, life purpose',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'chakra-reading',
+    name: 'Chakra Reading',
+    description: 'Analyze and balance your energy centers',
+    icon: Sparkles,
+    fields: [
+      {
+        name: 'physical_symptoms',
+        type: 'text',
+        displayName: 'Are you experiencing any physical or emotional symptoms?',
+        placeholder: 'Describe any symptoms...',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'angel-guidance',
+    name: 'Angel Guidance',
+    description: 'Connect with your guardian angels',
+    icon: Crown,
+    fields: [
+      {
+        name: 'question',
+        type: 'text',
+        displayName: 'What message would you like to receive from your angels?',
+        placeholder: 'Enter your question...',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'crystal-reading',
+    name: 'Crystal Reading',
+    description: 'Discover which crystals can help you',
+    icon: Gem,
+    fields: [
+      {
+        name: 'current_situation',
+        type: 'text',
+        displayName: 'What situation would you like crystal guidance for?',
+        placeholder: 'Describe your situation...',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'manifestation',
+    name: 'Manifestation',
+    description: 'Learn how to manifest your desires',
+    icon: Wand2,
+    fields: [
+      {
+        name: 'desire',
+        type: 'text',
+        displayName: 'What do you wish to manifest?',
+        placeholder: 'Describe your desire...',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'numerology',
+    name: 'Numerology',
+    description: 'Understand the numbers in your life',
+    icon: Moon,
+    fields: [
+      {
+        name: 'birthdate',
+        type: 'date',
+        displayName: 'What is your birth date?',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'aura-reading',
+    name: 'Aura Reading',
+    description: 'Understand your energy field',
+    icon: Sun,
+    fields: [
+      {
+        name: 'current_mood',
+        type: 'text',
+        displayName: 'How are you feeling right now?',
+        placeholder: 'Describe your current emotional state...',
+        required: true
+      }
+    ]
+  },
+  {
+    id: 'life-purpose',
+    name: 'Life Purpose',
+    description: 'Discover your soul\'s mission',
+    icon: Flower2,
+    fields: [
+      {
+        name: 'interests',
+        type: 'text',
+        displayName: 'What activities make you feel most alive?',
+        placeholder: 'Describe your passions...',
+        required: true
+      },
+      {
+        name: 'challenges',
+        type: 'text',
+        displayName: 'What challenges are you facing in finding your purpose?',
+        placeholder: 'Describe your challenges...',
+        required: true
+      }
+    ]
+  }
+];

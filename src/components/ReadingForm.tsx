@@ -1,143 +1,96 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { ReadingType, ReadingField } from '../types';
 
 interface Props {
-  isDarkMode: boolean;
   readingType: ReadingType;
-  onReadingComplete: (reading: string) => void;
-  onReadingRequest: () => boolean;
-  session: any;
-  setShowUpgradeModal: (show: boolean) => void;
+  onSubmit: (formData: Record<string, string>) => void;
+  isDarkMode: boolean;
 }
 
-const ReadingForm: React.FC<Props> = ({
-  readingType,
-  isDarkMode,
-  onReadingComplete,
-  onReadingRequest,
-  session,
-  setShowUpgradeModal
-}) => {
-  const [formValues, setFormValues] = useState<Record<string, string>>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+const ReadingForm: React.FC<Props> = ({ readingType, onSubmit, isDarkMode }) => {
+  const [formData, setFormData] = React.useState<Record<string, string>>({});
 
-  const inputClassName = `w-full p-3 rounded-lg bg-opacity-50 ${
-    isDarkMode
-      ? 'bg-gray-800 text-white placeholder-gray-400'
-      : 'bg-white text-gray-900 placeholder-gray-500'
-  }`;
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormValues(prev => ({
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!onReadingRequest()) {
-      return;
-    }
+  const renderField = (field: ReadingField) => {
+    const baseClasses = `w-full p-2 rounded-lg border ${
+      isDarkMode
+        ? 'bg-gray-800 border-gray-600 text-white'
+        : 'bg-white border-gray-300 text-gray-900'
+    }`;
 
-    setError('');
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/.netlify/functions/getReading', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`
-        },
-        body: JSON.stringify({ readingType: readingType.id, userInput: formValues })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 402) {
-          // Show upgrade modal with remaining readings info
-          setShowUpgradeModal(true);
-        } else {
-          throw new Error(data.error || 'Failed to get reading');
-        }
-        return;
-      }
-
-      // Call onReadingComplete with the reading
-      onReadingComplete(data.reading);
-      
-      // Show remaining readings message for free users
-      if (data.readingsRemaining !== null) {
-        setMessage(`You have ${data.readingsRemaining} free readings remaining.`);
-      }
-    } catch (error: any) {
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
+    switch (field.type) {
+      case 'textarea':
+        return (
+          <textarea
+            name={field.name}
+            value={formData[field.name] || ''}
+            onChange={handleChange}
+            required={field.required}
+            className={`${baseClasses} h-32`}
+            placeholder={field.placeholder}
+          />
+        );
+      case 'select':
+        return (
+          <select
+            name={field.name}
+            value={formData[field.name] || ''}
+            onChange={handleChange}
+            required={field.required}
+            className={baseClasses}
+          >
+            <option value="">Select your zodiac sign</option>
+            {['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'].map(sign => (
+              <option key={sign} value={sign.toLowerCase()}>{sign}</option>
+            ))}
+          </select>
+        );
+      default:
+        return (
+          <input
+            type={field.type}
+            name={field.name}
+            value={formData[field.name] || ''}
+            onChange={handleChange}
+            required={field.required}
+            className={baseClasses}
+            placeholder={field.placeholder}
+          />
+        );
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {readingType.fields.map((field: ReadingField) => (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {readingType.fields.map(field => (
         <div key={field.name} className="space-y-2">
-          <label
-            htmlFor={field.name}
-            className={`block text-sm font-medium ${
-              isDarkMode ? 'text-gray-200' : 'text-gray-700'
-            }`}
-          >
+          <label className={`block font-medium ${isDarkMode ? 'text-white' : 'text-gray-700'}`}>
             {field.label}
+            {field.required && <span className="text-red-500 ml-1">*</span>}
           </label>
-          {field.type === 'textarea' ? (
-            <textarea
-              id={field.name}
-              name={field.name}
-              placeholder={field.placeholder}
-              required={field.required}
-              value={formValues[field.name] || ''}
-              onChange={handleInputChange}
-              className={`${inputClassName} min-h-[100px]`}
-            />
-          ) : (
-            <input
-              type={field.type}
-              id={field.name}
-              name={field.name}
-              placeholder={field.placeholder}
-              required={field.required}
-              value={formValues[field.name] || ''}
-              onChange={handleInputChange}
-              className={inputClassName}
-            />
-          )}
+          {renderField(field)}
         </div>
       ))}
-      {error && (
-        <div className="mb-4 p-3 rounded-lg bg-red-500/10 text-red-500 text-sm">
-          {error}
-        </div>
-      )}
-      {message && (
-        <div className="mb-4 p-3 rounded-lg bg-yellow-500/10 text-yellow-500 text-sm">
-          {message}
-        </div>
-      )}
       <button
         type="submit"
-        disabled={isLoading}
-        className={`w-full py-3 px-4 rounded-lg font-medium text-white transition-colors ${
-          isLoading
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-indigo-600 hover:bg-indigo-700'
-        }`}
+        className={`w-full py-2 px-4 rounded-lg font-medium transition-colors
+          ${isDarkMode
+            ? 'bg-purple-600 hover:bg-purple-700 text-white'
+            : 'bg-purple-500 hover:bg-purple-600 text-white'
+          }`}
       >
-        {isLoading ? 'Getting Your Reading...' : 'Get Reading'}
+        Get Your Reading
       </button>
     </form>
   );

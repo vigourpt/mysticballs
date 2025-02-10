@@ -1,7 +1,18 @@
-import { useEffect } from 'react';
-import { supabase, createUserProfile } from '../services/supabase';
+import { useState, useEffect } from 'react';
+import { supabase } from '../services/supabase';
+import type { User } from '../types';
 
-export const useAuthState = () => {
+interface AuthState {
+  user: User | null;
+  loading: boolean;
+}
+
+export const useAuthState = (): AuthState => {
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    loading: true
+  });
+
   useEffect(() => {
     // Check for email verification
     const params = new URLSearchParams(window.location.search);
@@ -15,32 +26,46 @@ export const useAuthState = () => {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-        const user = session?.user;
-        if (user) {
-          try {
-            // Create or update user profile
-            await createUserProfile(
-              user.id,
-              user.email ?? '',
-              user.user_metadata.full_name ?? null
-            );
-
-            // If user just verified their email, show payment modal
-            if (isVerified) {
-              window.location.href = `${window.location.origin}/?showPayment=true`;
-            }
-          } catch (error) {
-            console.error('Failed to create/update user profile:', error);
-          }
+        if (session?.user) {
+          setState({
+            user: {
+              id: session.user.id,
+              email: session.user.email || '',
+              access_token: session.access_token
+            },
+            loading: false
+          });
         }
+      } else if (event === 'SIGNED_OUT') {
+        setState({ user: null, loading: false });
       }
     });
 
-    // Cleanup subscription on unmount
+    // Initial session check
+    const initSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setState({
+          user: {
+            id: session.user.id,
+            email: session.user.email || '',
+            access_token: session.access_token
+          },
+          loading: false
+        });
+      } else {
+        setState({ user: null, loading: false });
+      }
+    };
+
+    initSession();
+
     return () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  return state;
 };
 
 export default useAuthState;
