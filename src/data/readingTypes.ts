@@ -76,7 +76,7 @@ export const READING_TYPES: ReadingType[] = [
   {
     id: 'spiritual-journey',
     name: 'Spiritual Journey',
-    description: 'Deepen your spiritual connection, understand your soul's evolution, and receive guidance on your path to higher consciousness and enlightenment.',
+    description: 'Deepen your spiritual connection, understand your soul’s evolution, and receive guidance on your path to higher consciousness and enlightenment.',
     icon: Star,
     fields: [
       {
