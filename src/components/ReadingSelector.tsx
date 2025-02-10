@@ -1,11 +1,17 @@
 import React from 'react';
+import type { LucideIcon } from 'lucide-react';
 import type { ReadingType } from '../types';
-import type { LucideProps } from 'lucide-react';
+import ReadingTypeInfo from './ReadingTypeInfo';
+
+interface ReadingTypeOption extends ReadingType {
+  icon: LucideIcon;
+  instructions?: string;
+}
 
 interface Props {
-  READING_TYPES: (ReadingType & { icon: React.FC<LucideProps> })[];
+  READING_TYPES: ReadingTypeOption[];
   onSelect: (type: ReadingType) => void;
-  isDarkMode?: boolean;
+  isDarkMode: boolean;
 }
 
 const ReadingSelector: React.FC<Props> = ({ READING_TYPES, onSelect, isDarkMode }) => {
@@ -35,31 +41,36 @@ const ReadingSelector: React.FC<Props> = ({ READING_TYPES, onSelect, isDarkMode 
           <button
             key={type.id}
             onClick={() => onSelect(type)}
-            className={`w-full h-full flex flex-col items-center text-center p-8 rounded-xl transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 ${
-              isDarkMode 
-                ? 'bg-indigo-900/40 hover:bg-indigo-800/40' 
-                : 'bg-white/90 hover:bg-white'
-            }`}
+            className={`group p-6 rounded-xl transition-all duration-300 transform hover:scale-105 ${
+              isDarkMode
+                ? 'bg-gradient-to-br from-indigo-800/50 to-purple-800/50 hover:from-indigo-700/50 hover:to-purple-700/50'
+                : 'bg-gradient-to-br from-white to-indigo-50 hover:from-indigo-50 hover:to-white'
+            } backdrop-blur-sm shadow-xl`}
           >
-            <div className={`p-4 mb-4 rounded-xl ${
-              isDarkMode 
-                ? 'bg-indigo-800/40 group-hover:bg-indigo-700/40' 
-                : 'bg-indigo-100'
-            }`}>
-              <type.icon className={`w-8 h-8 ${isDarkMode ? 'text-purple-200' : 'text-indigo-600'}`} />
+            <div className="flex flex-col items-center text-center space-y-4">
+              <type.icon
+                size={48}
+                className={`${
+                  isDarkMode ? 'text-indigo-300' : 'text-indigo-600'
+                } transition-transform group-hover:scale-110`}
+              />
+              <h3 className={`text-xl font-semibold ${
+                isDarkMode ? 'text-white' : 'text-gray-800'
+              }`}>
+                {type.name}
+              </h3>
+              <p className={`text-sm ${
+                isDarkMode ? 'text-indigo-200' : 'text-gray-600'
+              }`}>
+                {type.description}
+              </p>
             </div>
-            <h3 className={`text-lg font-semibold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-              {type.name}
-            </h3>
-            <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-              {type.description}
-            </p>
           </button>
         ))}
       </div>
 
       {/* Reading Type Information for SEO */}
-      {/* <ReadingTypeInfo isDarkMode={isDarkMode} /> */}
+      <ReadingTypeInfo isDarkMode={isDarkMode} />
 
       {/* Instructions Section */}
       <div className={`p-6 rounded-xl ${

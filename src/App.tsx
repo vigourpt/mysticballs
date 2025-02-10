@@ -6,7 +6,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import LoginModal from './components/LoginModal';
 import PaymentModal from './components/PaymentModal';
-import ReadingTypeCard from './components/ReadingTypeCard';
+import ReadingSelector from './components/ReadingSelector';
 import ReadingForm from './components/ReadingForm';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
@@ -107,17 +107,20 @@ const App: React.FC<AppProps> = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {READING_TYPES.map((type) => (
-            <ReadingTypeCard
-              key={type.id}
-              readingType={type}
-              selected={selectedReadingType === type}
-              onClick={() => setSelectedReadingType(type)}
-              isDarkMode={isDarkMode}
-            />
-          ))}
-        </div>
+        <ReadingSelector
+          READING_TYPES={READING_TYPES}
+          onSelect={setSelectedReadingType}
+          isDarkMode={isDarkMode}
+        />
+
+        {selectedReadingType && (
+          <ReadingForm
+            readingType={selectedReadingType}
+            onSubmit={handleReadingSubmit}
+            onClose={() => setSelectedReadingType(null)}
+            isDarkMode={isDarkMode}
+          />
+        )}
 
         <div className="mt-24">
           <h2 className="text-3xl font-bold text-center mb-12">How to Get the Best From Your Reading</h2>
@@ -167,15 +170,6 @@ const App: React.FC<AppProps> = () => {
           </div>
         </div>
       </main>
-
-      {selectedReadingType && (
-        <ReadingForm
-          readingType={selectedReadingType}
-          onSubmit={handleReadingSubmit}
-          onClose={() => setSelectedReadingType(null)}
-          isDarkMode={isDarkMode}
-        />
-      )}
 
       <Footer
         onPrivacyClick={() => setCurrentPage('privacy')}
