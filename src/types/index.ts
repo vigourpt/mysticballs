@@ -31,7 +31,19 @@ export type ReadingTypeId =
   | 'crystal-reading'
   | 'manifestation'
   | 'aura-reading'
-  | 'life-purpose';
+  | 'life-purpose'
+  | 'tarot'
+  | 'numerology'
+  | 'astrology'
+  | 'oracle'
+  | 'runes'
+  | 'iching'
+  | 'angel-numbers'
+  | 'horoscope'
+  | 'dream-analysis'
+  | 'magic-8-ball'
+  | 'aura'
+  | 'past-life';
 
 export interface ReadingField {
   name: string;
