@@ -28,6 +28,10 @@ const App: React.FC<AppProps> = () => {
   const { user, loading: authLoading } = useAuthState();
   const { signOut } = useAuth();
 
+  const handleReadingTypeSelect = (readingType: ReadingType) => {
+    setSelectedReadingType(readingType);
+  };
+
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
   }, [isDarkMode]);
@@ -107,11 +111,11 @@ const App: React.FC<AppProps> = () => {
           </p>
         </div>
 
-        <ReadingSelector
-          READING_TYPES={READING_TYPES}
-          onSelect={setSelectedReadingType}
-          isDarkMode={isDarkMode}
-        />
+                  <ReadingSelector 
+                    READING_TYPES={READING_TYPES}
+                    handleReadingTypeSelect={handleReadingTypeSelect}
+                    isDarkMode={isDarkMode}
+                  />
 
         {selectedReadingType && (
           <ReadingForm

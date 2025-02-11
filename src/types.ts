@@ -1,16 +1,21 @@
-export type ReadingTypeId = 'tarot' | 'numerology' | 'astrology' | 'oracle' | 'runes' | 'iching' | 'angels' | 'horoscope' | 'dreams' | 'magic8ball' | 'aura' | 'pastlife';
+import type { LucideIcon } from 'lucide-react';
+
+export type ReadingTypeId = 'tarot' | 'numerology' | 'astrology' | 'oracle' | 'runes' | 'iching' | 'angelnumbers' | 'horoscope' | 'dreamanalysis' | 'magic8ball' | 'aura' | 'pastlife';
 
 export interface ReadingType {
   id: ReadingTypeId;
   name: string;
   description: string;
-  icon: string;
+  icon: LucideIcon;
   fields?: ReadingField[];
 }
 
 export interface ReadingField {
   name: string;
-  type: 'text' | 'number' | 'date' | 'select';
+  type: 'text' | 'number' | 'date' | 'select' | 'textarea';
+  label: string;
+  displayName: string;
+  placeholder?: string;
   options?: string[];
   required: boolean;
 }
