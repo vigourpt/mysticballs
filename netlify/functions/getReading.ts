@@ -73,7 +73,7 @@ Use markdown headers (###) for each section.`
 2. Core Message
 3. Changing Lines (if any)
 4. Practical Application
-Use markdown headers (###) for each section.`
+Use markdown headers (###) to separate sections.`
   },
   'angelnumbers': {
     maxTokens: 500,
@@ -117,7 +117,7 @@ Use markdown headers (###) for each section.`
 2. Energy Patterns
 3. Chakra Balance
 4. Practical Energy Maintenance
-Use markdown headers (###) for each section.`
+Use markdown headers (###) to separate sections.`
   },
   'pastlife': {
     maxTokens: 1000,
@@ -128,7 +128,7 @@ Use markdown headers (###) for each section.`
 3. Key Life Events
 4. Connection to Present
 5. Lessons & Influences
-Use markdown headers (###) for each section.`
+Use markdown headers (###) to separate sections.`
   }
 };
 
@@ -378,13 +378,8 @@ const handler: Handler = async (event, context) => {
         errorMessage = 'Too many requests - please try again later';
         retryAfter = '60';
       }
-    } else { // Handle cases where error is not an Error instance
-      console.error('Unknown error:', error);
-      errorMessage = 'Reading generation failed due to an unknown error.';
-      statusCode = 500;
-      // No retryAfter for unknown errors for now
-    }
-
+    } 
+    
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*'
