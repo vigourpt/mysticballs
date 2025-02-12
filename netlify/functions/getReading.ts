@@ -75,7 +75,7 @@ Use markdown headers (###) for each section.`
 4. Practical Application
 Use markdown headers (###) for each section.`
   },
-  'angels': {
+  'angelnumbers': {
     maxTokens: 500,
     temperature: 0.7,
     systemPrompt: `You are an angel number interpreter. Provide insights into:
@@ -94,7 +94,7 @@ Use markdown headers (###) for each section.`
 4. Health & Well-being
 Use markdown headers (###) for each section.`
   },
-  'dreams': {
+  'dreamanalysis': {
     maxTokens: 700,
     temperature: 0.8,
     systemPrompt: `You are a dream interpreter. Analyze the dream by:
@@ -304,7 +304,7 @@ const handler: Handler = async (event, context) => {
       'oracle': `Interpret the oracle cards for: ${userInput.question}`,
       'runes': `Cast the runes for: ${userInput.question}`,
       'iching': `Consult the I Ching regarding: ${userInput.question}`,
-      'angels': `Interpret the significance of ${userInput.number} for ${userInput.name}`,
+      'angelnumbers': `Interpret the significance of ${userInput.number} for ${userInput.name}`,
       'horoscope': `Provide a detailed horoscope for ${userInput.zodiacSign}`,
       'dreams': `Interpret this dream: ${userInput.dream}`,
       'aura': `Read the aura and energy of ${userInput.name} based on their personality: ${userInput.personality}`
@@ -358,13 +358,13 @@ const handler: Handler = async (event, context) => {
         readingsRemaining: !profile.is_premium ? MAX_FREE_READINGS - (profile.readings_count + 1) : null
       })
     };
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Full OpenAI Error:', error);
     if (error instanceof Error) { // Type guard to check if error is an instance of Error
       console.error('OpenAI Error:', {
         message: error.message,
-        code: (error as Record<string, any>).code, // Use Record<string, any> type assertion
-        status: (error as Record<string, any>).status, // Use Record<string, any> type assertion
+        code: (error as Record<string, any>).code,
+        status: (error as Record<string, any>).status,
         stack: error.stack
       });
 
@@ -374,7 +374,7 @@ const handler: Handler = async (event, context) => {
 
       if (error.message.includes('API key')) {
         errorMessage = 'Invalid OpenAI API key';
-      } else if (error.message.includes('rate limit') || (error as Record<string, any>).status === 429) { // Use Record<string, any> type assertion
+      } else if (error.message.includes('rate limit') || (error as Record<string, any>).status === 429) {
         statusCode = 429;
         errorMessage = 'Too many requests - please try again later';
         retryAfter = '60';

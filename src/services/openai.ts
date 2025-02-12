@@ -1,4 +1,5 @@
 import { ReadingTypeId, ReadingType } from '../types';
+import { useAuth } from '../hooks/useAuth'; // Import useAuth hook
 
 // Validate required fields before making the request
 const validateRequiredFields = (readingType: ReadingTypeId, userInput: Record<string, string>) => {
@@ -29,21 +30,35 @@ export const getReading = async (
 ): Promise<string> => {
   try {
     // Validate reading type and required fields
-    if (!readingType || typeof readingType !== 'string') {
+    if (!readingType || typeof readingType !== 'object' || !readingType.id) {
       throw new Error(`Invalid reading type: ${JSON.stringify(readingType)}`);
     }
-    validateRequiredFields(readingType, userInput);
+    validateRequiredFields(readingType.id, userInput);
 
-    console.log('Processing reading type:', readingType, typeof readingType, 'with input:', userInput); // <--- Added console.log for typeof readingType
-    console.log('ReadingType object:', readingType); // <--- Added console.log for readingType object
+    console.log('Processing reading type:', readingType, 'with input:', userInput);
     
+    // Get the access token using the useAuth hook
+    // const { user } = useAuth(); // This won't work here, need to get the token from context
+    // if (!user) {
+    //   throw new Error('User not authenticated');
+    // }
+    // const accessToken = user.access_token;
+
+    // Get the access token from local storage
+    const accessToken = localStorage.getItem('sb-access-token');
+
+    if (!accessToken) {
+      throw new Error('Missing access token');
+    }
+
     const response = await fetch('/.netlify/functions/getReading', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}` // Add the Authorization header
       },
       body: JSON.stringify({
-        readingType: (readingType as ReadingType).id,
+        readingType: readingType.id,
         userInput
       })
     });
