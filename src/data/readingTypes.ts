@@ -1,17 +1,15 @@
 import { 
-  Sparkles, 
-  Calculator, 
-  Star, 
-  ScrollText, 
-  Shapes, 
-  BookOpen, 
-  Hash, 
-  Sun, 
-  Moon, 
-  Dice5, 
-  Zap, 
+  BookOpen,
+  Calculator,
   Clock,
-  Layout
+  Dice5,
+  Hash,
+  Layout,
+  Moon,
+  Sparkles,
+  Star,
+  Sun,
+  Zap
 } from 'lucide-react';
 import type { ReadingType } from '../types';
 
@@ -134,7 +132,7 @@ export const READING_TYPES: ReadingType[] = [
     id: 'runes',
     name: 'Rune Reading',
     description: 'Runes are ancient Norse symbols used for divination and guidance. Each of the 24 runes in the Elder Futhark system carries powerful meanings and energies. Rune readings offer insights into life situations, personal growth, and future possibilities, drawing upon centuries-old Nordic wisdom.',
-    icon: Shapes,
+    icon: Dice5,
     fields: [
       {
         name: 'question',

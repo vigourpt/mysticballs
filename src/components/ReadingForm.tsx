@@ -38,7 +38,7 @@ export const ReadingForm = ({ readingType, onSubmit, onClose, isDarkMode = true 
           {readingType.name}
         </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {readingType.fields.map((field) => (
+          {readingType.fields?.map((field) => (
             <div key={field.name}>
               <label 
                 htmlFor={field.name}

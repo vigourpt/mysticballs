@@ -47,4 +47,5 @@ export interface Step {
   content: string;
   target: string;
   placement?: 'top' | 'bottom' | 'left' | 'right';
+  position?: 'top' | 'bottom' | 'left' | 'right';
 }

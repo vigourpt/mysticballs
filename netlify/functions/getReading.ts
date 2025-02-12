@@ -374,9 +374,9 @@ const handler: Handler = async (event, context) => {
     };
   } catch (error: any) {
     console.error('Full OpenAI Error:', error);
-    let errorMessage: string = 'Reading generation failed';
-    let statusCode: number = 500;
-    let retryAfter: string | undefined;
+    let errorMessage = 'Reading generation failed';
+    let statusCode = 500;
+    let retryAfter: string | undefined = undefined;
     if (error instanceof Error) { // Type guard to check if error is an instance of Error
       console.error('OpenAI Error:', {
         message: error.message,
@@ -387,16 +387,14 @@ const handler: Handler = async (event, context) => {
 
       if (error.message.includes('API key')) {
         errorMessage = 'Invalid OpenAI API key';
-      } else if (error.message.includes('rate limit')) {
+      } else if (error.message.includes('rate limit') || (error as any).status === 429) {
         statusCode = 429;
         errorMessage = 'Too many requests - please try again later';
         retryAfter = '60';
-      } else if ((error as any).status === 429) {
-        statusCode = 429;
-        errorMessage = 'Too many requests - please try again later';
-        retryAfter = '60';
+      } else {
+        errorMessage = error.message;
       }
-    } 
+    }
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

@@ -2,14 +2,12 @@ import React from 'react';
 import { Step } from '../types';
 
 interface TourGuideProps {
-  steps: Step[];
   currentStep: Step;
   onClose: () => void;
   size?: 'small' | 'medium' | 'large';
 }
 
 const TourGuide: React.FC<TourGuideProps> = ({
-  steps,
   currentStep,
   onClose,
   size = 'medium'
