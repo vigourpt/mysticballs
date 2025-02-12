@@ -37,13 +37,6 @@ export const getReading = async (
 
     console.log('Processing reading type:', readingType, 'with input:', userInput);
     
-    // Get the access token using the useAuth hook
-    // const { user } = useAuth(); // This won't work here, need to get the token from context
-    // if (!user) {
-    //   throw new Error('User not authenticated');
-    // }
-    // const accessToken = user.access_token;
-
     // Get the access token from local storage
     const accessToken = localStorage.getItem('sb-access-token');
 

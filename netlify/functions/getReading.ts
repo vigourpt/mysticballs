@@ -347,7 +347,7 @@ const handler: Handler = async (event, context) => {
       }
     }
 
-    const responseBody: { reading?: string; error?: string; readingsRemaining?: number | null } = {};
+    const responseBody: { reading?: string; error?: string; readingsRemaining?: number | null } = { };
 
     if (completion.choices[0]?.message?.content?.trim()) {
         responseBody.reading = completion.choices[0].message.content.trim();
@@ -361,19 +361,22 @@ const handler: Handler = async (event, context) => {
         responseBody.readingsRemaining = null;
     }
 
+    let statusCode = 200;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*'
+    };
+
     return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
+      statusCode,
+      headers,
       body: JSON.stringify(responseBody)
     };
   } catch (error: any) {
     console.error('Full OpenAI Error:', error);
     let errorMessage = 'Reading generation failed';
     let statusCode = 500;
-    let retryAfter = '';
+    let retryAfter: string | undefined;
     if (error instanceof Error) { // Type guard to check if error is an instance of Error
       console.error('OpenAI Error:', {
         message: error.message,
@@ -389,8 +392,13 @@ const handler: Handler = async (event, context) => {
         errorMessage = 'Too many requests - please try again later';
         retryAfter = '60';
       }
-    } 
-    
+    } else { // Handle cases where error is not an Error instance
+      console.error('Unknown error:', error);
+      errorMessage = 'Reading generation failed due to an unknown error.';
+      statusCode = 500;
+      // No retryAfter for unknown errors for now
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*'
