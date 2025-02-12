@@ -8,10 +8,9 @@ import LoginModal from './components/LoginModal';
 import PaymentModal from './components/PaymentModal';
 import ReadingSelector from './components/ReadingSelector';
 import ReadingForm from './components/ReadingForm';
-import { PricingPlan } from './types';
-import { ReadingType } from './types';
-import { supabaseClient } from './lib/supabaseClient'; // Import supabaseClient
-import { UserProfile } from './types'; // Import UserProfile
+import { PricingPlan, ReadingType } from './types';
+import { supabaseClient } from './lib/supabaseClient';
+import { UserProfile } from './services/supabase'; // Import UserProfile from supabase service
 
 const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -22,9 +21,9 @@ const App: React.FC = () => {
   const [selectedReadingType, setSelectedReadingType] = useState<ReadingType | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [profiles, setProfiles] = useState<UserProfile[] | null>(null); // Initialize profiles state with type
-  const [supabaseError, setSupabaseError] = useState<Error | null>(null); // Initialize supabaseError state with type
-  const [currentPage, setCurrentPage] = useState<string | null>(null); // Initialize currentPage state
+  const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
+  const [supabaseError, setSupabaseError] = useState<Error | null>(null);
+  const [currentPage, setCurrentPage] = useState<string | null>(null);
   const { user, loading: authLoading } = useAuthState();
   const { signOut } = useAuth();
 
@@ -211,8 +210,8 @@ const App: React.FC = () => {
         onPrivacyClick={() => setCurrentPage('privacy')}
         onTermsClick={() => setCurrentPage('terms')}
         isDarkMode={isDarkMode}
-        currentPage={currentPage} // Pass currentPage prop
-        setCurrentPage={setCurrentPage} // Pass setCurrentPage prop
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
       />
 
       <LoginModal

@@ -26,7 +26,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 });
 
 type Tables = Database['public']['Tables'];
-type UserProfile = Tables['user_profiles']['Row'];
+export type UserProfile = Tables['user_profiles']['Row'];
 
 export const signInWithGoogle = async () => {
   try {
@@ -103,7 +103,11 @@ export const signInWithEmail = async (email: string, password: string) => {
     return data;
   } catch (error: unknown) {
     console.error('Email sign in error:', error);
-    throw new Error(error.message || 'Failed to sign in with email');
+    let errorMessage = 'Failed to sign in with email';
+    if (error instanceof Error) {
+      errorMessage = error.message || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 };
 
