@@ -11,10 +11,7 @@ interface Props {
 export const ReadingForm = ({ readingType, onSubmit, onClose, isDarkMode = true }: Props) => {
   const [formData, setFormData] = useState<Record<string, string>>({});
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await onSubmit(formData);
-  };
+  const [readingOutput, setReadingOutput] = useState<string | null>(null);
 
   const handleChange = (field: ReadingField, value: string) => {
     setFormData(prev => ({
@@ -27,16 +24,19 @@ export const ReadingForm = ({ readingType, onSubmit, onClose, isDarkMode = true 
     ? 'bg-indigo-800/50 border-indigo-700 text-white placeholder-gray-400'
     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500';
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await onSubmit(formData);
+      // TODO: Get the actual reading output from the API response
+      setReadingOutput("Your reading will appear here...");
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-      <div className={`p-8 rounded-xl max-w-xl w-full ${
-        isDarkMode ? 'bg-indigo-900/90' : 'bg-white'
-      }`}>
-        <h2 className={`text-2xl font-bold mb-6 ${
-          isDarkMode ? 'text-white' : 'text-gray-900'
-        }`}>
-          {readingType.name}
-        </h2>
+    <div>
         <form onSubmit={handleSubmit} className="space-y-6">
           {readingType.fields?.map((field) => (
             <div key={field.name}>
@@ -84,27 +84,15 @@ export const ReadingForm = ({ readingType, onSubmit, onClose, isDarkMode = true 
               )}
             </div>
           ))}
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className={`px-6 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 ${
-                isDarkMode 
-                  ? 'bg-indigo-800/50 text-white hover:bg-indigo-700/50' 
-                  : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-              }`}
-            >
-              Cancel
-            </button>
+          <div className="flex justify-center">
             <button
               type="submit"
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-400"
+              className="px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-400 text-lg font-semibold"
             >
-              Get Reading
+              Get Your Reading
             </button>
           </div>
         </form>
-      </div>
     </div>
   );
 };

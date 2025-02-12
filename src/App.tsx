@@ -30,11 +30,13 @@ const App: React.FC = () => {
   const [supabaseError, setSupabaseError] = useState<Error | null>(null);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<Step | null>(ONBOARDING_STEPS[0] || null);
+  const [readingOutput, setReadingOutput] = useState<string | null>(null);
   const { user, loading: authLoading } = useAuthState();
   const { signOut } = useAuth();
 
   const handleReadingTypeSelect = (readingType: ReadingType) => {
     setSelectedReadingType(readingType);
+    setReadingOutput(null);
   };
 
   useEffect(() => {
@@ -77,9 +79,10 @@ const App: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log(data);
+      setReadingOutput(data.reading || "Your reading will appear here...");
     } catch (error) {
       console.error('Error getting reading:', error);
+      setReadingOutput("There was an error getting your reading. Please try again.");
     }
   };
 
@@ -130,7 +133,7 @@ const App: React.FC = () => {
         ) : currentPage === 'terms' ? (
           <TermsOfService isDarkMode={isDarkMode} />
         ) : selectedReadingType ? (
-          <div>
+          <div className="max-w-4xl mx-auto">
             <button
               onClick={() => setSelectedReadingType(null)}
               className="mb-8 flex items-center gap-2 px-4 py-2 text-white bg-indigo-900/40 hover:bg-indigo-900/60 rounded-lg transition-colors"
@@ -138,14 +141,26 @@ const App: React.FC = () => {
               <span>←</span>
               Back to Reading Types
             </button>
-            <div className="max-w-2xl mx-auto">
-              <h2 className="text-3xl font-bold mb-8">{selectedReadingType.name}</h2>
-              <ReadingForm
-                readingType={selectedReadingType}
-                onSubmit={handleReadingSubmit}
-                onClose={() => setSelectedReadingType(null)}
-                isDarkMode={isDarkMode}
-              />
+            <div className="space-y-8">
+              <div className={`p-8 rounded-xl w-full ${isDarkMode ? 'bg-indigo-900/40' : 'bg-white'}`}>
+                <h2 className="text-3xl font-bold mb-8">{selectedReadingType.name}</h2>
+                <ReadingForm
+                  readingType={selectedReadingType}
+                  onSubmit={handleReadingSubmit}
+                  onClose={() => setSelectedReadingType(null)}
+                  isDarkMode={isDarkMode}
+                />
+              </div>
+              {readingOutput && (
+                <div className={`p-8 rounded-xl w-full ${isDarkMode ? 'bg-indigo-900/40' : 'bg-white'}`}>
+                  <h3 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Your Reading
+                  </h3>
+                  <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
+                    {readingOutput}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         ) : (
