@@ -360,6 +360,9 @@ const handler: Handler = async (event, context) => {
     };
   } catch (error: any) {
     console.error('Full OpenAI Error:', error);
+    let errorMessage = 'Reading generation failed';
+    let statusCode = 500;
+    let retryAfter = '';
     if (error instanceof Error) { // Type guard to check if error is an instance of Error
       console.error('OpenAI Error:', {
         message: error.message,
@@ -367,10 +370,6 @@ const handler: Handler = async (event, context) => {
         status: (error as Record<string, any>).status,
         stack: error.stack
       });
-
-      let errorMessage = 'Reading generation failed';
-      let statusCode = 500;
-      let retryAfter = '';
 
       if (error.message.includes('API key')) {
         errorMessage = 'Invalid OpenAI API key';
@@ -381,29 +380,26 @@ const handler: Handler = async (event, context) => {
       }
     } else { // Handle cases where error is not an Error instance
       console.error('Unknown error:', error);
-      let errorMessage = 'Reading generation failed due to an unknown error.';
-      let statusCode = 500;
+      errorMessage = 'Reading generation failed due to an unknown error.';
+      statusCode = 500;
       // No retryAfter for unknown errors for now
-      return { statusCode, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: errorMessage }) };
     }
-
-    const errorMessage = 'Reading generation failed'; // Default error message if not caught by specific conditions
-    const statusCode = 500;
-    const retryAfter = ''; // No retryAfter for generic errors
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*'
     };
 
+    const responseBody: { error: string; retryAfter?: string } = { error: errorMessage };
     if (retryAfter) {
+      responseBody.retryAfter = retryAfter;
       headers['Retry-After'] = retryAfter;
     }
 
     return {
       statusCode,
       headers,
-      body: JSON.stringify({ error: errorMessage })
+      body: JSON.stringify(responseBody)
     };
   }
 };
