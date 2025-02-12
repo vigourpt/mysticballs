@@ -8,15 +8,12 @@ import LoginModal from './components/LoginModal';
 import PaymentModal from './components/PaymentModal';
 import ReadingSelector from './components/ReadingSelector';
 import ReadingForm from './components/ReadingForm';
-import PrivacyPolicy from './components/PrivacyPolicy';
-import TermsOfService from './components/TermsOfService';
 import { PricingPlan } from './types';
 import { ReadingType } from './types';
 import { supabaseClient } from './lib/supabaseClient'; // Import supabaseClient
+import { UserProfile } from './types'; // Import UserProfile
 
-interface AppProps {}
-
-const App: React.FC<AppProps> = () => {
+const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const savedMode = localStorage.getItem('darkMode');
     return savedMode ? JSON.parse(savedMode) : true;
@@ -25,11 +22,11 @@ const App: React.FC<AppProps> = () => {
   const [selectedReadingType, setSelectedReadingType] = useState<ReadingType | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [currentPage, setCurrentPage] = useState<'home' | 'privacy' | 'terms'>('home');
+  const [profiles, setProfiles] = useState<UserProfile[] | null>(null); // Initialize profiles state with type
+  const [supabaseError, setSupabaseError] = useState<Error | null>(null); // Initialize supabaseError state with type
+  const [currentPage, setCurrentPage] = useState<string | null>(null); // Initialize currentPage state
   const { user, loading: authLoading } = useAuthState();
   const { signOut } = useAuth();
-  const [profiles, setProfiles] = useState(null); // State for profiles data
-  const [supabaseError, setSupabaseError] = useState(null); // State for Supabase errors
 
 
   const handleReadingTypeSelect = (readingType: ReadingType) => {
@@ -97,7 +94,7 @@ const App: React.FC<AppProps> = () => {
           setProfiles(data);
         }
       } catch (err) {
-        setSupabaseError(err);
+        setSupabaseError(err instanceof Error ? err : new Error(String(err)) as Error);
       }
     };
 
@@ -134,13 +131,23 @@ const App: React.FC<AppProps> = () => {
             seek guidance, clarity, or deeper understanding, our AI-powered insights combine traditional
             knowledge with modern technology to illuminate your path forward.
           </p>
+          {profiles && (
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-700'} mt-2`}>
+              {profiles.length} user profiles loaded.
+            </p>
+          )}
+          {supabaseError && (
+            <p className={`text-sm text-red-500 mt-2`}>
+              Error fetching profiles: {supabaseError.message}
+            </p>
+          )}
         </div>
 
-                  <ReadingSelector 
-                    READING_TYPES={READING_TYPES}
-                    handleReadingTypeSelect={handleReadingTypeSelect}
-                    isDarkMode={isDarkMode}
-                  />
+        <ReadingSelector 
+          READING_TYPES={READING_TYPES}
+          handleReadingTypeSelect={handleReadingTypeSelect}
+          isDarkMode={isDarkMode}
+        />
 
         {selectedReadingType && (
           <ReadingForm
@@ -204,12 +211,13 @@ const App: React.FC<AppProps> = () => {
         onPrivacyClick={() => setCurrentPage('privacy')}
         onTermsClick={() => setCurrentPage('terms')}
         isDarkMode={isDarkMode}
+        currentPage={currentPage} // Pass currentPage prop
+        setCurrentPage={setCurrentPage} // Pass setCurrentPage prop
       />
 
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
-        isDarkMode={isDarkMode}
       />
 
       <PaymentModal

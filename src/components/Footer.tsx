@@ -5,9 +5,11 @@ interface Props {
   isDarkMode: boolean;
   onPrivacyClick: () => void;
   onTermsClick: () => void;
+  currentPage: string | null; // Add currentPage prop
+  setCurrentPage: React.Dispatch<React.SetStateAction<string | null>>; // Add setCurrentPage prop
 }
 
-const Footer: React.FC<Props> = ({ isDarkMode, onPrivacyClick, onTermsClick }) => {
+const Footer: React.FC<Props> = ({ isDarkMode, onPrivacyClick, onTermsClick, currentPage, setCurrentPage }) => {
   return (
     <footer className={`mt-16 py-8 border-t ${
       isDarkMode ? 'border-indigo-800/50 text-indigo-200' : 'border-indigo-100 text-gray-600'
@@ -22,14 +24,14 @@ const Footer: React.FC<Props> = ({ isDarkMode, onPrivacyClick, onTermsClick }) =
           
           <nav className="flex items-center gap-6 text-sm">
             <button
-              onClick={onPrivacyClick}
-              className={`hover:${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors`}
+              onClick={() => { onPrivacyClick(); setCurrentPage('privacy'); }} // Use setCurrentPage for Privacy Policy
+              className={`hover:${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors ${currentPage === 'privacy' ? 'font-semibold underline' : ''}`} // Conditionally style Privacy Policy button
             >
               Privacy Policy
             </button>
             <button
-              onClick={onTermsClick}
-              className={`hover:${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors`}
+              onClick={() => { onTermsClick(); setCurrentPage('terms'); }} // Use setCurrentPage for Terms of Service
+              className={`hover:${isDarkMode ? 'text-white' : 'text-gray-900'} transition-colors ${currentPage === 'terms' ? 'font-semibold underline' : ''}`} // Conditionally style Terms of Service button
             >
               Terms of Service
             </button>

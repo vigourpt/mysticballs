@@ -358,26 +358,38 @@ const handler: Handler = async (event, context) => {
         readingsRemaining: !profile.is_premium ? MAX_FREE_READINGS - (profile.readings_count + 1) : null
       })
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Full OpenAI Error:', error);
-    console.error('OpenAI Error:', {
-      message: error.message,
-      code: error.code,
-      status: error.status,
-      stack: error.stack
-    });
+    if (error instanceof Error) { // Type guard to check if error is an instance of Error
+      console.error('OpenAI Error:', {
+        message: error.message,
+        code: (error as Record<string, any>).code, // Use Record<string, any> type assertion
+        status: (error as Record<string, any>).status, // Use Record<string, any> type assertion
+        stack: error.stack
+      });
 
-    let errorMessage = 'Reading generation failed';
-    let statusCode = 500;
-    let retryAfter = '';
+      let errorMessage = 'Reading generation failed';
+      let statusCode = 500;
+      let retryAfter = '';
 
-    if (error.message.includes('API key')) {
-      errorMessage = 'Invalid OpenAI API key';
-    } else if (error.message.includes('rate limit') || error.status === 429) {
-      statusCode = 429;
-      errorMessage = 'Too many requests - please try again later';
-      retryAfter = '60';
+      if (error.message.includes('API key')) {
+        errorMessage = 'Invalid OpenAI API key';
+      } else if (error.message.includes('rate limit') || (error as Record<string, any>).status === 429) { // Use Record<string, any> type assertion
+        statusCode = 429;
+        errorMessage = 'Too many requests - please try again later';
+        retryAfter = '60';
+      }
+    } else { // Handle cases where error is not an Error instance
+      console.error('Unknown error:', error);
+      let errorMessage = 'Reading generation failed due to an unknown error.';
+      let statusCode = 500;
+      // No retryAfter for unknown errors for now
+      return { statusCode, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: errorMessage }) };
     }
+
+    const errorMessage = 'Reading generation failed'; // Default error message if not caught by specific conditions
+    const statusCode = 500;
+    const retryAfter = ''; // No retryAfter for generic errors
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

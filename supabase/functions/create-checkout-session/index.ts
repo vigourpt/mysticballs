@@ -82,15 +82,28 @@ export const handler: Handler = async (event) => {
       },
       body: JSON.stringify({ sessionId: session.id }),
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Checkout session error:', error);
+    let statusCode = 400; // Default status code
+    let errorMessage = 'Checkout session failed'; // Default error message
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      if (errorMessage === 'Unauthorized') {
+        statusCode = 401;
+      }
+    } else {
+      console.error('Unknown error:', error);
+      errorMessage = 'Checkout session failed due to an unknown error.';
+    }
+    
     return {
-      statusCode: error.message === 'Unauthorized' ? 401 : 400,
+      statusCode,
       headers: {
         ...corsHeaders,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ error: errorMessage }),
     };
   }
 };

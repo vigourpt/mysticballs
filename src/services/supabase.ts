@@ -40,7 +40,7 @@ export const signInWithGoogle = async () => {
         }
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Google sign in error:', error);
     throw error;
   }
@@ -82,7 +82,7 @@ export const signUpWithEmail = async (email: string, password: string) => {
     }
 
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Email sign up error:', error);
     throw error;
   }
@@ -101,7 +101,7 @@ export const signInWithEmail = async (email: string, password: string) => {
 
     if (error) throw error;
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Email sign in error:', error);
     throw new Error(error.message || 'Failed to sign in with email');
   }

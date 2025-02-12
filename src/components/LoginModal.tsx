@@ -6,17 +6,16 @@ import { signInWithGoogle, supabase } from '../services/supabase';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  isDarkMode: boolean;
 }
 
-const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
+const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { signIn, signUp, loading: authLoading, error: authError, confirmEmail } = useAuth();
+  const { signIn, signUp, loading: authLoading, confirmEmail } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,17 +41,23 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
         // Close modal on successful sign in
         onClose();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Auth error:', err);
-      if (err.message?.toLowerCase().includes('already registered')) {
-        setError('This email is already registered. Please sign in instead.');
-        setIsSignUp(false); // Switch to sign in mode
-      } else if (err.message?.toLowerCase().includes('invalid login credentials')) {
-        setError('Invalid email or password. Please try again.');
-      } else if (err.message?.toLowerCase().includes('email link is invalid or has expired')) {
-        setError('The confirmation link is invalid or has expired. Please try signing up again.');
+      const authErrorMessage = 'An error occurred during authentication';
+      if (err instanceof Error) {
+        if (err.message?.toLowerCase().includes('already registered')) {
+          setError('This email is already registered. Please sign in instead.');
+          setIsSignUp(false); // Switch to sign in mode
+        } else if (err.message?.toLowerCase().includes('invalid login credentials')) {
+          setError('Invalid email or password. Please try again.');
+        } else if (err.message?.toLowerCase().includes('email link is invalid or has expired')) {
+          setError('The confirmation link is invalid or has expired. Please try signing up again.');
+        } else {
+          setError(err.message);
+        }
       } else {
-        setError(err.message || 'An error occurred during authentication');
+        console.error('Unknown error:', err);
+        setError(authErrorMessage);
       }
     } finally {
       setIsLoading(false);
@@ -70,9 +75,15 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
       if (error) throw error;
       // Close modal on successful Google sign in
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Google sign in error:', err);
-      setError(err.message || 'Failed to sign in with Google');
+      const googleErrorMessage = 'Failed to sign in with Google';
+      if (err instanceof Error) {
+        setError(err.message || googleErrorMessage);
+      } else {
+        console.error('Unknown error:', err);
+        setError(googleErrorMessage);
+      }
       setIsLoading(false);
     }
   };
@@ -210,7 +221,7 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
 
           <div className="mt-6">
             <button
-              onClick={() => signInWithGoogle()}
+              onClick={handleGoogleSignIn}
               className="w-full flex items-center justify-center py-3 px-4 rounded-lg bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -238,7 +249,6 @@ const LoginModal: FC<Props> = ({ isOpen, onClose, isDarkMode }) => {
       </div>
     </div>
   );
-
 };
 
 export default LoginModal;
