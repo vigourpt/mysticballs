@@ -227,6 +227,7 @@ const handler: Handler = async (event, context) => {
       .single();
 
     if (profileError) {
+      console.error('Supabase Profile Error:', profileError);
       throw new Error('Failed to get user profile');
     }
 
@@ -358,6 +359,7 @@ const handler: Handler = async (event, context) => {
       })
     };
   } catch (error: any) {
+    console.error('Full OpenAI Error:', error);
     console.error('OpenAI Error:', {
       message: error.message,
       code: error.code,

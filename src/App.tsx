@@ -12,6 +12,7 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import { PricingPlan } from './types';
 import { ReadingType } from './types';
+import { supabaseClient } from './lib/supabaseClient'; // Import supabaseClient
 
 interface AppProps {}
 
@@ -27,6 +28,9 @@ const App: React.FC<AppProps> = () => {
   const [currentPage, setCurrentPage] = useState<'home' | 'privacy' | 'terms'>('home');
   const { user, loading: authLoading } = useAuthState();
   const { signOut } = useAuth();
+  const [profiles, setProfiles] = useState(null); // State for profiles data
+  const [supabaseError, setSupabaseError] = useState(null); // State for Supabase errors
+
 
   const handleReadingTypeSelect = (readingType: ReadingType) => {
     setSelectedReadingType(readingType);
@@ -79,6 +83,27 @@ const App: React.FC<AppProps> = () => {
       console.error('Error getting reading:', error);
     }
   };
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        const { data, error } = await supabaseClient
+          .from('user_profiles')
+          .select('*');
+
+        if (error) {
+          setSupabaseError(error);
+        } else {
+          setProfiles(data);
+        }
+      } catch (err) {
+        setSupabaseError(err);
+      }
+    };
+
+    fetchProfiles();
+  }, []);
+
 
   if (authLoading) {
     return (
