@@ -134,46 +134,39 @@ const App: React.FC = () => {
         ) : currentPage === 'terms' ? (
           <TermsOfService isDarkMode={isDarkMode} />
         ) : (
-          <>
+          <div>
             <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold mb-4">Welcome to Your Spiritual Journey</h1>
-          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Explore ancient wisdom through our diverse collection of spiritual readings. Whether you
-            seek guidance, clarity, or deeper understanding, our AI-powered insights combine traditional
-            knowledge with modern technology to illuminate your path forward.
-          </p>
-          {profiles && (
-            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-700'} mt-2`}>
-              {profiles.length} user profiles loaded.
-            </p>
-          )}
-          {supabaseError && (
-            <p className={`text-sm text-red-500 mt-2`}>
-              Error fetching profiles: {supabaseError.message}
-            </p>
-          )}
-        </div>
+              <h1 className="text-4xl font-bold mb-4">Welcome to Your Spiritual Journey</h1>
+              <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                Explore ancient wisdom through our diverse collection of spiritual readings. Whether you
+                seek guidance, clarity, or deeper understanding, our AI-powered insights combine traditional
+                knowledge with modern technology to illuminate your path forward.
+              </p>
+              {profiles && (
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-700'} mt-2`}>
+                  {profiles.length} user profiles loaded.
+                </p>
+              )}
+              {supabaseError && (
+                <p className={`text-sm text-red-500 mt-2`}>
+                  Error fetching profiles: {supabaseError.message}
+                </p>
+              )}
+            </div>
 
-        <div className="mt-12">
-          <div className="reading-types">
-            <ReadingSelector 
-              READING_TYPES={READING_TYPES}
-              handleReadingTypeSelect={handleReadingTypeSelect}
-              isDarkMode={isDarkMode}
-            />
-          </div>
+            <div className="mt-12">
+              <div className="reading-types">
+                <ReadingSelector 
+                  READING_TYPES={READING_TYPES}
+                  handleReadingTypeSelect={handleReadingTypeSelect}
+                  isDarkMode={isDarkMode}
+                />
+              </div>
+            </div>
 
-          {selectedReadingType && (
-            <ReadingForm
-              readingType={selectedReadingType}
-              onSubmit={handleReadingSubmit}
-              onClose={() => setSelectedReadingType(null)}
-              isDarkMode={isDarkMode}
-            />
-          )}
-        </div>
-
-        <div className="mt-24">
+            {!selectedReadingType && (
+              <>
+                <div className="mt-24">
           <h2 className="text-3xl font-bold text-center mb-12">How to Get the Best From Your Reading</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="bg-indigo-900/40 rounded-xl p-8">
@@ -197,30 +190,53 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        <div className="mt-24">
-          <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
-          <div className="space-y-6 max-w-4xl mx-auto">
-            <div className="bg-indigo-900/40 rounded-xl p-8">
-              <h3 className="text-xl font-semibold mb-4">How accurate are the readings?</h3>
-              <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Our readings combine traditional spiritual wisdom with advanced AI technology. While they provide valuable insights and guidance, remember that you have free will and the power to shape your path.
-              </p>
-            </div>
-            <div className="bg-indigo-900/40 rounded-xl p-8">
-              <h3 className="text-xl font-semibold mb-4">How often should I get a reading?</h3>
-              <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                This varies by individual. Some find daily guidance helpful, while others prefer weekly or monthly readings. Listen to your intuition and seek guidance when you feel called to do so.
-              </p>
-            </div>
-            <div className="bg-indigo-900/40 rounded-xl p-8">
-              <h3 className="text-xl font-semibold mb-4">What if I don't understand my reading?</h3>
-              <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Take time to reflect on the messages received. Sometimes insights become clearer with time. You can also try journaling about your reading or discussing it with a trusted friend.
-              </p>
-            </div>
+                <div className="mt-24">
+                  <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
+                  <div className="space-y-6 max-w-4xl mx-auto">
+                    <div className="bg-indigo-900/40 rounded-xl p-8">
+                      <h3 className="text-xl font-semibold mb-4">How accurate are the readings?</h3>
+                      <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Our readings combine traditional spiritual wisdom with advanced AI technology. While they provide valuable insights and guidance, remember that you have free will and the power to shape your path.
+                      </p>
+                    </div>
+                    <div className="bg-indigo-900/40 rounded-xl p-8">
+                      <h3 className="text-xl font-semibold mb-4">How often should I get a reading?</h3>
+                      <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        This varies by individual. Some find daily guidance helpful, while others prefer weekly or monthly readings. Listen to your intuition and seek guidance when you feel called to do so.
+                      </p>
+                    </div>
+                    <div className="bg-indigo-900/40 rounded-xl p-8">
+                      <h3 className="text-xl font-semibold mb-4">What if I don't understand my reading?</h3>
+                      <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Take time to reflect on the messages received. Sometimes insights become clearer with time. You can also try journaling about your reading or discussing it with a trusted friend.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {selectedReadingType && (
+              <div className="mt-12">
+                <button
+                  onClick={() => setSelectedReadingType(null)}
+                  className="mb-8 flex items-center gap-2 px-4 py-2 text-white bg-indigo-900/40 hover:bg-indigo-900/60 rounded-lg transition-colors"
+                >
+                  <span>←</span>
+                  Back to Reading Types
+                </button>
+                <div className="max-w-2xl mx-auto">
+                  <h2 className="text-3xl font-bold mb-8">{selectedReadingType.name}</h2>
+                  <ReadingForm
+                    readingType={selectedReadingType}
+                    onSubmit={handleReadingSubmit}
+                    onClose={() => setSelectedReadingType(null)}
+                    isDarkMode={isDarkMode}
+                  />
+                </div>
+              </div>
+            )}
           </div>
-            </div>
-          </>
         )}
       </main>
 
