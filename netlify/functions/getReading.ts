@@ -349,7 +349,7 @@ const handler: Handler = async (event, context) => {
 
     const responseBody: { reading?: string; error?: string; readingsRemaining?: number | null } = { };
 
-    if (completion.choices[0]?.message?.content?.trim()) {
+    if (completion.choices && completion.choices[0] && completion.choices[0].message && completion.choices[0].message.content) {
         responseBody.reading = completion.choices[0].message.content.trim();
     } else {
         responseBody.error = 'No response received';
@@ -362,7 +362,7 @@ const handler: Handler = async (event, context) => {
     }
 
     let statusCode = 200;
-    const headers: Record<string, string> = {
+    const headers = {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*'
     };
@@ -374,8 +374,8 @@ const handler: Handler = async (event, context) => {
     };
   } catch (error: any) {
     console.error('Full OpenAI Error:', error);
-    let errorMessage = 'Reading generation failed';
-    let statusCode = 500;
+    let errorMessage: string = 'Reading generation failed';
+    let statusCode: number = 500;
     let retryAfter: string | undefined;
     if (error instanceof Error) { // Type guard to check if error is an instance of Error
       console.error('OpenAI Error:', {
@@ -387,17 +387,16 @@ const handler: Handler = async (event, context) => {
 
       if (error.message.includes('API key')) {
         errorMessage = 'Invalid OpenAI API key';
-      } else if (error.message.includes('rate limit') || (error as Record<string, any>).status === 429) {
+      } else if (error.message.includes('rate limit')) {
+        statusCode = 429;
+        errorMessage = 'Too many requests - please try again later';
+        retryAfter = '60';
+      } else if ((error as any).status === 429) {
         statusCode = 429;
         errorMessage = 'Too many requests - please try again later';
         retryAfter = '60';
       }
-    } else { // Handle cases where error is not an Error instance
-      console.error('Unknown error:', error);
-      errorMessage = 'Reading generation failed due to an unknown error.';
-      statusCode = 500;
-      // No retryAfter for unknown errors for now
-    }
+    } 
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',

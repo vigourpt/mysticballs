@@ -1,5 +1,4 @@
 import { ReadingTypeId, ReadingType } from '../types';
-import { useAuth } from '../hooks/useAuth'; // Import useAuth hook
 
 // Validate required fields before making the request
 const validateRequiredFields = (readingType: ReadingTypeId, userInput: Record<string, string>) => {
@@ -69,23 +68,8 @@ export const getReading = async (
     }
 
     return data.reading;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in getReading:', error);
-    
-    // Enhance error message for users
-    let userMessage = 'Reading generation failed. ';
-    if (error instanceof Error) {
-      if (error.message.includes('Missing required fields')) {
-        userMessage = error.message;
-      } else if (error.message.includes('API key')) {
-        userMessage = 'API configuration error. Please contact support.';
-      } else if (error.message.includes('rate limit')) {
-        userMessage = 'Too many requests. Please try again in a moment.';
-      } else {
-        userMessage += error.message;
-      }
-    }
-    
-    throw new Error(userMessage);
+    throw error;
   }
 };
