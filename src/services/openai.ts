@@ -1,20 +1,20 @@
-import { ReadingTypeId } from '../types';
+import { ReadingTypeId, ReadingType } from '../types';
 
 // Validate required fields before making the request
 const validateRequiredFields = (readingType: ReadingTypeId, userInput: Record<string, string>) => {
   const requiredFields: Record<ReadingTypeId, string[]> = {
-    'tarot': ['question'],
-    'numerology': ['name', 'birthdate'],
-    'pastlife': ['name', 'timePeriod'],
-    'magic8ball': ['question'],
-    'astrology': ['sign', 'birthdate'],
-    'oracle': ['question'],
-    'runes': ['question'],
+    'tarot': ['question', 'spread'],
+    'numerology': ['birthdate', 'fullname'],
+    'astrology': ['birthdate', 'birthplace'],
+    'oracle': ['question', 'deck'],
+    'runes': ['question', 'spread'],
     'iching': ['question'],
-    'angels': ['name', 'number'],
-    'horoscope': ['zodiacSign'],
-    'dreams': ['dream'],
-    'aura': ['name', 'personality']
+    'angelnumbers': ['numbers'],
+    'horoscope': ['zodiac'],
+    'dreamanalysis': ['dream'],
+    'magic8ball': ['question'],
+    'aura': ['feelings'],
+    'pastlife': ['concerns']
   };
 
   const missing = requiredFields[readingType]?.filter(field => !userInput[field]);
@@ -24,7 +24,7 @@ const validateRequiredFields = (readingType: ReadingTypeId, userInput: Record<st
 };
 
 export const getReading = async (
-  readingType: ReadingTypeId,
+  readingType: ReadingType,
   userInput: Record<string, string>
 ): Promise<string> => {
   try {
@@ -34,7 +34,8 @@ export const getReading = async (
     }
     validateRequiredFields(readingType, userInput);
 
-    console.log('Processing reading type:', readingType, 'with input:', userInput);
+    console.log('Processing reading type:', readingType, typeof readingType, 'with input:', userInput); // <--- Added console.log for typeof readingType
+    console.log('ReadingType object:', readingType); // <--- Added console.log for readingType object
     
     const response = await fetch('/.netlify/functions/getReading', {
       method: 'POST',
@@ -42,7 +43,7 @@ export const getReading = async (
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        readingType,
+        readingType: (readingType as ReadingType).id,
         userInput
       })
     });
