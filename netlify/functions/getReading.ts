@@ -347,16 +347,27 @@ const handler: Handler = async (event, context) => {
       }
     }
 
+    const responseBody: { reading?: string; error?: string; readingsRemaining?: number | null } = {};
+
+    if (completion.choices[0]?.message?.content?.trim()) {
+        responseBody.reading = completion.choices[0].message.content.trim();
+    } else {
+        responseBody.error = 'No response received';
+    }
+
+    if (!profile.is_premium) {
+        responseBody.readingsRemaining = MAX_FREE_READINGS - (profile.readings_count + 1);
+    } else {
+        responseBody.readingsRemaining = null;
+    }
+
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
       },
-      body: JSON.stringify({
-        reading: completion.choices[0]?.message?.content?.trim() || 'No response received',
-        readingsRemaining: !profile.is_premium ? MAX_FREE_READINGS - (profile.readings_count + 1) : null
-      })
+      body: JSON.stringify(responseBody)
     };
   } catch (error: any) {
     console.error('Full OpenAI Error:', error);
