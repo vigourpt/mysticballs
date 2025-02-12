@@ -11,6 +11,11 @@ import ReadingForm from './components/ReadingForm';
 import { PricingPlan, ReadingType } from './types';
 import { supabaseClient } from './lib/supabaseClient';
 import { UserProfile } from './services/supabase'; // Import UserProfile from supabase service
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
+import TourGuide from './components/TourGuide';
+import { ONBOARDING_STEPS } from './config/tutorial';
+import { Step } from './types';
 
 const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -24,6 +29,7 @@ const App: React.FC = () => {
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
   const [supabaseError, setSupabaseError] = useState<Error | null>(null);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<Step | null>(ONBOARDING_STEPS[0] || null);
   const { user, loading: authLoading } = useAuthState();
   const { signOut } = useAuth();
 
@@ -123,7 +129,13 @@ const App: React.FC = () => {
       />
       
       <main className="container mx-auto px-4 py-12">
-        <div className="text-center mb-16">
+        {currentPage === 'privacy' ? (
+          <PrivacyPolicy isDarkMode={isDarkMode} />
+        ) : currentPage === 'terms' ? (
+          <TermsOfService isDarkMode={isDarkMode} />
+        ) : (
+          <>
+            <div className="text-center mb-16">
           <h1 className="text-4xl font-bold mb-4">Welcome to Your Spiritual Journey</h1>
           <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             Explore ancient wisdom through our diverse collection of spiritual readings. Whether you
@@ -142,20 +154,24 @@ const App: React.FC = () => {
           )}
         </div>
 
-        <ReadingSelector 
-          READING_TYPES={READING_TYPES}
-          handleReadingTypeSelect={handleReadingTypeSelect}
-          isDarkMode={isDarkMode}
-        />
+        <div className="mt-12">
+          <div className="reading-types">
+            <ReadingSelector 
+              READING_TYPES={READING_TYPES}
+              handleReadingTypeSelect={handleReadingTypeSelect}
+              isDarkMode={isDarkMode}
+            />
+          </div>
 
-        {selectedReadingType && (
-          <ReadingForm
-            readingType={selectedReadingType}
-            onSubmit={handleReadingSubmit}
-            onClose={() => setSelectedReadingType(null)}
-            isDarkMode={isDarkMode}
-          />
-        )}
+          {selectedReadingType && (
+            <ReadingForm
+              readingType={selectedReadingType}
+              onSubmit={handleReadingSubmit}
+              onClose={() => setSelectedReadingType(null)}
+              isDarkMode={isDarkMode}
+            />
+          )}
+        </div>
 
         <div className="mt-24">
           <h2 className="text-3xl font-bold text-center mb-12">How to Get the Best From Your Reading</h2>
@@ -203,7 +219,9 @@ const App: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
+            </div>
+          </>
+        )}
       </main>
 
       <Footer
@@ -227,6 +245,13 @@ const App: React.FC = () => {
         onSubscribe={handleSubscribe}
         remainingReadings={0}
       />
+
+      {currentStep && (
+        <TourGuide
+          currentStep={currentStep}
+          onClose={() => setCurrentStep(null)}
+        />
+      )}
     </div>
   );
 };

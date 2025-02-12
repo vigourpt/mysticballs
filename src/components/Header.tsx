@@ -25,7 +25,7 @@ const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center space-x-4">
             <button
               onClick={onDarkModeToggle}
-              className={`p-2 rounded-lg ${
+              className={`theme-toggle p-2 rounded-lg ${
                 isDarkMode 
                   ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
