@@ -151,7 +151,6 @@ const App: React.FC = () => {
                 <ReadingForm
                   readingType={selectedReadingType}
                   onSubmit={handleReadingSubmit}
-                  onClose={() => setSelectedReadingType(null)}
                   isDarkMode={isDarkMode}
                 />
               </div>

@@ -4,14 +4,11 @@ import type { ReadingType, ReadingField } from '../types';
 interface Props {
   readingType: ReadingType;
   onSubmit: (formData: Record<string, string>) => Promise<void>;
-  onClose: () => void;
   isDarkMode?: boolean;
 }
 
-export const ReadingForm = ({ readingType, onSubmit, onClose, isDarkMode = true }: Props) => {
+export const ReadingForm = ({ readingType, onSubmit, isDarkMode = true }: Props) => {
   const [formData, setFormData] = useState<Record<string, string>>({});
-
-  const [readingOutput, setReadingOutput] = useState<string | null>(null);
 
   const handleChange = (field: ReadingField, value: string) => {
     setFormData(prev => ({
@@ -28,8 +25,6 @@ export const ReadingForm = ({ readingType, onSubmit, onClose, isDarkMode = true 
     e.preventDefault();
     try {
       await onSubmit(formData);
-      // TODO: Get the actual reading output from the API response
-      setReadingOutput("Your reading will appear here...");
     } catch (error) {
       console.error('Error submitting form:', error);
     }
