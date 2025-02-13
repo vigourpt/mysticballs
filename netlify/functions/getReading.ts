@@ -323,7 +323,7 @@ const handler: Handler = async (event, context) => {
     }
 
     const completion = await openai.chat.completions.create({
-      model: process.env.NODE_ENV === 'production' ? "gpt-4-turbo-preview" : "gpt-3.5-turbo",
+      model: process.env.NODE_ENV === 'production' ? "gpt-4o" : "gpt-3.5-turbo",
       messages: [
         { role: "system", content: config.systemPrompt },
         { role: "user", content: prompt }
