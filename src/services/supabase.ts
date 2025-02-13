@@ -22,6 +22,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce'
+  },
+  global: {
+    headers: {
+      'x-site-url': siteUrl
+    }
   }
 });
 
@@ -113,7 +118,7 @@ export const signInWithEmail = async (email: string, password: string) => {
 
 // User Profile Management
 export const createUserProfile = async (userId: string, email: string, displayName?: string): Promise<UserProfile | null> => {
-  const profile: UserProfile = {
+  const profile: Tables['user_profiles']['Insert'] = {
     id: userId,
     email,
     display_name: displayName || null,
@@ -170,7 +175,7 @@ export const updatePremiumStatus = async (userId: string, isPremium: boolean): P
     .update({
       is_premium: isPremium,
       updated_at: new Date().toISOString()
-    } as Tables['user_profiles']['Update'])
+    })
     .eq('id', userId);
 
   if (error) {
