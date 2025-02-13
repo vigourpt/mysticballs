@@ -66,7 +66,7 @@ const App: React.FC = () => {
           'Authorization': `Bearer ${user.access_token}`,
         },
         body: JSON.stringify({
-          readingType: selectedReadingType,
+          readingType: selectedReadingType?.id,
           userInput: formData,
         }),
       });
