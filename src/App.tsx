@@ -16,6 +16,7 @@ import TermsOfService from './components/TermsOfService';
 import TourGuide from './components/TourGuide';
 import { ONBOARDING_STEPS } from './config/tutorial';
 import { Step } from './types';
+import ReadingTypeInfo from './components/ReadingTypeInfo';
 
 const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -190,6 +191,10 @@ const App: React.FC = () => {
                 handleReadingTypeSelect={handleReadingTypeSelect}
                 isDarkMode={isDarkMode}
               />
+            </div>
+
+            <div className="mt-24">
+              <ReadingTypeInfo isDarkMode={isDarkMode} />
             </div>
 
             <div className="mt-24">
