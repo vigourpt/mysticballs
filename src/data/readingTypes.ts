@@ -180,7 +180,15 @@ export const READING_TYPES: ReadingType[] = [
     icon: Hash,
     fields: [
       {
-        name: 'numbers',
+        name: 'name',
+        type: 'text',
+        label: 'Your Name',
+        displayName: 'Your Name',
+        placeholder: 'Enter your name',
+        required: true
+      },
+      {
+        name: 'number',
         type: 'text',
         label: 'Number Sequence',
         displayName: 'What numbers do you keep seeing?',

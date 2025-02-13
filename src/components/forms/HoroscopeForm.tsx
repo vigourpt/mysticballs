@@ -7,7 +7,6 @@ const zodiacSigns = [
 ];
 
 const HoroscopeForm: React.FC<FormProps> = ({ 
-  isDarkMode, 
   inputClassName, 
   labelClassName,
   values,
@@ -16,8 +15,8 @@ const HoroscopeForm: React.FC<FormProps> = ({
   <div className="mb-4">
     <label className={labelClassName}>Your Zodiac Sign</label>
     <select
-      value={values.zodiacSign || ''}
-      onChange={(e) => onChange('zodiacSign', e.target.value)}
+      value={values.zodiac || ''}
+      onChange={(e) => onChange('zodiac', e.target.value)}
       className={inputClassName}
       required
     >

@@ -2,7 +2,6 @@ import React from 'react';
 import { FormProps } from './types';
 
 const AuraForm: React.FC<FormProps> = ({ 
-  isDarkMode, 
   inputClassName, 
   labelClassName,
   values,
@@ -21,12 +20,12 @@ const AuraForm: React.FC<FormProps> = ({
       />
     </div>
     <div className="mb-4">
-      <label className={labelClassName}>Personality Description</label>
+      <label className={labelClassName}>Current Feelings</label>
       <textarea
-        value={values.personality || ''}
-        onChange={(e) => onChange('personality', e.target.value)}
+        value={values.feelings || ''}
+        onChange={(e) => onChange('feelings', e.target.value)}
         className={`${inputClassName} h-32 resize-none`}
-        placeholder="Describe your personality, emotions, and current energy levels..."
+        placeholder="Describe your current emotional and physical state..."
         required
       />
     </div>

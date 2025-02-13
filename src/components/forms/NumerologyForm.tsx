@@ -2,7 +2,6 @@ import React from 'react';
 import { FormProps } from './types';
 
 const NumerologyForm: React.FC<FormProps> = ({ 
-  isDarkMode, 
   inputClassName, 
   labelClassName,
   values,
@@ -13,8 +12,8 @@ const NumerologyForm: React.FC<FormProps> = ({
       <label className={labelClassName}>Full Name</label>
       <input
         type="text"
-        value={values.name || ''}
-        onChange={(e) => onChange('name', e.target.value)}
+        value={values.fullname || ''}
+        onChange={(e) => onChange('fullname', e.target.value)}
         className={inputClassName}
         placeholder="Enter your full name"
         required

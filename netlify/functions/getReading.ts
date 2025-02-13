@@ -304,7 +304,7 @@ const handler: Handler = async (event, context) => {
       'oracle': `Interpret the oracle cards for: ${userInput.question}`,
       'runes': `Cast the runes for: ${userInput.question}`,
       'iching': `Consult the I Ching regarding: ${userInput.question}`,
-      'angelnumbers': `Interpret the significance of ${userInput.numbers}`,
+      'angelnumbers': `Interpret the significance of ${userInput.number} for ${userInput.name}`,
       'horoscope': `Provide a detailed horoscope for ${userInput.zodiac}`,
       'dreamanalysis': `Interpret this dream: ${userInput.dream}`,
       'aura': `Read the aura and energy based on current feelings: ${userInput.feelings}`
