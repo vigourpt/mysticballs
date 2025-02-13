@@ -261,7 +261,7 @@ const handler: Handler = async (event, context) => {
     }
 
     // Input validation for specific reading types
-    if (readingType === 'numerology' && (!userInput.name || !userInput.birthdate)) {
+    if (readingType === 'numerology' && (!userInput.fullname || !userInput.birthdate)) {
       return {
         statusCode: 400,
         headers: {
@@ -272,7 +272,7 @@ const handler: Handler = async (event, context) => {
       };
     }
 
-    if (readingType === 'pastlife' && (!userInput.name || !userInput.timePeriod)) {
+    if (readingType === 'pastlife' && !userInput.concerns) {
       return {
         statusCode: 400,
         headers: {
@@ -297,17 +297,17 @@ const handler: Handler = async (event, context) => {
 
     const prompts: Record<string, string> = {
       'tarot': `Provide a tarot reading for this question: ${userInput.question}`,
-      'numerology': `Analyze the numerological significance of ${userInput.name}, born on ${userInput.birthdate}`,
-      'pastlife': `Explore ${userInput.name}'s most significant past life based on their attraction to the ${userInput.timePeriod} period`,
+      'numerology': `Analyze the numerological significance of ${userInput.fullname}, born on ${userInput.birthdate}`,
+      'pastlife': `Explore past life connections based on current concerns: ${userInput.concerns}${userInput.feelings ? ` and unexplained feelings: ${userInput.feelings}` : ''}`,
       'magic8ball': `${userInput.question}`,
-      'astrology': `Analyze the celestial influences for a ${userInput.sign} born on ${userInput.birthdate}`,
+      'astrology': `Analyze the celestial influences for someone born on ${userInput.birthdate}${userInput.birthtime ? ` at ${userInput.birthtime}` : ''} in ${userInput.birthplace}`,
       'oracle': `Interpret the oracle cards for: ${userInput.question}`,
       'runes': `Cast the runes for: ${userInput.question}`,
       'iching': `Consult the I Ching regarding: ${userInput.question}`,
-      'angelnumbers': `Interpret the significance of ${userInput.number} for ${userInput.name}`,
-      'horoscope': `Provide a detailed horoscope for ${userInput.zodiacSign}`,
-      'dreams': `Interpret this dream: ${userInput.dream}`,
-      'aura': `Read the aura and energy of ${userInput.name} based on their personality: ${userInput.personality}`
+      'angelnumbers': `Interpret the significance of ${userInput.numbers}`,
+      'horoscope': `Provide a detailed horoscope for ${userInput.zodiac}`,
+      'dreamanalysis': `Interpret this dream: ${userInput.dream}`,
+      'aura': `Read the aura and energy based on current feelings: ${userInput.feelings}`
     };
 
     const prompt = prompts[readingType];
