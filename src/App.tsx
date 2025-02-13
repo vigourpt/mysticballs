@@ -80,10 +80,13 @@ const App: React.FC = () => {
       }
 
       const data = await response.json();
-      setReadingOutput(data.reading || "Your reading will appear here...");
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      setReadingOutput(data.reading);
     } catch (error) {
       console.error('Error getting reading:', error);
-      setReadingOutput("There was an error getting your reading. Please try again.");
+      setReadingOutput(error instanceof Error ? error.message : "There was an error getting your reading. Please try again.");
     }
   };
 
