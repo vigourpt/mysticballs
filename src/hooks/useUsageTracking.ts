@@ -5,7 +5,6 @@ import { getUserProfile } from '../services/supabase';
 const defaultUsage: UserUsage = {
   readingsCount: 0,
   isPremium: false,
-  lastReadingDate: null,
   readingsRemaining: 3
 };
 
@@ -28,7 +27,7 @@ export const useUsageTracking = (userId: string | null) => {
           setUsage({
             readingsCount: profile.readings_count,
             isPremium: profile.is_premium,
-            lastReadingDate: profile.last_reading_date,
+            lastReadingDate: profile.last_reading_date ? new Date(profile.last_reading_date) : null,
             readingsRemaining: profile.is_premium ? Infinity : Math.max(0, 3 - profile.readings_count)
           });
         }

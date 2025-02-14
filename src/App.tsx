@@ -10,9 +10,15 @@ import ReadingSelector from './components/ReadingSelector';
 import ReadingForm from './components/ReadingForm';
 import { PricingPlan, ReadingType } from './types';
 import { supabaseClient } from './lib/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 import { UserProfile } from './services/supabase';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 import TourGuide from './components/TourGuide';
 import { ONBOARDING_STEPS } from './config/tutorial';
 import { Step } from './types';
@@ -31,11 +37,20 @@ const App: React.FC = () => {
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
   const [supabaseError, setSupabaseError] = useState<Error | null>(null);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<Step | null>(ONBOARDING_STEPS[0] || null);
+  const [currentStep, setCurrentStep] = useState<Step | null>(ONBOARDING_STEPS.length > 0 ? ONBOARDING_STEPS[0] : null);
   const [readingOutput, setReadingOutput] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user, loading: authLoading } = useAuthState();
   const { signOut } = useAuth();
+
+  const nextStep = () => {
+    const currentIndex = ONBOARDING_STEPS.findIndex(step => step.id === currentStep?.id);
+    if (currentIndex >= 0 && currentIndex < ONBOARDING_STEPS.length - 1) {
+      setCurrentStep(ONBOARDING_STEPS[currentIndex + 1]);
+    } else {
+      setCurrentStep(null);
+    }
+  };
 
   const handleReadingTypeSelect = (readingType: ReadingType) => {
     setSelectedReadingType(readingType);
@@ -51,7 +66,27 @@ const App: React.FC = () => {
   };
 
   const handleSubscribe = async (plan: PricingPlan) => {
-    console.log('Subscribing to plan:', plan);
+    try {
+      const response = await fetch('/.netlify/functions/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId: plan.stripePriceId, customerId: user?.id })
+      });
+      const result = await response.json();
+      
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      
+      if (result.url) {
+        window.location.href = result.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (err) {
+      console.error('Error creating checkout session:', err);
+      throw err;
+    }
   };
 
   const handleReadingSubmit = async (formData: Record<string, string>) => {
@@ -68,7 +103,7 @@ const App: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.access_token}`,
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
         },
         body: JSON.stringify({
           readingType: selectedReadingType?.id,
@@ -286,6 +321,7 @@ const App: React.FC = () => {
         <TourGuide
           currentStep={currentStep}
           onClose={() => setCurrentStep(null)}
+          nextStep={nextStep}
         />
       )}
     </div>

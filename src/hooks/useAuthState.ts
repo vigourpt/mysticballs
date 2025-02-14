@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import type { User } from '../types';
+import type { User } from '@supabase/supabase-js';
 
 interface AuthState {
   user: User | null;
@@ -30,11 +30,7 @@ export const useAuthState = (): AuthState => {
       if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         if (session?.user) {
           setState({
-            user: {
-              id: session.user.id,
-              email: session.user.email || '',
-              access_token: session.access_token
-            },
+            user: session.user,
             loading: false,
             error: null
           });
@@ -49,11 +45,7 @@ export const useAuthState = (): AuthState => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setState({
-          user: {
-            id: session.user.id,
-            email: session.user.email || '',
-            access_token: session.access_token
-          },
+          user: session.user,
           loading: false,
           error: null
         });

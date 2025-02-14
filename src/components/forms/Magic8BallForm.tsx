@@ -2,7 +2,6 @@ import React from 'react';
 import { FormProps } from './types';
 
 const Magic8BallForm: React.FC<FormProps> = ({ 
-  isDarkMode, 
   inputClassName, 
   labelClassName,
   values,

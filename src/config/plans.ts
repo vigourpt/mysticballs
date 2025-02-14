@@ -1,9 +1,11 @@
-export const PAYMENT_PLANS = [
+import { PricingPlan } from '../types';
+
+export const PAYMENT_PLANS: PricingPlan[] = [
   {
     id: 'basic',
     name: 'Basic',
     price: 9.99,
-    priceId: 'price_1QKjTIG3HGXKeksq3NJSoxfN',
+    stripePriceId: 'price_1QKjTIG3HGXKeksq3NJSoxfN',
     description: 'Perfect for occasional guidance',
     features: [
       '30 readings per month',
@@ -16,7 +18,7 @@ export const PAYMENT_PLANS = [
     id: 'premium',
     name: 'Premium',
     price: 19.99,
-    priceId: 'price_1QKja1G3HGXKeksqUqC0edF0',
+    stripePriceId: 'price_1QKja1G3HGXKeksqUqC0edF0',
     description: 'For those seeking regular insights',
     features: [
       'Unlimited readings',

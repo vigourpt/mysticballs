@@ -2,7 +2,6 @@ import React from 'react';
 import { FormProps } from './types';
 
 const QuestionForm: React.FC<FormProps> = ({ 
-  isDarkMode, 
   inputClassName, 
   labelClassName,
   values,

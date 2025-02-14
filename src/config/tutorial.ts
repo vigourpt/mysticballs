@@ -4,28 +4,28 @@ export const ONBOARDING_STEPS = [
     target: '.reading-types',
     title: 'Choose Your Reading',
     content: 'Start by selecting the type of spiritual reading you\'d like to receive. Each option offers unique insights and guidance.',
-    position: 'bottom' as const
+    placement: 'right'
   },
   {
     id: 'theme-toggle',
     target: '.theme-toggle',
     title: 'Customize Your Experience',
     content: 'Toggle between light and dark mode for comfortable reading in any environment.',
-    position: 'left' as const
+    placement: 'left'
   },
   {
     id: 'reading-form',
     target: '.reading-form',
     title: 'Provide Your Details',
     content: 'Fill in the required information to receive a personalized reading tailored to your needs.',
-    position: 'right' as const
+    placement: 'right'
   },
   {
     id: 'reading-output',
     target: '.reading-output',
     title: 'Your Reading Results',
     content: 'Your personalized reading will appear here, offering spiritual guidance and insights.',
-    position: 'top' as const
+    placement: 'top'
   }
 ];
 

@@ -24,7 +24,7 @@ export interface UserUsage {
   readingsCount: number;
   readingsRemaining: number;
   isPremium: boolean;
-  lastReadingDate?: string;
+  lastReadingDate?: Date | null;
 }
 
 export interface PaymentPlan {
@@ -46,6 +46,5 @@ export interface Step {
   title: string;
   content: string;
   target: string;
-  placement?: 'top' | 'bottom' | 'left' | 'right';
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  placement: 'top' | 'bottom' | 'left' | 'right';
 }

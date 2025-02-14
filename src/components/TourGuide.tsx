@@ -1,19 +1,22 @@
 import React from 'react';
 import { Step } from '../types';
+import { ONBOARDING_STEPS } from '../config/tutorial';
 
 interface TourGuideProps {
   currentStep: Step;
   onClose: () => void;
+  nextStep: () => void;
   size?: 'small' | 'medium' | 'large';
 }
 
 const TourGuide: React.FC<TourGuideProps> = ({
   currentStep,
   onClose,
+  nextStep,
   size = 'medium'
 }) => {
-  const getPositionStyles = (position: Step['position']) => {
-    switch (position) {
+  const getPositionStyles = (placement: Step['placement']) => {
+    switch (placement) {
       case 'top':
         return 'bottom-full mb-2';
       case 'bottom':
@@ -43,7 +46,7 @@ const TourGuide: React.FC<TourGuideProps> = ({
       <div className="relative w-full h-full">
         {currentStep && (
           <div
-            className={`absolute ${getPositionStyles(currentStep.position)} ${getSizeStyles(size)} bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 pointer-events-auto`}
+            className={`absolute ${getPositionStyles(currentStep.placement)} ${getSizeStyles(size)} bg-indigo-800 text-white rounded-lg shadow-xl p-4 pointer-events-auto`}
             style={{
               left: currentStep.target ? document.querySelector(currentStep.target)?.getBoundingClientRect().left : 0,
               top: currentStep.target ? document.querySelector(currentStep.target)?.getBoundingClientRect().top : 0,
@@ -51,7 +54,7 @@ const TourGuide: React.FC<TourGuideProps> = ({
           >
             <button
               onClick={onClose}
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              className="absolute top-2 right-2 text-white hover:text-gray-300"
             >
               <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path
@@ -68,6 +71,27 @@ const TourGuide: React.FC<TourGuideProps> = ({
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 {currentStep.content}
               </p>
+            </div>
+            <div className="flex justify-between mt-4">
+              <div className="flex justify-center">
+                {ONBOARDING_STEPS.map((step) => (
+                  <span
+                    key={step.id}
+                    className={`w-2 h-2 rounded-full mx-1 ${
+                      currentStep.id === step.id ? 'bg-indigo-500' : 'bg-indigo-300'
+                    }`}
+                  />
+                ))}
+              </div>
+              {ONBOARDING_STEPS.length > 0 && currentStep && currentStep.id === ONBOARDING_STEPS[ONBOARDING_STEPS.length - 1]?.id ? (
+                <button onClick={onClose} className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+                  Finish
+                </button>
+              ) : (
+                <button onClick={nextStep} className="bg-indigo-500 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded">
+                  Next
+                </button>
+              )}
             </div>
           </div>
         )}

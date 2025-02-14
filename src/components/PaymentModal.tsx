@@ -3,7 +3,6 @@ import { User } from '@supabase/supabase-js';
 import { PricingPlan } from '../types';
 import { PAYMENT_PLANS } from '../config/plans';
 import LoadingSpinner from './LoadingSpinner';
-import { useAuth } from '../hooks/useAuth';
 import { Check } from 'lucide-react';
 
 interface PaymentModalProps {
@@ -11,9 +10,9 @@ interface PaymentModalProps {
   isDarkMode: boolean;
   onClose: () => void;
   user: User | null;
-  onSubscribe: (plan: PricingPlan) => Promise<void>;
   remainingReadings: number;
   onLoginRequired?: () => void;
+  onSubscribe: (plan: PricingPlan) => Promise<void>;
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({
@@ -21,9 +20,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   isDarkMode,
   onClose,
   user,
-  onSubscribe,
   remainingReadings,
-  onLoginRequired
+  onLoginRequired,
+  onSubscribe
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,26 +36,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     try {
       setIsLoading(true);
       setError(null);
-      
-      const response = await fetch('/.netlify/functions/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ price: plan.price, customerId: user?.id })
-      });
-      const result = await response.json();
-      
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      
-      if (result.url) {
-        window.location.href = result.url;
-      } else {
-        throw new Error('No checkout URL returned');
-      }
+      await onSubscribe(plan);
     } catch (err) {
-      console.error('Error creating checkout session:', err);
-      setError(err instanceof Error ? err.message : 'Failed to start checkout process');
+      console.error('Error subscribing:', err);
+      setError(err instanceof Error ? err.message : 'Failed to subscribe');
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +82,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          {PAYMENT_PLANS.map((plan) => (
+          {PAYMENT_PLANS.map((plan: PricingPlan) => (
             <div
               key={plan.id}
               className={`${
