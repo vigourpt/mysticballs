@@ -17,6 +17,7 @@ import TourGuide from './components/TourGuide';
 import { ONBOARDING_STEPS } from './config/tutorial';
 import { Step } from './types';
 import ReadingTypeInfo from './components/ReadingTypeInfo';
+import ReadingOutput from './components/ReadingOutput';
 
 const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -32,6 +33,7 @@ const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<Step | null>(ONBOARDING_STEPS[0] || null);
   const [readingOutput, setReadingOutput] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const { user, loading: authLoading } = useAuthState();
   const { signOut } = useAuth();
 
@@ -57,6 +59,9 @@ const App: React.FC = () => {
       setShowLoginModal(true);
       return;
     }
+
+    setIsLoading(true);
+    setReadingOutput(null);
 
     try {
       const response = await fetch('/.netlify/functions/getReading', {
@@ -87,6 +92,8 @@ const App: React.FC = () => {
     } catch (error) {
       console.error('Error getting reading:', error);
       setReadingOutput(error instanceof Error ? error.message : "There was an error getting your reading. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -159,9 +166,12 @@ const App: React.FC = () => {
                   <h3 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                     Your Reading
                   </h3>
-                  <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
-                    {readingOutput}
-                  </p>
+                  <ReadingOutput
+                    readingType={selectedReadingType}
+                    isDarkMode={isDarkMode}
+                    reading={readingOutput}
+                    isLoading={isLoading}
+                  />
                 </div>
               )}
             </div>
