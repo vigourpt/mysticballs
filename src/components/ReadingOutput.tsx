@@ -2,14 +2,28 @@ import React from 'react';
 import { Sparkles } from 'lucide-react';
 import { ReadingType } from '../types';
 import ReactMarkdown from 'react-markdown';
+import LoadingSpinner from './LoadingSpinner';
 
 interface Props {
   readingType: ReadingType;
   isDarkMode: boolean;
   reading?: string;
+  isLoading: boolean;
 }
 
-const ReadingOutput: React.FC<Props> = ({ readingType, isDarkMode, reading }) => {
+const ReadingOutput: React.FC<Props> = ({ readingType, isDarkMode, reading, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className={`mt-8 p-6 rounded-xl relative overflow-hidden reading-output ${
+        isDarkMode
+          ? 'bg-indigo-900/30 backdrop-blur-sm'
+          : 'bg-white/80 backdrop-blur-sm'
+      } shadow-xl`}>
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   if (!reading) return null;
 
   return (
@@ -33,7 +47,7 @@ const ReadingOutput: React.FC<Props> = ({ readingType, isDarkMode, reading }) =>
           <h2 className={`text-2xl font-semibold ${
             isDarkMode ? 'text-white' : 'text-gray-800'
           }`}>
-            Your {readingType === 'iching' ? 'I-Ching' : readingType.charAt(0).toUpperCase() + readingType.slice(1)} Reading
+            Your {readingType.id === 'iching' ? 'I-Ching' : readingType.id.charAt(0).toUpperCase() + readingType.id.slice(1)} Reading
           </h2>
         </div>
         
