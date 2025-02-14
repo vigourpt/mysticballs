@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { rateLimiter } from './utils/rateLimiter';
 import { createClient } from '@supabase/supabase-js';
 
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   defaultHeaders: { 'OpenAI-Project-Id': process.env.OPENAI_PROJECT_ID }

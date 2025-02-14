@@ -34,17 +34,19 @@ const LoadingSpinner: FC<LoadingSpinnerProps> = ({
   };
 
   return (
-    <div className={`fixed inset-0 flex flex-col items-center justify-center bg-gray-900 bg-opacity-90 z-50 ${className}`}>
+    <div className={`flex flex-col items-center justify-center ${className}`}>
       <div className={`${sizeClasses[size]} border-white border-b-transparent rounded-full animate-spin mb-4`}></div>
-      <div className="text-white text-center">
-        <p className="mb-2">{message}</p>
-        {showMessage && showSlowLoadingMessage && (
-          <p className="text-gray-400 text-sm">
-            This is taking longer than expected.<br />
-            Please wait a moment...
-          </p>
-        )}
-      </div>
+      {message && (
+        <div className="text-white text-center">
+          <p className="mb-2">{message}</p>
+          {showMessage && showSlowLoadingMessage && (
+            <p className="text-gray-400 text-sm">
+              This is taking longer than expected.<br />
+              Please wait a moment...
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };
