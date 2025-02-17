@@ -166,6 +166,12 @@ const App: React.FC = () => {
         ? 'bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950' 
         : 'bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100'
     }`}>
+      <Header
+        isDarkMode={isDarkMode}
+        onDarkModeToggle={handleDarkModeToggle}
+        user={user}
+        onSignOut={signOut}
+      />
       <div className="container mx-auto px-4">
         <div className="text-center pt-16 pb-12">
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
@@ -181,13 +187,6 @@ const App: React.FC = () => {
           </p>
         </div>
       </div>
-      <Header
-        isDarkMode={isDarkMode}
-        onDarkModeToggle={handleDarkModeToggle}
-        user={user}
-        onSignOut={signOut}
-      />
-      
       <main className="container mx-auto px-4 py-12">
         {currentPage === 'privacy' ? (
           <PrivacyPolicy isDarkMode={isDarkMode} />

@@ -15,26 +15,23 @@ const Header: React.FC<HeaderProps> = ({
   onSignOut
 }) => {
   return (
-    <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow-sm`}>
+    <header className={`${isDarkMode ? 'bg-gray-800/20' : 'bg-white/10'} shadow-sm`}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            Mystic Balls
-          </h1>
-          
+          <div className="flex-1"></div>
           <div className="flex items-center space-x-4">
             <button
               onClick={onDarkModeToggle}
               className={`theme-toggle p-2 rounded-lg ${
                 isDarkMode 
-                  ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-gray-700/50 text-gray-200 hover:bg-gray-600/50' 
+                  : 'bg-gray-100/50 text-gray-600 hover:bg-gray-200/50'
               } transition-colors`}
             >
               {isDarkMode ? '🌞' : '🌙'}
             </button>
 
-            {user ? (
+            {user && (
               <div className="flex items-center space-x-4">
                 <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   {user.email}
@@ -43,14 +40,14 @@ const Header: React.FC<HeaderProps> = ({
                   onClick={onSignOut}
                   className={`px-4 py-2 rounded-lg ${
                     isDarkMode
-                      ? 'bg-gray-700 text-gray-200 hover:bg-gray-600'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-gray-700/50 text-gray-200 hover:bg-gray-600/50'
+                      : 'bg-gray-100/50 text-gray-600 hover:bg-gray-200/50'
                   } transition-colors`}
                 >
                   Sign Out
                 </button>
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       </div>
