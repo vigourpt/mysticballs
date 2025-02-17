@@ -161,11 +161,26 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className={`min-h-screen ${
+    <div className={`min-h-screen transition-colors duration-300 ${
       isDarkMode 
-        ? 'bg-gradient-to-b from-indigo-950 via-purple-900 to-indigo-950 text-white' 
-        : 'bg-gray-50 text-gray-900'
+        ? 'bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950' 
+        : 'bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100'
     }`}>
+      <div className="container mx-auto px-4">
+        <div className="text-center pt-16 pb-12">
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            Mystic Insights
+          </h1>
+          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            Welcome to Your Spiritual Journey
+          </p>
+          <p className={`mt-4 max-w-2xl mx-auto ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            Explore ancient wisdom through our diverse collection of spiritual readings. Whether you 
+            seek guidance, clarity, or deeper understanding, our AI-powered insights combine traditional 
+            knowledge with modern technology to illuminate your path forward.
+          </p>
+        </div>
+      </div>
       <Header
         isDarkMode={isDarkMode}
         onDarkModeToggle={handleDarkModeToggle}
