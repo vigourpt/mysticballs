@@ -1,10 +1,9 @@
 import React from 'react';
 
 interface Props {
-  isDarkMode: boolean;
 }
 
-const FAQ: React.FC<Props> = ({ isDarkMode }) => {
+const FAQ: React.FC<Props> = () => {
   return (
     <div className="py-16">
       <h2 className="text-3xl md:text-4xl font-bold text-white relative group mb-16 text-center">

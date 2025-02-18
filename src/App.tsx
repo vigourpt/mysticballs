@@ -17,7 +17,6 @@ import TermsOfService from './components/TermsOfService';
 import TourGuide from './components/TourGuide';
 import { ONBOARDING_STEPS } from './config/tutorial';
 import { Step } from './types';
-import ReadingTypeInfo from './components/ReadingTypeInfo';
 import ReadingOutput from './components/ReadingOutput';
 import FAQ from './components/FAQ';
 
@@ -36,7 +35,6 @@ const App: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
-  const [supabaseError, setSupabaseError] = useState<Error | null>(null);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<Step | null>(ONBOARDING_STEPS.length > 0 ? ONBOARDING_STEPS[0] : null);
   const [readingOutput, setReadingOutput] = useState<string | null>(null);
@@ -141,12 +139,12 @@ const App: React.FC = () => {
           .select('*');
 
         if (error) {
-          setSupabaseError(error);
+          setProfiles(null);
         } else {
           setProfiles(data);
         }
       } catch (err) {
-        setSupabaseError(err instanceof Error ? err : new Error(String(err)) as Error);
+        setProfiles(null);
       }
     };
 
@@ -233,7 +231,7 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
-      {!selectedReadingType && <FAQ isDarkMode={isDarkMode} />}
+      {!selectedReadingType && <FAQ />}
       <Footer
         onPrivacyClick={() => setCurrentPage('privacy')}
         onTermsClick={() => setCurrentPage('terms')}
