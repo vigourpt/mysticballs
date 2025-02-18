@@ -174,10 +174,10 @@ const App: React.FC = () => {
       />
       <div className="container mx-auto px-4">
         <div className="text-center pt-16 pb-16 max-w-4xl mx-auto">
-          <h2 className="text-2xl text-blue-400 mb-6">
+          <h2 className="text-4xl text-blue-400 mb-8 font-semibold">
             Welcome to Your Spiritual Journey
           </h2>
-          <p className={`text-base max-w-2xl mx-auto ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          <p className={`text-xl max-w-3xl mx-auto leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             Explore ancient wisdom through our diverse collection of spiritual readings. Whether you 
             seek guidance, clarity, or deeper understanding, our AI-powered insights combine traditional 
             knowledge with modern technology to illuminate your path forward.
