@@ -62,9 +62,7 @@ const ReadingTypeInfo: React.FC<Props> = ({ isDarkMode }) => {
         ? 'bg-indigo-900/30 backdrop-blur-sm'
         : 'bg-white/80 backdrop-blur-sm'
     } shadow-xl space-y-8`}>
-      <h2 className={`text-2xl font-semibold mb-6 ${
-        isDarkMode ? 'text-white' : 'text-gray-800'
-      }`}>
+      <h2 className={`text-3xl font-bold text-center mb-12 text-blue-400`}>
         Discover Our Reading Types
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

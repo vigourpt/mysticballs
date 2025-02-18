@@ -177,7 +177,7 @@ const App: React.FC = () => {
           <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
             Mystic Insights
           </h1>
-          <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          <p className={`text-lg text-blue-400 ${isDarkMode ? 'text-opacity-90' : 'text-opacity-100'}`}>
             Welcome to Your Spiritual Journey
           </p>
           <p className={`mt-4 max-w-2xl mx-auto ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
