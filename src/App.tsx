@@ -174,9 +174,6 @@ const App: React.FC = () => {
       />
       <div className="container mx-auto px-4">
         <div className="text-center pt-16 pb-16 max-w-4xl mx-auto">
-          <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Mystic Insights
-          </h1>
           <h2 className="text-2xl text-blue-400 mb-6">
             Welcome to Your Spiritual Journey
           </h2>

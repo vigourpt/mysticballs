@@ -18,7 +18,10 @@ const Header: React.FC<HeaderProps> = ({
     <header className={`${isDarkMode ? 'bg-gray-800/20' : 'bg-white/10'} shadow-sm`}>
       <div className="container mx-auto px-4 py-4">
         <div className="flex justify-between items-center">
-          <div className="flex-1"></div>
+          <h1 className="text-4xl font-bold text-blue-400 relative group">
+            <span className="absolute -inset-2 bg-blue-400/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="relative">Mystic Balls</span>
+          </h1>
           <div className="flex items-center space-x-4">
             <button
               onClick={onDarkModeToggle}
