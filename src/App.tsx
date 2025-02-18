@@ -14,16 +14,17 @@ import { createClient } from '@supabase/supabase-js';
 import { UserProfile } from './services/supabase';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
 import TourGuide from './components/TourGuide';
 import { ONBOARDING_STEPS } from './config/tutorial';
 import { Step } from './types';
 import ReadingTypeInfo from './components/ReadingTypeInfo';
 import ReadingOutput from './components/ReadingOutput';
+import FAQ from './components/FAQ';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -292,6 +293,7 @@ const App: React.FC = () => {
         )}
       </main>
 
+      <FAQ isDarkMode={isDarkMode} />
       <Footer
         onPrivacyClick={() => setCurrentPage('privacy')}
         onTermsClick={() => setCurrentPage('terms')}
