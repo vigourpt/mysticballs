@@ -1,4 +1,6 @@
-export const ONBOARDING_STEPS = [
+import { Step } from '../types';
+
+export const ONBOARDING_STEPS: readonly Step[] = [
   {
     id: 'reading-types',
     target: '.reading-types',
@@ -27,7 +29,7 @@ export const ONBOARDING_STEPS = [
     content: 'Your personalized reading will appear here, offering spiritual guidance and insights.',
     placement: 'top'
   }
-];
+] as const;
 
 export const TOOLTIPS = {
   readingTypes: {

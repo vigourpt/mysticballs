@@ -45,7 +45,7 @@ const App: React.FC = () => {
   const nextStep = () => {
     const currentIndex = ONBOARDING_STEPS.findIndex(step => step.id === currentStep?.id);
     if (currentIndex >= 0 && currentIndex < ONBOARDING_STEPS.length - 1) {
-      setCurrentStep(ONBOARDING_STEPS[currentIndex + 1]);
+      setCurrentStep(ONBOARDING_STEPS[currentIndex + 1] as Step);
     } else {
       setCurrentStep(null);
     }
