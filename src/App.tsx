@@ -36,7 +36,9 @@ const App: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
-  const [currentStep, setCurrentStep] = useState<Step | null>(ONBOARDING_STEPS.length > 0 ? ONBOARDING_STEPS[0] : null);
+  const [currentStep, setCurrentStep] = useState<Step | null>(() => {
+    return ONBOARDING_STEPS.length > 0 ? ONBOARDING_STEPS[0] as Step : null;
+  });
   const [readingOutput, setReadingOutput] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user, loading: authLoading } = useAuthState();
