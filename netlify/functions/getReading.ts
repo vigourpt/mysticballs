@@ -3,7 +3,6 @@ import OpenAI from 'openai';
 import { rateLimiter } from './utils/rateLimiter';
 import { createClient } from '@supabase/supabase-js';
 
-
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   defaultHeaders: { 'OpenAI-Project-Id': process.env.OPENAI_PROJECT_ID }
@@ -49,60 +48,64 @@ Use markdown headers (###) for each section.`
 Use markdown headers (###) for each section.`
   },
   'oracle': {
-    maxTokens: 600,
-    temperature: 0.8,
-    systemPrompt: `You are an intuitive oracle card reader. Draw 3 cards and provide:
-1. Card Messages
-2. How they relate to the question
-3. Guidance and Action Steps
+    maxTokens: 800,
+    temperature: 0.7,
+    systemPrompt: `You are a mystic oracle reader. Based on the seeker's question, provide a detailed oracle reading that includes:
+1. Initial Insights
+2. Symbolic Interpretations
+3. Guidance and Advice
+4. Future Possibilities
 Use markdown headers (###) for each section.`
   },
   'runes': {
-    maxTokens: 700,
+    maxTokens: 800,
     temperature: 0.7,
-    systemPrompt: `You are a rune master versed in Elder Futhark. Draw 3 runes and provide:
-1. Individual Rune Meanings
-2. Combined Interpretation
-3. Practical Guidance
+    systemPrompt: `You are a skilled rune reader versed in Norse wisdom. Provide a detailed rune reading that includes:
+1. The runes drawn (choose these intuitively)
+2. Individual rune meanings
+3. How the runes interact
+4. Practical guidance
 Use markdown headers (###) for each section.`
   },
   'iching': {
-    maxTokens: 800,
+    maxTokens: 1000,
     temperature: 0.6,
-    systemPrompt: `You are an I Ching master. Generate a hexagram and provide:
-1. Hexagram Name and Number
-2. Core Message
-3. Changing Lines (if any)
-4. Practical Application
-Use markdown headers (###) to separate sections.`
+    systemPrompt: `You are a wise I Ching interpreter. Provide a detailed reading that includes:
+1. The hexagram(s) drawn
+2. The changing lines
+3. Core meaning and symbolism
+4. Advice for the situation
+Use markdown headers (###) for each section.`
   },
   'angelnumbers': {
-    maxTokens: 500,
+    maxTokens: 800,
     temperature: 0.7,
-    systemPrompt: `You are an angel number interpreter. Provide insights into:
-1. Number Significance
-2. Angelic Message
-3. Guidance for Implementation
+    systemPrompt: `You are an angel number interpreter. Provide a detailed interpretation that includes:
+1. The significance of each number
+2. The combined message
+3. Spiritual meaning
+4. Practical guidance
 Use markdown headers (###) for each section.`
   },
   'horoscope': {
-    maxTokens: 600,
+    maxTokens: 1000,
     temperature: 0.7,
-    systemPrompt: `You are an astrologer providing daily guidance. Cover:
+    systemPrompt: `You are an expert astrologer. Provide a detailed daily horoscope that includes:
 1. General Overview
 2. Love & Relationships
 3. Career & Goals
-4. Health & Well-being
+4. Health & Wellness
+5. Lucky Elements for Today
 Use markdown headers (###) for each section.`
   },
-  'dreamanalysis': {
-    maxTokens: 700,
-    temperature: 0.8,
-    systemPrompt: `You are a dream interpreter. Analyze the dream by:
-1. Symbol Meanings
+  'dream': {
+    maxTokens: 1000,
+    temperature: 0.7,
+    systemPrompt: `You are a skilled dream interpreter. Analyze the dream and provide insights including:
+1. Symbol Analysis
 2. Emotional Context
 3. Personal Significance
-4. Guidance Message
+4. Guidance & Messages
 Use markdown headers (###) for each section.`
   },
   'magic8ball': {
@@ -283,6 +286,18 @@ const handler: Handler = async (event, context) => {
         };
       }
 
+      if (readingType === 'oracle' && !userInput.question) {
+        console.error('Missing question for oracle reading');
+        return {
+          statusCode: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: JSON.stringify({ error: 'Please provide a question for your oracle reading' })
+        };
+      }
+
       if (readingType === 'pastlife' && !userInput.concerns) {
         console.error('Missing concerns for pastlife');
         return {
@@ -319,7 +334,7 @@ const handler: Handler = async (event, context) => {
         'iching': `Consult the I Ching regarding: ${userInput.question}`,
         'angelnumbers': `Interpret the significance of ${userInput.number} for ${userInput.name}`,
         'horoscope': `Provide a detailed horoscope for ${userInput.zodiac}`,
-        'dreamanalysis': `Interpret this dream: ${userInput.dream}`,
+        'dream': `Interpret this dream: ${userInput.dream}`,
         'aura': `Read the aura and energy based on current feelings: ${userInput.feelings}`
       };
 
