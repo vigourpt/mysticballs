@@ -173,14 +173,14 @@ const App: React.FC = () => {
         onSignOut={signOut}
       />
       <div className="container mx-auto px-4">
-        <div className="text-center pt-16 pb-12 max-w-3xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+        <div className="text-center pt-16 pb-16 max-w-4xl mx-auto">
+          <h1 className="text-5xl font-bold mb-3 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
             Mystic Insights
           </h1>
-          <h2 className="text-xl text-blue-400 mb-4">
+          <h2 className="text-2xl text-blue-400 mb-6">
             Welcome to Your Spiritual Journey
           </h2>
-          <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          <p className={`text-base max-w-2xl mx-auto ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             Explore ancient wisdom through our diverse collection of spiritual readings. Whether you 
             seek guidance, clarity, or deeper understanding, our AI-powered insights combine traditional 
             knowledge with modern technology to illuminate your path forward.
@@ -227,33 +227,16 @@ const App: React.FC = () => {
           </div>
         ) : (
           <div>
-            <div className="text-center mb-16">
-              <h1 className="text-4xl font-bold mb-4">Welcome to Your Spiritual Journey</h1>
-              <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Explore ancient wisdom through our diverse collection of spiritual readings. Whether you
-                seek guidance, clarity, or deeper understanding, our AI-powered insights combine traditional
-                knowledge with modern technology to illuminate your path forward.
+            <ReadingSelector
+              READING_TYPES={READING_TYPES}
+              handleReadingTypeSelect={handleReadingTypeSelect}
+              isDarkMode={isDarkMode}
+            />
+            {profiles && (
+              <p className={`text-sm text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-700'} mt-2`}>
+                {profiles.length} user profiles loaded.
               </p>
-              {profiles && (
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-700'} mt-2`}>
-                  {profiles.length} user profiles loaded.
-                </p>
-              )}
-              {supabaseError && (
-                <p className={`text-sm text-red-500 mt-2`}>
-                  Error fetching profiles: {supabaseError.message}
-                </p>
-              )}
-            </div>
-
-            <div className="reading-types">
-              <ReadingSelector 
-                READING_TYPES={READING_TYPES}
-                handleReadingTypeSelect={handleReadingTypeSelect}
-                isDarkMode={isDarkMode}
-              />
-            </div>
-
+            )}
             <div className="mt-24">
               <ReadingTypeInfo isDarkMode={isDarkMode} />
             </div>
