@@ -46,7 +46,7 @@ const Header: React.FC<HeaderProps> = ({
                 </span>
                 {userProfile && (
                   <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    {userProfile.readingsRemaining} free readings remaining
+                    {userProfile.is_premium ? 'Premium Member' : `${10 - (userProfile.readings_count || 0)} free readings remaining`}
                   </span>
                 )}
                 <button
