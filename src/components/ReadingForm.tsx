@@ -31,7 +31,7 @@ export const ReadingForm = ({ readingType, onSubmit, isDarkMode = true }: Props)
   };
 
   return (
-    <div>
+    <div className="bg-indigo-900/40 rounded-xl p-8">
       <h2 className="text-2xl md:text-3xl font-bold text-white relative group mb-8">
         <span className="absolute -inset-2 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
         <span className="absolute -inset-2 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>

@@ -39,12 +39,12 @@ const ReadingOutput: React.FC<Props> = ({ readingType, isDarkMode, reading, isLo
       </div>
       
       <div className="relative">
-        <div className="flex items-center justify-center mb-6">
+        <div className="flex items-center gap-3 mb-6">
           <div className="absolute w-24 h-24 bg-indigo-500/20 rounded-full blur-xl"></div>
           <Sparkles className={`w-8 h-8 ${
             isDarkMode ? 'text-indigo-300' : 'text-indigo-600'
-          } mr-2 animate-pulse`} />
-          <h2 className="text-2xl md:text-3xl font-bold text-white relative group mb-8">
+          } animate-pulse`} />
+          <h2 className="text-2xl md:text-3xl font-bold text-white relative group">
             <span className="absolute -inset-2 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
             <span className="absolute -inset-2 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
             <span className="absolute -inset-2 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>

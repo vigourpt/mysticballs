@@ -202,29 +202,21 @@ const App: React.FC = () => {
               <span>←</span>
               Back to Reading Types
             </button>
-            <div className="space-y-8">
-              <div className={`p-8 rounded-xl w-full ${isDarkMode ? 'bg-indigo-900/40' : 'bg-white'}`}>
-                <h2 className="text-3xl font-bold mb-8">{selectedReadingType.name}</h2>
-                <ReadingForm
+            <ReadingForm
+              readingType={selectedReadingType}
+              onSubmit={handleReadingSubmit}
+              isDarkMode={isDarkMode}
+            />
+            {readingOutput && (
+              <div className="mt-8">
+                <ReadingOutput
                   readingType={selectedReadingType}
-                  onSubmit={handleReadingSubmit}
                   isDarkMode={isDarkMode}
+                  reading={readingOutput}
+                  isLoading={isLoading}
                 />
               </div>
-              {readingOutput && (
-                <div className={`p-8 rounded-xl w-full ${isDarkMode ? 'bg-indigo-900/40' : 'bg-white'}`}>
-                  <h3 className={`text-xl font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                    Your Reading
-                  </h3>
-                  <ReadingOutput
-                    readingType={selectedReadingType}
-                    isDarkMode={isDarkMode}
-                    reading={readingOutput}
-                    isLoading={isLoading}
-                  />
-                </div>
-              )}
-            </div>
+            )}
           </div>
         ) : (
           <div>
@@ -238,62 +230,10 @@ const App: React.FC = () => {
                 {profiles.length} user profiles loaded.
               </p>
             )}
-            <div className="mt-24">
-              <ReadingTypeInfo isDarkMode={isDarkMode} />
-            </div>
-
-            <div className="mt-24">
-              <h2 className="text-3xl font-bold text-center mb-12">How to Get the Best From Your Reading</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div className="bg-indigo-900/40 rounded-xl p-8">
-                  <h3 className="text-xl font-semibold mb-4">Set Your Intention</h3>
-                  <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Take a moment to center yourself and clearly focus on your question or area of concern. The more specific your intention, the more focused your reading will be.
-                  </p>
-                </div>
-                <div className="bg-indigo-900/40 rounded-xl p-8">
-                  <h3 className="text-xl font-semibold mb-4">Create Sacred Space</h3>
-                  <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Find a quiet, comfortable place where you won't be disturbed. This helps create the right environment for receiving spiritual insights.
-                  </p>
-                </div>
-                <div className="bg-indigo-900/40 rounded-xl p-8">
-                  <h3 className="text-xl font-semibold mb-4">Stay Open</h3>
-                  <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Approach your reading with an open mind and heart. Sometimes the guidance we receive isn't what we expect, but it's often what we need.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-24">
-              <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
-              <div className="space-y-6 max-w-4xl mx-auto">
-                <div className="bg-indigo-900/40 rounded-xl p-8">
-                  <h3 className="text-xl font-semibold mb-4">How accurate are the readings?</h3>
-                  <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Our readings combine traditional spiritual wisdom with advanced AI technology. While they provide valuable insights and guidance, remember that you have free will and the power to shape your path.
-                  </p>
-                </div>
-                <div className="bg-indigo-900/40 rounded-xl p-8">
-                  <h3 className="text-xl font-semibold mb-4">How often should I get a reading?</h3>
-                  <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    This varies by individual. Some find daily guidance helpful, while others prefer weekly or monthly readings. Listen to your intuition and seek guidance when you feel called to do so.
-                  </p>
-                </div>
-                <div className="bg-indigo-900/40 rounded-xl p-8">
-                  <h3 className="text-xl font-semibold mb-4">What if I don't understand my reading?</h3>
-                  <p className={`text-gray-300 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                    Take time to reflect on the messages received. Sometimes insights become clearer with time. You can also try journaling about your reading or discussing it with a trusted friend.
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         )}
       </main>
-
-      <FAQ isDarkMode={isDarkMode} />
+      {!selectedReadingType && <FAQ isDarkMode={isDarkMode} />}
       <Footer
         onPrivacyClick={() => setCurrentPage('privacy')}
         onTermsClick={() => setCurrentPage('terms')}
