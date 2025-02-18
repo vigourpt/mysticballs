@@ -190,9 +190,15 @@ const App: React.FC = () => {
       </div>
       <main className="container mx-auto px-4 py-12">
         {currentPage === 'privacy' ? (
-          <PrivacyPolicy isDarkMode={isDarkMode} />
+          <PrivacyPolicy 
+            isDarkMode={isDarkMode} 
+            onBack={() => setCurrentPage(null)} 
+          />
         ) : currentPage === 'terms' ? (
-          <TermsOfService isDarkMode={isDarkMode} />
+          <TermsOfService 
+            isDarkMode={isDarkMode} 
+            onBack={() => setCurrentPage(null)} 
+          />
         ) : selectedReadingType ? (
           <div className="max-w-4xl mx-auto">
             <button
@@ -233,7 +239,7 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
-      {!selectedReadingType && <FAQ isDarkMode={isDarkMode} />}
+      {!selectedReadingType && !currentPage && <FAQ isDarkMode={isDarkMode} />}
       <Footer
         onPrivacyClick={() => setCurrentPage('privacy')}
         onTermsClick={() => setCurrentPage('terms')}

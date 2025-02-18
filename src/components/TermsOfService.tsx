@@ -2,11 +2,19 @@ import React from 'react';
 
 interface Props {
   isDarkMode: boolean;
+  onBack: () => void;
 }
 
-const TermsOfService: React.FC<Props> = ({ isDarkMode }) => {
+const TermsOfService: React.FC<Props> = ({ isDarkMode, onBack }) => {
   return (
     <div className={`container mx-auto px-4 py-8 text-indigo-200 ${isDarkMode ? 'dark-mode' : ''}`}>
+      <button
+        onClick={onBack}
+        className="mb-8 flex items-center gap-2 px-4 py-2 text-white bg-indigo-900/40 hover:bg-indigo-900/60 rounded-lg transition-colors"
+      >
+        <span>←</span>
+        Back to Home
+      </button>
       <h1 className="text-3xl font-bold text-white mb-6">Terms of Service</h1>
       
       <div className="space-y-6">
