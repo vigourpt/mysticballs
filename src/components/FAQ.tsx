@@ -7,19 +7,19 @@ interface Props {
 const FAQ: React.FC<Props> = ({ isDarkMode }) => {
   return (
     <div className="py-16">
-      <h2 className={`text-3xl md:text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} relative group mb-16 text-center`}>
-        <span className="absolute -inset-1 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-        <span className="absolute -inset-1 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-        <span className="absolute -inset-1 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+      <h2 className={`text-3xl md:text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} relative group mb-16 text-center max-w-4xl mx-auto`}>
+        <span className="absolute inset-0 -left-8 -right-8 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+        <span className="absolute inset-0 -left-8 -right-8 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+        <span className="absolute inset-0 -left-8 -right-8 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
         <span className="relative glow-text">How to Get the Best From Your Reading</span>
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-24 max-w-6xl mx-auto px-4">
         <div>
           <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} relative group mb-4`}>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
             <span className="relative glow-text">Set Your Intention</span>
           </h3>
           <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} leading-relaxed`}>
@@ -29,9 +29,9 @@ const FAQ: React.FC<Props> = ({ isDarkMode }) => {
 
         <div>
           <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} relative group mb-4`}>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
             <span className="relative glow-text">Create Sacred Space</span>
           </h3>
           <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} leading-relaxed`}>
@@ -41,9 +41,9 @@ const FAQ: React.FC<Props> = ({ isDarkMode }) => {
 
         <div>
           <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} relative group mb-4`}>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
             <span className="relative glow-text">Stay Open</span>
           </h3>
           <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} leading-relaxed`}>
@@ -52,19 +52,19 @@ const FAQ: React.FC<Props> = ({ isDarkMode }) => {
         </div>
       </div>
 
-      <h2 className={`text-3xl md:text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} relative group mb-12 text-center`}>
-        <span className="absolute -inset-1 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-        <span className="absolute -inset-1 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-        <span className="absolute -inset-1 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+      <h2 className={`text-3xl md:text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} relative group mb-12 text-center max-w-4xl mx-auto`}>
+        <span className="absolute inset-0 -left-8 -right-8 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+        <span className="absolute inset-0 -left-8 -right-8 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+        <span className="absolute inset-0 -left-8 -right-8 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
         <span className="relative glow-text">Frequently Asked Questions</span>
       </h2>
 
       <div className="max-w-4xl mx-auto px-4 space-y-8">
         <div className="bg-indigo-900/30 backdrop-blur-sm rounded-lg p-8">
           <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} relative group mb-4`}>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
             <span className="relative glow-text">How accurate are the readings?</span>
           </h3>
           <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} leading-relaxed`}>
@@ -74,9 +74,9 @@ const FAQ: React.FC<Props> = ({ isDarkMode }) => {
 
         <div className="bg-indigo-900/30 backdrop-blur-sm rounded-lg p-8">
           <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} relative group mb-4`}>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
             <span className="relative glow-text">How often should I get a reading?</span>
           </h3>
           <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} leading-relaxed`}>
@@ -86,9 +86,9 @@ const FAQ: React.FC<Props> = ({ isDarkMode }) => {
 
         <div className="bg-indigo-900/30 backdrop-blur-sm rounded-lg p-8">
           <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'} relative group mb-4`}>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute -inset-1 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute inset-0 -left-4 -right-4 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
             <span className="relative glow-text">What if I don't understand my reading?</span>
           </h3>
           <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} leading-relaxed`}>
