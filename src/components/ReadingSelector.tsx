@@ -10,7 +10,12 @@ interface Props {
 const ReadingSelector: React.FC<Props> = ({ READING_TYPES, handleReadingTypeSelect, isDarkMode }) => {
   return (
     <section id="reading-types">
-      <h2 className="text-3xl font-bold text-center mb-12 text-blue-400">Discover Our Reading Types</h2>
+      <h2 className="text-2xl md:text-3xl font-bold text-white relative group mb-12">
+        <span className="absolute -inset-2 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+        <span className="absolute -inset-2 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+        <span className="absolute -inset-2 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+        <span className="relative glow-text text-center block">Discover Our Reading Types</span>
+      </h2>
       <div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {READING_TYPES.map((type) => {

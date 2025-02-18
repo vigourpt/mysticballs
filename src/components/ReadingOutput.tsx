@@ -44,10 +44,11 @@ const ReadingOutput: React.FC<Props> = ({ readingType, isDarkMode, reading, isLo
           <Sparkles className={`w-8 h-8 ${
             isDarkMode ? 'text-indigo-300' : 'text-indigo-600'
           } mr-2 animate-pulse`} />
-          <h2 className={`text-2xl font-semibold ${
-            isDarkMode ? 'text-white' : 'text-gray-800'
-          }`}>
-            Your {readingType.id === 'iching' ? 'I-Ching' : readingType.id.charAt(0).toUpperCase() + readingType.id.slice(1)} Reading
+          <h2 className="text-2xl md:text-3xl font-bold text-white relative group mb-8">
+            <span className="absolute -inset-2 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute -inset-2 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute -inset-2 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="relative glow-text">Your {readingType.id === 'iching' ? 'I-Ching' : readingType.id.charAt(0).toUpperCase() + readingType.id.slice(1)} Reading</span>
           </h2>
         </div>
         

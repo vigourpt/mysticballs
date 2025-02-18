@@ -173,11 +173,14 @@ const App: React.FC = () => {
         onSignOut={signOut}
       />
       <div className="container mx-auto px-4">
-        <div className="text-center pt-16 pb-16 max-w-4xl mx-auto">
-          <h2 className="text-4xl text-blue-400 mb-8 font-semibold">
-            Welcome to Your Spiritual Journey
+        <div className="pt-16 pb-16 max-w-xl">
+          <h2 className="text-2xl md:text-3xl font-bold text-white relative group mb-6">
+            <span className="absolute -inset-2 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute -inset-2 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="absolute -inset-2 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
+            <span className="relative glow-text">Welcome to Your Spiritual Journey</span>
           </h2>
-          <p className={`text-xl max-w-3xl mx-auto leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+          <p className={`text-lg leading-relaxed ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
             Explore ancient wisdom through our diverse collection of spiritual readings. Whether you 
             seek guidance, clarity, or deeper understanding, our AI-powered insights combine traditional 
             knowledge with modern technology to illuminate your path forward.
