@@ -1,18 +1,21 @@
 import React from 'react';
 import { User } from '@supabase/supabase-js';
+import { UserProfile } from '../services/supabase';
 
 interface HeaderProps {
   user: User | null;
   isDarkMode: boolean;
   onDarkModeToggle: () => void;
   onSignOut: () => Promise<{ success: boolean }>;
+  userProfile?: UserProfile;
 }
 
 const Header: React.FC<HeaderProps> = ({
   user,
   isDarkMode,
   onDarkModeToggle,
-  onSignOut
+  onSignOut,
+  userProfile
 }) => {
   return (
     <header className={`${isDarkMode ? 'bg-gray-800/20' : 'bg-white/10'} shadow-sm`}>
@@ -37,10 +40,15 @@ const Header: React.FC<HeaderProps> = ({
             </button>
 
             {user && (
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-col items-end">
                 <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   {user.email}
                 </span>
+                {userProfile && (
+                  <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                    {userProfile.readingsRemaining} free readings remaining
+                  </span>
+                )}
                 <button
                   onClick={onSignOut}
                   className={`px-4 py-2 rounded-lg ${

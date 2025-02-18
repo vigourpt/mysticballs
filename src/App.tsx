@@ -168,10 +168,11 @@ const App: React.FC = () => {
         : 'bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100'
     }`}>
       <Header
+        user={user}
         isDarkMode={isDarkMode}
         onDarkModeToggle={handleDarkModeToggle}
-        user={user}
         onSignOut={signOut}
+        userProfile={profiles?.[0]}
       />
       <div className="container mx-auto px-4">
         <div className="pt-16 pb-16 max-w-3xl mx-auto text-center">
