@@ -231,7 +231,7 @@ const App: React.FC = () => {
           </div>
         )}
       </main>
-      {!selectedReadingType && <FAQ />}
+      {!selectedReadingType && <FAQ isDarkMode={isDarkMode} />}
       <Footer
         onPrivacyClick={() => setCurrentPage('privacy')}
         onTermsClick={() => setCurrentPage('terms')}
