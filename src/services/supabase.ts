@@ -184,6 +184,37 @@ export const updatePremiumStatus = async (userId: string, isPremium: boolean): P
   }
 };
 
+export const updateUserReadingsCount = async (userId: string, additionalReadings: number): Promise<void> => {
+  if (additionalReadings <= 0) return;
+
+  try {
+    // First get the current profile
+    const profile = await getUserProfile(userId);
+    
+    if (!profile) {
+      console.error('Profile not found for user:', userId);
+      return;
+    }
+    
+    // Update the readings count
+    const { error } = await supabase
+      .from('user_profiles')
+      .update({
+        readings_count: profile.readings_count + additionalReadings,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error updating readings count:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error in updateUserReadingsCount:', error);
+    throw error;
+  }
+};
+
 export const clearAllAuthState = async () => {
   try {
     // Clear Supabase session

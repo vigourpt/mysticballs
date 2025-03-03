@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { signInWithGoogle, supabase } from '../services/supabase';
+import { signInWithGoogle, supabase, updateUserReadingsCount } from '../services/supabase';
+import { FREE_READINGS_LIMIT } from '../config/constants';
 
 interface Props {
   isOpen: boolean;
@@ -15,7 +16,32 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { signIn, signUp, loading: authLoading, confirmEmail } = useAuth();
+  const { signIn, signUp, loading: authLoading, confirmEmail, user } = useAuth();
+
+  // Function to transfer anonymous readings to user account
+  const transferAnonymousReadings = async (userId: string) => {
+    try {
+      const storedReadings = localStorage.getItem('freeReadingsUsed');
+      if (storedReadings) {
+        const readingsCount = parseInt(storedReadings, 10);
+        if (readingsCount > 0) {
+          await updateUserReadingsCount(userId, readingsCount);
+          // Clear anonymous readings from localStorage
+          localStorage.removeItem('freeReadingsUsed');
+        }
+      }
+    } catch (err) {
+      console.error('Error transferring anonymous readings:', err);
+      // Don't throw error here, just log it - we don't want to block sign-in
+    }
+  };
+
+  // Watch for user changes to transfer readings
+  useEffect(() => {
+    if (user) {
+      transferAnonymousReadings(user.id);
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +99,7 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
     try {
       const { error } = await signInWithGoogle();
       if (error) throw error;
+      
       // Close modal on successful Google sign in
       onClose();
     } catch (err: unknown) {

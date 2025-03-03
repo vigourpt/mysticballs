@@ -160,6 +160,16 @@ const App: React.FC = () => {
       if (!user) {
         freeReadingsUsed += 1;
         localStorage.setItem('freeReadingsUsed', freeReadingsUsed.toString());
+      } else {
+        // Refresh user profile after successful reading to update the readings count
+        const { data: refreshedProfiles, error } = await supabaseClient
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id);
+          
+        if (!error && refreshedProfiles) {
+          setProfiles(refreshedProfiles);
+        }
       }
       
       setReadingOutput(data.reading);
@@ -173,23 +183,30 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchProfiles = async () => {
-      try {
-        const { data, error } = await supabaseClient
-          .from('user_profiles')
-          .select('*');
+      if (user) {
+        try {
+          const { data, error } = await supabaseClient
+            .from('user_profiles')
+            .select('*')
+            .eq('id', user.id); // Only fetch current user's profile
 
-        if (error) {
+          if (error) {
+            setProfiles(null);
+          } else {
+            setProfiles(data);
+          }
+        } catch (err) {
           setProfiles(null);
-        } else {
-          setProfiles(data);
         }
-      } catch (err) {
-        setProfiles(null);
       }
     };
 
-    fetchProfiles();
-  }, []);
+    if (user) {
+      fetchProfiles();
+    } else {
+      setProfiles(null);
+    }
+  }, [user]); // Re-run when user changes
 
   if (authLoading) {
     return (
