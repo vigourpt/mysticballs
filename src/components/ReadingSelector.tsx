@@ -5,9 +5,10 @@ interface Props {
   READING_TYPES: ReadingType[];
   handleReadingTypeSelect: (reading: ReadingType) => void;
   isDarkMode: boolean;
+  isPremium?: boolean;
 }
 
-const ReadingSelector: React.FC<Props> = ({ READING_TYPES, handleReadingTypeSelect, isDarkMode }) => {
+const ReadingSelector: React.FC<Props> = ({ READING_TYPES, handleReadingTypeSelect, isDarkMode, isPremium = false }) => {
   return (
     <section id="reading-types">
       <h2 className="text-2xl md:text-3xl font-bold text-white relative group mb-12">
@@ -31,6 +32,13 @@ const ReadingSelector: React.FC<Props> = ({ READING_TYPES, handleReadingTypeSele
               } backdrop-blur-sm shadow-xl`}
               >
                 <div className="flex flex-col items-center text-center space-y-4">
+                  {type.premiumOnly && (
+                    <div className="absolute top-2 right-2">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-amber-500 to-amber-300 text-amber-900">
+                        Premium Only
+                      </span>
+                    </div>
+                  )}
                   <Icon
                     size={48}
                     className={`${

@@ -273,6 +273,24 @@ const handler: Handler = async (event, context) => {
           body: JSON.stringify({ error: 'Missing required parameters' })
         };
       }
+      
+      // Check if reading type is premium-only
+      const premiumReadingTypes = ['pastlife', 'aura', 'astrology'];
+      if (premiumReadingTypes.includes(readingType) && !profile.is_premium) {
+        console.log('Premium reading requested by non-premium user:', user.id);
+        return {
+          statusCode: 402,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: JSON.stringify({
+            error: 'Premium reading type',
+            message: 'This reading type is only available to premium members. Please upgrade to access it.',
+            requiresUpgrade: true
+          })
+        };
+      }
 
       // Input validation for specific reading types
       if (readingType === 'numerology' && (!userInput.fullname || !userInput.birthdate)) {

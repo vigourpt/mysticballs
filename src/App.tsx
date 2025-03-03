@@ -55,6 +55,12 @@ const App: React.FC = () => {
   };
 
   const handleReadingTypeSelect = (readingType: ReadingType) => {
+    // Check if reading is premium-only and user is not premium
+    if (readingType.premiumOnly && (!user || !profiles?.[0]?.is_premium)) {
+      setShowPaymentModal(true);
+      return;
+    }
+    
     setSelectedReadingType(readingType);
     setReadingOutput(null);
   };
@@ -232,6 +238,7 @@ const App: React.FC = () => {
               READING_TYPES={READING_TYPES}
               handleReadingTypeSelect={handleReadingTypeSelect}
               isDarkMode={isDarkMode}
+              isPremium={user ? profiles?.[0]?.is_premium : false}
             />
             {profiles && (
               <p className={`text-sm text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-700'} mt-2`}>

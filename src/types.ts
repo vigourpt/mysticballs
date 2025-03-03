@@ -8,6 +8,7 @@ export interface ReadingType {
   description: string;
   icon: LucideIcon;
   fields?: ReadingField[];
+  premiumOnly?: boolean;
 }
 
 export interface ReadingField {

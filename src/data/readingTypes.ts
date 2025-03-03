@@ -72,6 +72,7 @@ export const READING_TYPES: ReadingType[] = [
     name: 'Astrology Reading',
     description: 'Explore your celestial connections and cosmic path',
     icon: Star,
+    premiumOnly: true,
     fields: [
       {
         name: 'birthdate',
@@ -254,6 +255,7 @@ export const READING_TYPES: ReadingType[] = [
     name: 'Aura Reading',
     description: 'Discover your energy field\'s colors and meanings',
     icon: Zap,
+    premiumOnly: true,
     fields: [
       {
         name: 'feelings',
@@ -270,6 +272,7 @@ export const READING_TYPES: ReadingType[] = [
     name: 'Past Life Reading',
     description: 'Explore your soul\'s previous incarnations',
     icon: Clock,
+    premiumOnly: true,
     fields: [
       {
         name: 'concerns',
