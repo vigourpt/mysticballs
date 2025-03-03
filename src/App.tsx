@@ -55,8 +55,14 @@ const App: React.FC = () => {
   };
 
   const handleReadingTypeSelect = (readingType: ReadingType) => {
-    // Check if reading is premium-only and user is not premium
-    if (readingType.premiumOnly && (!user || !profiles?.[0]?.is_premium)) {
+    // Allow all users to access all readings with their free readings
+    // Only show payment modal if they've run out of free readings
+    const freeReadingsRemaining = user && profiles?.[0]
+      ? Math.max(0, FREE_READINGS_LIMIT - (profiles[0].readings_count || 0))
+      : FREE_READINGS_LIMIT;
+    
+    // If it's a premium reading and user is not premium and has no free readings left
+    if (readingType.premiumOnly && (!user || !profiles?.[0]?.is_premium) && freeReadingsRemaining <= 0) {
       setShowPaymentModal(true);
       return;
     }
@@ -98,24 +104,42 @@ const App: React.FC = () => {
   };
 
   const handleReadingSubmit = async (formData: Record<string, string>) => {
+    // Allow non-logged-in users to get readings
+    // Track readings in localStorage for non-logged-in users
+    let freeReadingsUsed = 0;
+    
     if (!user) {
-      setShowLoginModal(true);
-      return;
+      // Get free readings used from localStorage
+      const storedReadings = localStorage.getItem('freeReadingsUsed');
+      freeReadingsUsed = storedReadings ? parseInt(storedReadings, 10) : 0;
+      
+      // If they've used all free readings, prompt to login
+      if (freeReadingsUsed >= FREE_READINGS_LIMIT) {
+        setShowLoginModal(true);
+        return;
+      }
     }
 
     setIsLoading(true);
     setReadingOutput(null);
 
     try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Add authorization header if user is logged in
+      if (user) {
+        headers['Authorization'] = `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`;
+      }
+      
       const response = await fetch('/.netlify/functions/getReading', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
+        headers,
         body: JSON.stringify({
           readingType: selectedReadingType?.id,
           userInput: formData,
+          isAnonymous: !user,
         }),
       });
 
@@ -131,6 +155,13 @@ const App: React.FC = () => {
       if (data.error) {
         throw new Error(data.error);
       }
+      
+      // If user is not logged in, increment free readings used in localStorage
+      if (!user) {
+        freeReadingsUsed += 1;
+        localStorage.setItem('freeReadingsUsed', freeReadingsUsed.toString());
+      }
+      
       setReadingOutput(data.reading);
     } catch (error) {
       console.error('Error getting reading:', error);

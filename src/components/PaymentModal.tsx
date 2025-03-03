@@ -62,7 +62,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         </button>
 
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold mb-2">Upgrade Your Spiritual Journey</h2>
+          <h2 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Upgrade Your Spiritual Journey</h2>
           <p className={`${isDarkMode ? 'text-indigo-200' : 'text-gray-600'}`}>
             You have {remainingReadings} free readings remaining.
             Unlock unlimited readings and premium features!
@@ -91,8 +91,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   : 'bg-white hover:bg-indigo-50'
               } rounded-xl p-6 shadow-lg transition-all duration-300 transform hover:scale-105`}
             >
-              <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-              <div className="text-3xl font-bold mb-4">
+              <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{plan.name}</h3>
+              <div className={`text-3xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
                 ${plan.price}
                 <span className={`text-sm ${
                   isDarkMode ? 'text-indigo-200' : 'text-gray-600'
@@ -109,7 +109,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                     <Check className={`w-5 h-5 mr-2 ${
                       isDarkMode ? 'text-indigo-300' : 'text-indigo-600'
                     }`} />
-                    <span>{feature}</span>
+                    <span className={`${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -137,8 +137,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           disabled={isLoading}
           className={`mt-6 py-2 px-4 rounded-lg ${
             isDarkMode
-              ? 'bg-gray-800 hover:bg-gray-700'
-              : 'bg-gray-200 hover:bg-gray-300'
+              ? 'bg-gray-800 hover:bg-gray-700 text-white'
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
           } transition-colors w-full disabled:opacity-50`}
         >
           Maybe Later

@@ -2,6 +2,7 @@ import { Handler } from '@netlify/functions';
 import OpenAI from 'openai';
 import { rateLimiter } from './utils/rateLimiter';
 import { createClient } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -137,6 +138,17 @@ Use markdown headers (###) to separate sections.`
   }
 };
 
+// List of premium reading types
+const premiumReadingTypes = ['pastlife', 'aura', 'astrology'];
+
+// Interface for user profile
+interface UserProfile {
+  id: string;
+  is_premium: boolean;
+  readings_count: number;
+  last_reading_date?: string;
+}
+
 const handler: Handler = async (event, context) => {
   console.log('Received event:', JSON.stringify(event));
   try {
@@ -184,7 +196,7 @@ const handler: Handler = async (event, context) => {
         statusCode: 204,
         headers: {
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
           'Access-Control-Allow-Methods': 'POST, OPTIONS'
         }
       };
@@ -215,53 +227,11 @@ const handler: Handler = async (event, context) => {
     }
 
     try {
-      const authHeader = event.headers.authorization;
-      if (!authHeader) {
-        console.error('Missing authorization header');
-        throw new Error('Missing authorization header');
-      }
-
-      // Get user profile
-      const { data: { user }, error: authError } = await supabase.auth.getUser(
-        authHeader.replace('Bearer ', '')
-      );
-
-      if (authError || !user) {
-        console.error('Supabase auth error:', authError);
-        throw new Error('Unauthorized');
-      }
-
-      // Get user profile with readings count
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Supabase Profile Error:', profileError);
-        throw new Error('Failed to get user profile');
-      }
-
-      // Check if user is premium or has free readings left
-      if (!profile.is_premium && profile.readings_count >= MAX_FREE_READINGS) {
-        console.log('Free trial ended for user:', user.id);
-        return {
-          statusCode: 402,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          },
-          body: JSON.stringify({
-            error: 'Free trial ended',
-            message: 'You have used all your free readings. Please upgrade to continue.',
-            requiresUpgrade: true
-          })
-        };
-      }
-
-      const { readingType, userInput } = JSON.parse(event.body || '{}');
+      // Parse request body
+      const parsedBody = JSON.parse(event.body || '{}');
+      const { readingType, userInput, isAnonymous } = parsedBody;
       
+      // Check for required parameters
       if (!readingType || !userInput) {
         console.error('Missing readingType or userInput');
         return {
@@ -274,10 +244,74 @@ const handler: Handler = async (event, context) => {
         };
       }
       
-      // Check if reading type is premium-only
-      const premiumReadingTypes = ['pastlife', 'aura', 'astrology'];
-      if (premiumReadingTypes.includes(readingType) && !profile.is_premium) {
-        console.log('Premium reading requested by non-premium user:', user.id);
+      // Variables to track user status
+      let user: User | null = null;
+      let profile: UserProfile | null = null;
+      let isPremium = false;
+      let readingsCount = 0;
+      let freeReadingsRemaining = MAX_FREE_READINGS;
+      
+      // Handle authenticated users
+      if (!isAnonymous && event.headers.authorization) {
+        const authHeader = event.headers.authorization;
+        
+        // Get user profile
+        const { data: userData, error: authError } = await supabase.auth.getUser(
+          authHeader.replace('Bearer ', '')
+        );
+
+        if (authError || !userData.user) {
+          console.error('Supabase auth error:', authError);
+          throw new Error('Unauthorized');
+        }
+        
+        user = userData.user;
+
+        // Get user profile with readings count
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Supabase Profile Error:', profileError);
+          throw new Error('Failed to get user profile');
+        }
+        
+        profile = profileData as UserProfile;
+        isPremium = profile.is_premium;
+        readingsCount = profile.readings_count || 0;
+        freeReadingsRemaining = Math.max(0, MAX_FREE_READINGS - readingsCount);
+        
+        // Check if user is premium or has free readings left
+        if (!isPremium && readingsCount >= MAX_FREE_READINGS) {
+          console.log('Free trial ended for user:', user.id);
+          return {
+            statusCode: 402,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({
+              error: 'Free trial ended',
+              message: 'You have used all your free readings. Please upgrade to continue.',
+              requiresUpgrade: true
+            })
+          };
+        }
+      }
+      
+      // Check if reading type is premium-only and user has no free readings left
+      // Only apply this restriction if the user is authenticated and not premium
+      if (
+        premiumReadingTypes.includes(readingType) && 
+        user !== null && 
+        profile !== null && 
+        !isPremium && 
+        freeReadingsRemaining <= 0
+      ) {
+        console.log('Premium reading requested by non-premium user with no free readings:', user.id);
         return {
           statusCode: 402,
           headers: {
@@ -380,12 +414,12 @@ const handler: Handler = async (event, context) => {
         max_tokens: config.maxTokens
       });
 
-      // Update readings count for non-premium users
-      if (!profile.is_premium) {
+      // Update readings count for authenticated non-premium users
+      if (user !== null && profile !== null && !isPremium) {
         const { error: updateError } = await supabase
           .from('user_profiles')
           .update({
-            readings_count: profile.readings_count + 1,
+            readings_count: readingsCount + 1,
             last_reading_date: new Date().toISOString()
           })
           .eq('id', user.id);
@@ -404,9 +438,14 @@ const handler: Handler = async (event, context) => {
           responseBody.error = 'No response received';
       }
 
-      if (!profile.is_premium) {
-          responseBody.readingsRemaining = MAX_FREE_READINGS - (profile.readings_count + 1);
+      // For authenticated users, return readings remaining
+      if (user !== null && profile !== null && !isPremium) {
+          responseBody.readingsRemaining = Math.max(0, MAX_FREE_READINGS - (readingsCount + 1));
+      } else if (isAnonymous) {
+          // For anonymous users, we don't track readings in the database
+          responseBody.readingsRemaining = null;
       } else {
+          // For premium users
           responseBody.readingsRemaining = null;
       }
 
