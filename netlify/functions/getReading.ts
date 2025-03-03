@@ -8,7 +8,8 @@ const openai = new OpenAI({
   defaultHeaders: { 'OpenAI-Project-Id': process.env.OPENAI_PROJECT_ID }
 });
 
-const MAX_FREE_READINGS = 3;
+// Import from environment variable or use default value of 5
+const MAX_FREE_READINGS = parseInt(process.env.FREE_READINGS_LIMIT || '5', 10);
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',

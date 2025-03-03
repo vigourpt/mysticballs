@@ -2,6 +2,7 @@ import React from 'react';
 import { User } from '@supabase/supabase-js';
 import { UserProfile } from '../services/supabase';
 import { Moon, Sun } from 'lucide-react';
+import { FREE_READINGS_LIMIT } from '../config/constants';
 
 interface HeaderProps {
   user: User | null;
@@ -41,24 +42,30 @@ const Header: React.FC<HeaderProps> = ({
               )}
             </button>
 
-            {user && (
-              <div className="flex flex-col items-end space-y-1">
-                <span className="text-sm text-white">
-                  {user.email}
-                </span>
-                {userProfile && (
-                  <span className="text-sm text-fuchsia-300">
-                    {userProfile.is_premium ? 'Premium Member' : `${10 - (userProfile.readings_count || 0)} free readings remaining`}
+            <div className="flex flex-col items-end space-y-1">
+              {user ? (
+                <>
+                  <span className="text-sm text-white">
+                    {user.email}
                   </span>
-                )}
-                <button
-                  onClick={onSignOut}
-                  className="text-sm text-gray-300 hover:text-white transition-colors"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
+                  {userProfile && (
+                    <span className="text-sm text-fuchsia-300">
+                      {userProfile.is_premium ? 'Premium Member' : `${userProfile.readings_count >= 0 ? Math.max(0, FREE_READINGS_LIMIT - userProfile.readings_count) : FREE_READINGS_LIMIT} free readings remaining`}
+                    </span>
+                  )}
+                  <button
+                    onClick={onSignOut}
+                    className="text-sm text-gray-300 hover:text-white transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <span className="text-sm text-fuchsia-300">
+                  {FREE_READINGS_LIMIT} free readings available
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

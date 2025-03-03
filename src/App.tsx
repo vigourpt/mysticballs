@@ -12,6 +12,7 @@ import { PricingPlan, ReadingType } from './types';
 import { supabaseClient } from './lib/supabaseClient';
 import { createClient } from '@supabase/supabase-js';
 import { UserProfile } from './services/supabase';
+import { FREE_READINGS_LIMIT } from './config/constants';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import TourGuide from './components/TourGuide';
@@ -260,7 +261,9 @@ const App: React.FC = () => {
         isDarkMode={isDarkMode}
         user={user}
         onSubscribe={handleSubscribe}
-        remainingReadings={0}
+        remainingReadings={user && profiles?.[0] ?
+          Math.max(0, FREE_READINGS_LIMIT - (profiles[0].readings_count || 0)) :
+          FREE_READINGS_LIMIT}
       />
 
       {currentStep && (
