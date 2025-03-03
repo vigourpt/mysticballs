@@ -20,6 +20,7 @@ import { ONBOARDING_STEPS } from './config/tutorial';
 import { Step } from './types';
 import ReadingOutput from './components/ReadingOutput';
 import FAQ from './components/FAQ';
+import ReactConfetti from 'react-confetti';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -42,8 +43,26 @@ const App: React.FC = () => {
   });
   const [readingOutput, setReadingOutput] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
   const { user, loading: authLoading } = useAuthState();
   const { signOut } = useAuth();
+
+  // Update window dimensions when window is resized
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const nextStep = () => {
     const currentIndex = ONBOARDING_STEPS.findIndex(step => step.id === currentStep?.id);
@@ -93,6 +112,8 @@ const App: React.FC = () => {
       }
       
       if (result.url) {
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 5000);
         window.location.href = result.url;
       } else {
         throw new Error('No checkout URL returned');
@@ -162,17 +183,12 @@ const App: React.FC = () => {
         localStorage.setItem('freeReadingsUsed', freeReadingsUsed.toString());
       } else {
         // Refresh user profile after successful reading to update the readings count
-        const { data: refreshedProfiles, error } = await supabaseClient
-          .from('user_profiles')
-          .select('*')
-          .eq('id', user.id);
-          
-        if (!error && refreshedProfiles) {
-          setProfiles(refreshedProfiles);
-        }
+        await fetchUserProfile(user.id);
       }
       
       setReadingOutput(data.reading);
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 5000);
     } catch (error) {
       console.error('Error getting reading:', error);
       setReadingOutput(error instanceof Error ? error.message : "There was an error getting your reading. Please try again.");
@@ -181,32 +197,36 @@ const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchProfiles = async () => {
-      if (user) {
-        try {
-          const { data, error } = await supabaseClient
-            .from('user_profiles')
-            .select('*')
-            .eq('id', user.id); // Only fetch current user's profile
+  // Function to fetch user profile
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabaseClient
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-          if (error) {
-            setProfiles(null);
-          } else {
-            setProfiles(data);
-          }
-        } catch (err) {
-          setProfiles(null);
-        }
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
       }
-    };
+      
+      // Update profiles state with the fetched profile
+      setProfiles([data]);
+      return data;
+    } catch (err) {
+      console.error('Error in fetchUserProfile:', err);
+      return null;
+    }
+  };
 
+  useEffect(() => {
     if (user) {
-      fetchProfiles();
+      fetchUserProfile(user.id);
     } else {
       setProfiles(null);
     }
-  }, [user]); // Re-run when user changes
+  }, [user]);
 
   if (authLoading) {
     return (
@@ -222,6 +242,16 @@ const App: React.FC = () => {
         ? 'bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950' 
         : 'bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100'
     }`}>
+      {showConfetti && (
+        <ReactConfetti
+          width={windowDimensions.width}
+          height={windowDimensions.height}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.1}
+          colors={['#f472b6', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b']}
+        />
+      )}
       <Header
         user={user}
         isDarkMode={isDarkMode}

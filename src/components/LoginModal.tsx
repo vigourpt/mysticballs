@@ -3,6 +3,7 @@ import type { FC } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { signInWithGoogle, supabase, updateUserReadingsCount } from '../services/supabase';
 import { FREE_READINGS_LIMIT } from '../config/constants';
+import ReactConfetti from 'react-confetti';
 
 interface Props {
   isOpen: boolean;
@@ -15,8 +16,26 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [windowDimensions, setWindowDimensions] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight
+  });
   
   const { signIn, signUp, loading: authLoading, confirmEmail, user } = useAuth();
+
+  // Update window dimensions when window is resized
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Function to transfer anonymous readings to user account
   const transferAnonymousReadings = async (userId: string) => {
@@ -64,6 +83,9 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
         // Don't close modal, wait for confirmation screen
       } else {
         await signIn(email, password);
+        // Show confetti on successful sign in
+        setShowConfetti(true);
+        setTimeout(() => setShowConfetti(false), 5000);
         // Close modal on successful sign in
         onClose();
       }
@@ -99,6 +121,10 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
     try {
       const { error } = await signInWithGoogle();
       if (error) throw error;
+      
+      // Show confetti on successful sign in
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 5000);
       
       // Close modal on successful Google sign in
       onClose();
@@ -143,6 +169,16 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {showConfetti && (
+        <ReactConfetti
+          width={windowDimensions.width}
+          height={windowDimensions.height}
+          recycle={false}
+          numberOfPieces={200}
+          gravity={0.1}
+          colors={['#f472b6', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b']}
+        />
+      )}
       <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
       <div className="relative bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 rounded-lg shadow-xl max-w-md w-full p-8 border border-indigo-800/30">
         <button
