@@ -8,6 +8,7 @@ import LoginModal from './components/LoginModal';
 import PaymentModal from './components/PaymentModal';
 import ReadingSelector from './components/ReadingSelector';
 import ReadingForm from './components/ReadingForm';
+import AuthCallback from './components/AuthCallback';
 import { PricingPlan, ReadingType } from './types';
 import { supabaseClient } from './lib/supabaseClient';
 import { createClient, User } from '@supabase/supabase-js';
@@ -298,6 +299,13 @@ const App: React.FC = () => {
       setProfiles(null);
     }
   }, [user]);
+
+  // Check if the current URL path is /auth/callback
+  const isAuthCallback = window.location.pathname === '/auth/callback';
+
+  if (isAuthCallback) {
+    return <AuthCallback />;
+  }
 
   if (authLoading) {
     return (
