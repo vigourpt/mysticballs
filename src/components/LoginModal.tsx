@@ -91,6 +91,9 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
         
         // Log that we're showing the email confirmation screen
         console.log('Showing email confirmation screen for:', email);
+        
+        // Display a message to the user about checking their email
+        alert('Please check your email for a confirmation link. You will receive 3 free readings after confirming your email!');
       } else {
         console.log('Attempting to sign in with email:', email);
         const result = await signIn(email, password);

@@ -38,7 +38,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       setError(null);
       
       // Log the subscription attempt
-      console.log('Attempting to subscribe to plan:', plan.id);
+      console.log('Attempting to subscribe to plan:', plan.id, 'with price ID:', plan.stripePriceId);
       
       // Add a small delay to ensure UI state is updated
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -60,6 +60,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           errorMessage = 'Network error: Please check your internet connection and try again.';
         } else if (errorMessage.includes('stripe')) {
           errorMessage = 'Payment processing error: ' + errorMessage;
+        } else if (errorMessage.includes('404')) {
+          errorMessage = 'Server error: The payment service is currently unavailable. Please try again later.';
+        } else if (errorMessage.includes('checkout')) {
+          errorMessage = 'Payment setup error: ' + errorMessage;
         }
       }
       

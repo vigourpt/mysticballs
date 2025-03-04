@@ -296,6 +296,8 @@ const App: React.FC = () => {
   // Function to fetch user profile
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching user profile for:', userId);
+      
       // Try to get the user profile
       const { data, error } = await supabaseClient
         .from('user_profiles')
@@ -314,13 +316,39 @@ const App: React.FC = () => {
             throw new Error('User email not found');
           }
           
+          // Create a new profile with additional free readings
+          const additionalReadings = FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT;
+          console.log('Adding additional free readings:', additionalReadings);
+          
           // Create a new profile
           const newProfile = await createUserProfile(userId, userData.user.email);
           
           if (newProfile) {
-            // Update profiles state with the new profile
-            setProfiles([newProfile]);
-            return newProfile;
+            // Update the profile with additional free readings
+            await supabaseClient
+              .from('user_profiles')
+              .update({
+                readings_count: additionalReadings,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', userId);
+              
+            // Fetch the updated profile
+            const { data: updatedProfile } = await supabaseClient
+              .from('user_profiles')
+              .select('*')
+              .eq('id', userId)
+              .single();
+              
+            if (updatedProfile) {
+              console.log('Updated profile with free readings:', updatedProfile);
+              setProfiles([updatedProfile]);
+              return updatedProfile;
+            } else {
+              // If we couldn't fetch the updated profile, return the original one
+              setProfiles([newProfile]);
+              return newProfile;
+            }
           } else {
             throw new Error('Failed to create user profile');
           }
@@ -329,6 +357,9 @@ const App: React.FC = () => {
           return null;
         }
       } else {
+        // Log the profile data
+        console.log('Fetched user profile:', data);
+        
         // Update profiles state with the fetched profile
         setProfiles([data]);
         return data;

@@ -14,14 +14,15 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Get the site URL based on environment
 const siteUrl = import.meta.env.DEV ? 'http://localhost:5173' : PRODUCTION_URL;
 
-// Create Supabase client with minimal config
+// Create Supabase client with PKCE flow
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     storage: localStorage,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    debug: true // Enable debug mode to log auth operations
   },
   global: {
     headers: {
@@ -29,6 +30,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     }
   }
 });
+
+// Log the Supabase client configuration
+console.log('Supabase client initialized with flowType:', 'pkce');
 
 type Tables = Database['public']['Tables'];
 export type UserProfile = Tables['user_profiles']['Row'];
