@@ -12,7 +12,7 @@ import AuthCallback from './components/AuthCallback';
 import { PricingPlan, ReadingType } from './types';
 import { supabaseClient } from './lib/supabaseClient';
 import { createClient, User } from '@supabase/supabase-js';
-import { UserProfile } from './services/supabase';
+import { UserProfile, createUserProfile } from './services/supabase';
 import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT, ADMIN_EMAIL } from './config/constants';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
@@ -272,6 +272,7 @@ const App: React.FC = () => {
   // Function to fetch user profile
   const fetchUserProfile = async (userId: string) => {
     try {
+      // Try to get the user profile
       const { data, error } = await supabaseClient
         .from('user_profiles')
         .select('*')
@@ -279,13 +280,35 @@ const App: React.FC = () => {
         .single();
 
       if (error) {
-        console.error('Error fetching user profile:', error);
-        return null;
+        // If the error is "not found", create a new profile
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, creating new profile');
+          
+          // Get user email from auth
+          const { data: userData } = await supabase.auth.getUser();
+          if (!userData?.user?.email) {
+            throw new Error('User email not found');
+          }
+          
+          // Create a new profile
+          const newProfile = await createUserProfile(userId, userData.user.email);
+          
+          if (newProfile) {
+            // Update profiles state with the new profile
+            setProfiles([newProfile]);
+            return newProfile;
+          } else {
+            throw new Error('Failed to create user profile');
+          }
+        } else {
+          console.error('Error fetching user profile:', error);
+          return null;
+        }
+      } else {
+        // Update profiles state with the fetched profile
+        setProfiles([data]);
+        return data;
       }
-      
-      // Update profiles state with the fetched profile
-      setProfiles([data]);
-      return data;
     } catch (err) {
       console.error('Error in fetchUserProfile:', err);
       return null;

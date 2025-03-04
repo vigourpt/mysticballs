@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../services/supabase';
+import { supabase, createUserProfile, getUserProfile } from '../services/supabase';
 
 const AuthCallback: React.FC = () => {
   const [message, setMessage] = useState<string>('Processing authentication...');
@@ -8,12 +8,62 @@ const AuthCallback: React.FC = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the hash fragment from the URL
-        const hashFragment = window.location.hash;
+        // First, explicitly exchange the auth code for a session
+        // This is needed for the email confirmation flow
+        const url = window.location.href;
         
-        // Process the hash fragment if it exists
-        if (hashFragment) {
-          // The hash contains the access token and other auth info
+        // Check if we have a hash fragment (OAuth) or a code query param (email confirmation)
+        const hashFragment = window.location.hash;
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        
+        if (code) {
+          // This is an email confirmation flow
+          setMessage('Confirming your email...');
+          
+          // Exchange the code for a session
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            throw error;
+          }
+          
+          if (data?.session) {
+            setMessage('Email confirmed! Setting up your account...');
+            
+            // Check if user profile exists, create if it doesn't
+            const userId = data.session.user.id;
+            const email = data.session.user.email || '';
+            
+            try {
+              // Try to get existing profile
+              const profile = await getUserProfile(userId);
+              
+              if (!profile) {
+                // Create profile if it doesn't exist
+                setMessage('Creating your profile...');
+                await createUserProfile(userId, email);
+              }
+              
+              setMessage('Authentication successful! Redirecting...');
+              // Redirect to home page after successful authentication
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 2000);
+            } catch (profileError) {
+              console.error('Profile error:', profileError);
+              // Continue anyway, as the auth was successful
+              setMessage('Authentication successful! Redirecting...');
+              setTimeout(() => {
+                window.location.href = '/';
+              }, 2000);
+            }
+          } else {
+            throw new Error('No session found after code exchange');
+          }
+        } else if (hashFragment) {
+          // This is an OAuth flow with hash fragment
+          // The Supabase client should handle this automatically
           const { data, error } = await supabase.auth.getSession();
           
           if (error) {
@@ -30,7 +80,7 @@ const AuthCallback: React.FC = () => {
             throw new Error('No session found');
           }
         } else {
-          // If there's no hash fragment, check if there's a session
+          // No code or hash fragment, just check if we have a session
           const { data, error } = await supabase.auth.getSession();
           
           if (error) {
@@ -44,7 +94,7 @@ const AuthCallback: React.FC = () => {
               window.location.href = '/';
             }, 2000);
           } else {
-            throw new Error('No session found');
+            throw new Error('No authentication parameters found');
           }
         }
       } catch (err) {
