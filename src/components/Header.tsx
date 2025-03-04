@@ -1,7 +1,7 @@
 import React from 'react';
 import { User } from '@supabase/supabase-js';
 import { UserProfile } from '../services/supabase';
-import { Moon, Sun } from 'lucide-react';
+import { Moon, Sun, RefreshCw } from 'lucide-react';
 import { FREE_READINGS_LIMIT } from '../config/constants';
 
 interface HeaderProps {
@@ -11,6 +11,13 @@ interface HeaderProps {
   onSignOut: () => Promise<{ success: boolean }>;
   userProfile?: UserProfile;
 }
+
+// Function to reset free readings count in localStorage
+const resetFreeReadings = () => {
+  localStorage.removeItem('freeReadingsUsed');
+  // Force a page reload to update the UI
+  window.location.reload();
+};
 
 const Header: React.FC<HeaderProps> = ({
   user,
@@ -61,9 +68,19 @@ const Header: React.FC<HeaderProps> = ({
                   </button>
                 </>
               ) : (
-                <span className="text-sm text-fuchsia-300">
-                  {FREE_READINGS_LIMIT} free readings available
-                </span>
+                <div className="flex flex-col items-end space-y-1">
+                  <span className="text-sm text-fuchsia-300">
+                    {FREE_READINGS_LIMIT} free readings available
+                  </span>
+                  <button
+                    onClick={resetFreeReadings}
+                    className="flex items-center text-xs text-gray-300 hover:text-white transition-colors"
+                    title="Reset free readings counter if you're having issues"
+                  >
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Reset Counter
+                  </button>
+                </div>
               )}
             </div>
           </div>

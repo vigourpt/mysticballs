@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Comprehensive documentation for the project
 - Application analysis report with recommendations for improvements
+- "Reset Counter" button for non-logged-in users to manually reset their free readings counter
+
+### Fixed
+- Bug where users were incorrectly redirected to login screen despite having free readings available
+- Issue with localStorage tracking of free readings that could cause incorrect counting
 
 ## [1.0.0] - 2025-02-01
 

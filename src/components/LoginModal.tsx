@@ -154,6 +154,19 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
     checkUser();
   }, [isLoading, error, confirmEmail, onClose]);
 
+  // Function to check and reset localStorage if needed
+  const checkAndResetLocalStorage = () => {
+    // Get free readings used from localStorage
+    const storedReadings = localStorage.getItem('freeReadingsUsed');
+    const freeReadingsUsed = storedReadings ? parseInt(storedReadings, 10) : 0;
+    
+    // If localStorage has an invalid value (negative or greater than limit), reset it
+    if (freeReadingsUsed < 0 || freeReadingsUsed > FREE_READINGS_LIMIT) {
+      console.log('Resetting invalid freeReadingsUsed value:', freeReadingsUsed);
+      localStorage.removeItem('freeReadingsUsed');
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) {
       // Reset state when modal closes
@@ -162,6 +175,9 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
       setError(null);
       setIsLoading(false);
       setIsSignUp(false);
+      
+      // Check localStorage when modal closes without login
+      checkAndResetLocalStorage();
     }
   }, [isOpen]);
 

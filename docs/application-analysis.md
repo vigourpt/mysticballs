@@ -15,6 +15,7 @@ After examining the codebase and testing the application, I've identified severa
    - **Missing Environment Variables**: The application may be missing required environment variables
    - **No User Profiles Loaded**: The application shows "0 user profiles loaded"
    - **Accessibility Warning**: Input elements should have autocomplete attributes
+   - **Free Readings Tracking Issue**: Users are incorrectly redirected to login screen despite having free readings available due to localStorage tracking issues
 
 3. **Backend Connectivity**
    - The application attempts to connect to Supabase but may not have proper credentials
@@ -128,7 +129,43 @@ Add autocomplete attributes to the password input field in the `LoginModal.tsx` 
 />
 ```
 
-### 4. Error Logging Implementation
+### 4. Fix Free Readings Tracking Issue
+
+The application incorrectly tracks free readings in localStorage, causing users to be redirected to the login screen despite having free readings available. Implement validation and reset functionality:
+
+1. Add validation in App.tsx to check and reset localStorage if needed:
+
+```typescript
+// Function to check and reset localStorage if needed
+const checkAndResetLocalStorage = () => {
+  // Get free readings used from localStorage
+  const storedReadings = localStorage.getItem('freeReadingsUsed');
+  const freeReadingsUsed = storedReadings ? parseInt(storedReadings, 10) : 0;
+  
+  // If localStorage has an invalid value (negative or greater than limit), reset it
+  if (freeReadingsUsed < 0 || freeReadingsUsed > FREE_READINGS_LIMIT) {
+    console.log('Resetting invalid freeReadingsUsed value:', freeReadingsUsed);
+    localStorage.removeItem('freeReadingsUsed');
+  }
+};
+```
+
+2. Add a "Reset Counter" button in the Header component for non-logged-in users:
+
+```typescript
+<button
+  onClick={resetFreeReadings}
+  className="flex items-center text-xs text-gray-300 hover:text-white transition-colors"
+  title="Reset free readings counter if you're having issues"
+>
+  <RefreshCw className="w-3 h-3 mr-1" />
+  Reset Counter
+</button>
+```
+
+3. Check and reset localStorage when selecting a reading type and when submitting a reading form.
+
+### 5. Error Logging Implementation
 
 Implement a basic error logging system as mentioned in the roadmap:
 

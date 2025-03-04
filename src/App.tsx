@@ -73,7 +73,30 @@ const App: React.FC = () => {
     }
   };
 
+  // Function to check and reset localStorage if needed
+  const checkAndResetLocalStorage = () => {
+    // Get free readings used from localStorage
+    const storedReadings = localStorage.getItem('freeReadingsUsed');
+    const freeReadingsUsed = storedReadings ? parseInt(storedReadings, 10) : 0;
+    
+    // If localStorage has an invalid value (negative or greater than limit), reset it
+    if (freeReadingsUsed < 0 || freeReadingsUsed > FREE_READINGS_LIMIT) {
+      console.log('Resetting invalid freeReadingsUsed value:', freeReadingsUsed);
+      localStorage.removeItem('freeReadingsUsed');
+    }
+  };
+  
+  // Check localStorage on component mount
+  useEffect(() => {
+    checkAndResetLocalStorage();
+  }, []);
+
   const handleReadingTypeSelect = (readingType: ReadingType) => {
+    // Check and reset localStorage if needed
+    if (!user) {
+      checkAndResetLocalStorage();
+    }
+    
     // Allow all users to access all readings with their free readings
     // Only show payment modal if they've run out of free readings
     const freeReadingsRemaining = user && profiles?.[0]
@@ -133,6 +156,13 @@ const App: React.FC = () => {
       // Get free readings used from localStorage
       const storedReadings = localStorage.getItem('freeReadingsUsed');
       freeReadingsUsed = storedReadings ? parseInt(storedReadings, 10) : 0;
+      
+      // Reset if invalid value
+      if (freeReadingsUsed < 0 || freeReadingsUsed > FREE_READINGS_LIMIT) {
+        console.log('Resetting invalid freeReadingsUsed value:', freeReadingsUsed);
+        freeReadingsUsed = 0;
+        localStorage.removeItem('freeReadingsUsed');
+      }
       
       // If they've used all free readings, prompt to login
       if (freeReadingsUsed >= FREE_READINGS_LIMIT) {
