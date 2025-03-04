@@ -24,8 +24,17 @@ const ReadingSelector: React.FC<Props> = ({ READING_TYPES, handleReadingTypeSele
             return (
               <button
                 key={type.id}
-                onClick={() => handleReadingTypeSelect(type)}
-                className={`group relative p-6 rounded-xl text-left transition-all duration-300 transform hover:scale-105 ${
+                onClick={() => {
+                  if (!type.premiumOnly || isPremium) {
+                    handleReadingTypeSelect(type);
+                  } else {
+                    // Could show a premium upgrade modal here
+                    alert('This reading type requires a premium subscription');
+                  }
+                }}
+                className={`group relative p-6 rounded-xl text-left transition-all duration-300 transform ${
+                  type.premiumOnly && !isPremium ? 'cursor-not-allowed opacity-75' : 'hover:scale-105 cursor-pointer'
+                } ${
                   isDarkMode
                     ? 'bg-gradient-to-br from-indigo-800/50 to-purple-800/50 hover:from-indigo-700/50 hover:to-purple-700/50'
                     : 'bg-gradient-to-br from-white to-indigo-50 hover:from-indigo-50 hover:to-white'
@@ -34,8 +43,12 @@ const ReadingSelector: React.FC<Props> = ({ READING_TYPES, handleReadingTypeSele
                 <div className="flex flex-col items-center text-center space-y-4">
                   {type.premiumOnly && (
                     <div className="absolute top-2 right-2">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-amber-500 to-amber-300 text-amber-900">
-                        Premium Only
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        isPremium 
+                          ? 'bg-gradient-to-r from-green-500 to-green-300 text-green-900'
+                          : 'bg-gradient-to-r from-amber-500 to-amber-300 text-amber-900'
+                      }`}>
+                        {isPremium ? 'Premium' : 'Premium Only'}
                       </span>
                     </div>
                   )}
