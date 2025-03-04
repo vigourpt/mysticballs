@@ -10,11 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Comprehensive documentation for the project
 - Application analysis report with recommendations for improvements
-- "Reset Counter" button for non-logged-in users to manually reset their free readings counter
+- Admin user functionality for `vigourpt@googlemail.com`
+- Admin-only "Reset Counter" button (previously available to all users)
+- Compelling message to create an account to get 3 more free readings
+
+### Changed
+- Modified free readings model: 2 for anonymous users + 3 more after login (total of 5)
+- Updated subscription plans: Basic ($9.99/month, 30 readings) and Premium ($19.99/month, unlimited readings)
+- Premium plan now includes access to premium reading types and 30-day reading history
+- Improved payment modal messaging
 
 ### Fixed
 - Bug where users were incorrectly redirected to login screen despite having free readings available
 - Issue with localStorage tracking of free readings that could cause incorrect counting
+- Security issue where anonymous users could reset their reading counter to get unlimited free readings
 
 ## [1.0.0] - 2025-02-01
 

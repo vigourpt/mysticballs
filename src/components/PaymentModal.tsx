@@ -64,8 +64,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         <div className="text-center mb-8">
           <h2 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Upgrade Your Spiritual Journey</h2>
           <p className={`${isDarkMode ? 'text-indigo-200' : 'text-gray-600'}`}>
-            You have {remainingReadings} free readings remaining.
-            Unlock unlimited readings and premium features!
+            {remainingReadings > 0 ? (
+              <>You have {remainingReadings} free readings remaining.</>
+            ) : (
+              <>You've used all your free readings!</>
+            )}
+          </p>
+          <p className={`mt-2 ${isDarkMode ? 'text-indigo-300 font-medium' : 'text-indigo-600 font-medium'}`}>
+            Subscribe now to continue your spiritual journey with premium features!
           </p>
           {error && (
             <div className="mt-4 p-3 rounded-lg bg-red-500/10 text-red-500 text-sm">

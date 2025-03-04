@@ -6,10 +6,14 @@ MYSTICBALLS uses Stripe for payment processing and subscription management. This
 
 ## Subscription Model
 
-MYSTICBALLS follows a freemium business model:
+MYSTICBALLS follows a tiered freemium business model:
 
-1. **Free Tier**: Users get a limited number of free readings (typically 3-5)
-2. **Premium Tier**: Paid subscription with unlimited readings and additional features
+1. **Anonymous Users**: Get 2 free readings without creating an account
+2. **Free Tier**: Authenticated users get 3 additional free readings (total of 5)
+3. **Basic Tier**: Paid subscription with 30 readings per month ($9.99/month)
+4. **Premium Tier**: Paid subscription with unlimited readings and premium features ($19.99/month)
+
+After using all free readings, users are prompted to subscribe to either the Basic or Premium plan.
 
 ### Subscription Plans
 

@@ -124,6 +124,7 @@ export const createUserProfile = async (userId: string, email: string, displayNa
     display_name: displayName || null,
     readings_count: 0,
     is_premium: false,
+    is_admin: false,
     last_reading_date: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()

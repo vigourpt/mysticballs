@@ -9,8 +9,9 @@ export const PAYMENT_PLANS: PricingPlan[] = [
     description: 'Perfect for occasional guidance',
     features: [
       '30 readings per month',
-      'All reading types',
-      'Basic support'
+      'Standard reading types',
+      'Basic support',
+      'Email notifications'
     ],
     readingsPerMonth: 30
   },
@@ -22,10 +23,12 @@ export const PAYMENT_PLANS: PricingPlan[] = [
     description: 'For those seeking regular insights',
     features: [
       'Unlimited readings',
+      'All reading types including premium',
       'Priority support',
-      'Detailed interpretations',
-      'Personal reading history'
+      '30-day reading history',
+      'Detailed interpretations'
     ],
-    readingsPerMonth: Infinity
+    readingsPerMonth: Infinity,
+    recommended: true
   }
 ];

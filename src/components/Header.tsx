@@ -2,7 +2,7 @@ import React from 'react';
 import { User } from '@supabase/supabase-js';
 import { UserProfile } from '../services/supabase';
 import { Moon, Sun, RefreshCw } from 'lucide-react';
-import { FREE_READINGS_LIMIT } from '../config/constants';
+import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT, ADMIN_EMAIL } from '../config/constants';
 
 interface HeaderProps {
   user: User | null;
@@ -17,6 +17,11 @@ const resetFreeReadings = () => {
   localStorage.removeItem('freeReadingsUsed');
   // Force a page reload to update the UI
   window.location.reload();
+};
+
+// Check if user is admin
+const isAdmin = (user: User | null): boolean => {
+  return !!user && user.email === ADMIN_EMAIL;
 };
 
 const Header: React.FC<HeaderProps> = ({
@@ -53,33 +58,68 @@ const Header: React.FC<HeaderProps> = ({
               {user ? (
                 <>
                   <span className="text-sm text-white">
-                    {user.email}
+                    {user.email} {isAdmin(user) && <span className="ml-1 px-1 bg-fuchsia-700 rounded text-xs">Admin</span>}
                   </span>
                   {userProfile && (
                     <span className="text-sm text-fuchsia-300">
-                      {userProfile.is_premium ? 'Premium Member' : `${userProfile.readings_count >= 0 ? Math.max(0, FREE_READINGS_LIMIT - userProfile.readings_count) : FREE_READINGS_LIMIT} free readings remaining`}
+                      {userProfile.is_premium ? 
+                        `Premium Member (${userProfile.is_premium === true ? 'Unlimited' : '30'} readings)` : 
+                        `${userProfile.readings_count >= 0 ? Math.max(0, FREE_READINGS_LIMIT - userProfile.readings_count) : FREE_READINGS_LIMIT} free readings remaining`
+                      }
                     </span>
                   )}
-                  <button
-                    onClick={onSignOut}
-                    className="text-sm text-gray-300 hover:text-white transition-colors"
-                  >
-                    Sign Out
-                  </button>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={onSignOut}
+                      className="text-sm text-gray-300 hover:text-white transition-colors"
+                    >
+                      Sign Out
+                    </button>
+                    
+                    {/* Admin-only reset button */}
+                    {isAdmin(user) && (
+                      <button
+                        onClick={resetFreeReadings}
+                        className="flex items-center text-xs text-gray-300 hover:text-white transition-colors"
+                        title="Admin: Reset free readings counter"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Reset Counter
+                      </button>
+                    )}
+                  </div>
                 </>
               ) : (
                 <div className="flex flex-col items-end space-y-1">
-                  <span className="text-sm text-fuchsia-300">
-                    {FREE_READINGS_LIMIT} free readings available
-                  </span>
-                  <button
-                    onClick={resetFreeReadings}
-                    className="flex items-center text-xs text-gray-300 hover:text-white transition-colors"
-                    title="Reset free readings counter if you're having issues"
-                  >
-                    <RefreshCw className="w-3 h-3 mr-1" />
-                    Reset Counter
-                  </button>
+                  {/* Get free readings used from localStorage */}
+                  {(() => {
+                    const storedReadings = localStorage.getItem('freeReadingsUsed');
+                    const freeReadingsUsed = storedReadings ? parseInt(storedReadings, 10) : 0;
+                    const remainingReadings = Math.max(0, ANONYMOUS_FREE_READINGS_LIMIT - freeReadingsUsed);
+                    
+                    return (
+                      <span className="text-sm text-fuchsia-300">
+                        {remainingReadings} free {remainingReadings === 1 ? 'reading' : 'readings'} remaining
+                        {remainingReadings === 0 && 
+                          <span className="block text-xs mt-1">
+                            Create an account to get 3 more free readings!
+                          </span>
+                        }
+                      </span>
+                    );
+                  })()}
+                  
+                  {/* Only show Reset Counter for admin */}
+                  {isAdmin(user) && (
+                    <button
+                      onClick={resetFreeReadings}
+                      className="flex items-center text-xs text-gray-300 hover:text-white transition-colors"
+                      title="Admin: Reset free readings counter"
+                    >
+                      <RefreshCw className="w-3 h-3 mr-1" />
+                      Reset Counter (Admin)
+                    </button>
+                  )}
                 </div>
               )}
             </div>

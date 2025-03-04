@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { FC } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { signInWithGoogle, supabase, updateUserReadingsCount } from '../services/supabase';
-import { FREE_READINGS_LIMIT } from '../config/constants';
+import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT } from '../config/constants';
 import ReactConfetti from 'react-confetti';
 
 interface Props {
@@ -214,6 +214,30 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
           <p className="text-indigo-200">
             {isSignUp ? 'Sign up to start your mystical journey' : 'Sign in to continue your journey'}
           </p>
+          
+          {/* Calculate remaining readings */}
+          {(() => {
+            const storedReadings = localStorage.getItem('freeReadingsUsed');
+            const freeReadingsUsed = storedReadings ? parseInt(storedReadings, 10) : 0;
+            const usedAnonymousReadings = Math.min(freeReadingsUsed, ANONYMOUS_FREE_READINGS_LIMIT);
+            const remainingAfterSignup = FREE_READINGS_LIMIT - usedAnonymousReadings;
+            
+            return (
+              <div className="mt-3 p-3 bg-indigo-800/30 rounded-lg">
+                <p className="text-indigo-100 font-medium">
+                  {isSignUp ? (
+                    <>
+                      Get <span className="text-fuchsia-300 font-bold">{remainingAfterSignup}</span> more free readings when you create an account!
+                    </>
+                  ) : (
+                    <>
+                      Sign in to access your readings and continue your spiritual journey.
+                    </>
+                  )}
+                </p>
+              </div>
+            );
+          })()}
         </div>
 
         {error && (

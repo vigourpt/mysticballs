@@ -9,8 +9,10 @@ const openai = new OpenAI({
   defaultHeaders: { 'OpenAI-Project-Id': process.env.OPENAI_PROJECT_ID }
 });
 
-// Import from environment variable or use default value of 5
+// Import from environment variables or use default values
 const MAX_FREE_READINGS = parseInt(process.env.FREE_READINGS_LIMIT || '5', 10);
+const ANONYMOUS_FREE_READINGS_LIMIT = parseInt(process.env.ANONYMOUS_FREE_READINGS_LIMIT || '2', 10);
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'vigourpt@googlemail.com';
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
@@ -270,6 +272,7 @@ const handler: Handler = async (event, context) => {
       let user: User | null = null;
       let profile: UserProfile | null = null;
       let isPremium = false;
+      let isAdmin = false;
       let readingsCount = 0;
       let freeReadingsRemaining = MAX_FREE_READINGS;
       
@@ -288,6 +291,9 @@ const handler: Handler = async (event, context) => {
         }
         
         user = userData.user;
+        
+        // Check if user is admin
+        isAdmin = user.email === ADMIN_EMAIL;
 
         // Get user profile with readings count
         const { data: profileData, error: profileError } = await supabase
@@ -324,13 +330,37 @@ const handler: Handler = async (event, context) => {
         }
       }
       
+      // For anonymous users, check if they've exceeded their free readings limit
+      if (isAnonymous) {
+        // Get free readings used from request body
+        const anonymousReadingsUsed = userInput.anonymousReadingsUsed || 0;
+        
+        // If they've used all anonymous free readings, prompt to login
+        if (anonymousReadingsUsed >= ANONYMOUS_FREE_READINGS_LIMIT && !isAdmin) {
+          console.log('Anonymous user exceeded free readings limit');
+          return {
+            statusCode: 402,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({
+              error: 'Free anonymous readings limit reached',
+              message: 'You have used all your free anonymous readings. Please create an account to get 3 more free readings!',
+              requiresLogin: true
+            })
+          };
+        }
+      }
+      
       // Check if reading type is premium-only and user has no free readings left
-      // Only apply this restriction if the user is authenticated and not premium
+      // Only apply this restriction if the user is authenticated and not premium and not admin
       if (
         premiumReadingTypes.includes(readingType) && 
         user !== null && 
         profile !== null && 
         !isPremium && 
+        !isAdmin && 
         freeReadingsRemaining <= 0
       ) {
         console.log('Premium reading requested by non-premium user with no free readings:', user.id);

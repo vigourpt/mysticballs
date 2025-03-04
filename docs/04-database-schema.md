@@ -17,13 +17,15 @@ CREATE TABLE user_profiles (
     display_name TEXT,
     readings_count INTEGER NOT NULL DEFAULT 0,
     is_premium BOOLEAN NOT NULL DEFAULT false,
+    is_admin BOOLEAN NOT NULL DEFAULT false,
     last_reading_date TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
 
--- Index for faster lookups
+-- Indexes for faster lookups
 CREATE INDEX idx_user_profiles_email ON user_profiles(email);
+CREATE INDEX idx_user_profiles_is_admin ON user_profiles(is_admin);
 ```
 
 #### Fields:
@@ -32,6 +34,7 @@ CREATE INDEX idx_user_profiles_email ON user_profiles(email);
 - `display_name`: User's display name (optional)
 - `readings_count`: Number of readings the user has requested
 - `is_premium`: Whether the user has a premium subscription
+- `is_admin`: Whether the user has admin privileges
 - `last_reading_date`: Timestamp of the user's last reading
 - `created_at`: Timestamp when the profile was created
 - `updated_at`: Timestamp when the profile was last updated

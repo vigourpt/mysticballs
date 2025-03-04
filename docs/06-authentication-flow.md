@@ -4,6 +4,16 @@
 
 MYSTICBALLS uses Supabase for authentication, providing users with multiple ways to authenticate including email/password and Google OAuth. This document outlines the authentication flows, security considerations, and implementation details.
 
+## Free Readings Model
+
+The application follows a tiered free readings model:
+
+1. **Anonymous Users**: Can access up to 2 free readings without creating an account
+2. **Authenticated Users**: Get 3 additional free readings (total of 5) after creating an account
+3. **Premium Users**: Get unlimited readings after subscribing to a paid plan
+
+When anonymous users reach their limit, they are prompted to create an account with a message highlighting the benefit of getting 3 more free readings.
+
 ## Authentication Methods
 
 ### 1. Email/Password Authentication

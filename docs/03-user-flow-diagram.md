@@ -6,7 +6,30 @@ This document outlines the main user flows within the MYSTICBALLS application. U
 
 ## Main User Flows
 
-### 1. First-Time User Flow
+### 1. First-Time User Flow (Anonymous)
+
+```
+┌─────────────────┐     ┌───────────────────┐     ┌─────────────────┐
+│                 │     │                   │     │                 │
+│   Landing Page  │────▶│  Reading Selection│────▶│   Reading Form  │
+│                 │     │                   │     │                 │
+└─────────────────┘     └───────────────────┘     └────────┬────────┘
+                                                           │
+                                                           ▼
+                                                  ┌─────────────────┐
+                                                  │                 │
+                                                  │  Reading Result │
+                                                  │                 │
+                                                  └─────────────────┘
+```
+
+1. User lands on the homepage
+2. User browses and selects a reading type
+3. User fills out the reading form
+4. Reading is generated and displayed
+5. User can get up to 2 free readings anonymously
+
+### 2. Anonymous User Limit Reached Flow
 
 ```
 ┌─────────────────┐     ┌───────────────────┐     ┌─────────────────┐
@@ -23,10 +46,10 @@ This document outlines the main user flows within the MYSTICBALLS application. U
 └─────────────────┘     └───────────────────┘     └─────────────────┘
 ```
 
-1. User lands on the homepage
-2. User browses and selects a reading type
+1. User has used 2 free anonymous readings
+2. User selects a reading type
 3. User fills out the reading form
-4. User is prompted to authenticate
+4. User is prompted to authenticate with message "Create an account to get 3 more free readings!"
 5. User creates an account or logs in
 6. Reading is generated and displayed
 

@@ -10,9 +10,9 @@ import ReadingSelector from './components/ReadingSelector';
 import ReadingForm from './components/ReadingForm';
 import { PricingPlan, ReadingType } from './types';
 import { supabaseClient } from './lib/supabaseClient';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, User } from '@supabase/supabase-js';
 import { UserProfile } from './services/supabase';
-import { FREE_READINGS_LIMIT } from './config/constants';
+import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT, ADMIN_EMAIL } from './config/constants';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import TourGuide from './components/TourGuide';
@@ -91,21 +91,45 @@ const App: React.FC = () => {
     checkAndResetLocalStorage();
   }, []);
 
+  // Check if user is admin
+  const isAdmin = (user: User | null): boolean => {
+    return !!user && user.email === ADMIN_EMAIL;
+  };
+
   const handleReadingTypeSelect = (readingType: ReadingType) => {
     // Check and reset localStorage if needed
     if (!user) {
       checkAndResetLocalStorage();
     }
     
-    // Allow all users to access all readings with their free readings
-    // Only show payment modal if they've run out of free readings
+    // For non-authenticated users, check against ANONYMOUS_FREE_READINGS_LIMIT
+    if (!user) {
+      const storedReadings = localStorage.getItem('freeReadingsUsed');
+      const freeReadingsUsed = storedReadings ? parseInt(storedReadings, 10) : 0;
+      const remainingReadings = Math.max(0, ANONYMOUS_FREE_READINGS_LIMIT - freeReadingsUsed);
+      
+      // If they've used all anonymous free readings, prompt to login with message about 3 more free readings
+      if (remainingReadings <= 0) {
+        setShowLoginModal(true);
+        return;
+      }
+    }
+    
+    // For authenticated users, check against FREE_READINGS_LIMIT
     const freeReadingsRemaining = user && profiles?.[0]
       ? Math.max(0, FREE_READINGS_LIMIT - (profiles[0].readings_count || 0))
-      : FREE_READINGS_LIMIT;
+      : ANONYMOUS_FREE_READINGS_LIMIT;
     
     // If it's a premium reading and user is not premium and has no free readings left
     if (readingType.premiumOnly && (!user || !profiles?.[0]?.is_premium) && freeReadingsRemaining <= 0) {
       setShowPaymentModal(true);
+      return;
+    }
+    
+    // Admin users bypass all restrictions
+    if (user && isAdmin(user)) {
+      setSelectedReadingType(readingType);
+      setReadingOutput(null);
       return;
     }
     
@@ -152,21 +176,34 @@ const App: React.FC = () => {
     // Track readings in localStorage for non-logged-in users
     let freeReadingsUsed = 0;
     
-    if (!user) {
+    // Admin users bypass all restrictions
+    if (user && isAdmin(user)) {
+      // Continue with reading submission
+    }
+    // For non-authenticated users
+    else if (!user) {
       // Get free readings used from localStorage
       const storedReadings = localStorage.getItem('freeReadingsUsed');
       freeReadingsUsed = storedReadings ? parseInt(storedReadings, 10) : 0;
       
       // Reset if invalid value
-      if (freeReadingsUsed < 0 || freeReadingsUsed > FREE_READINGS_LIMIT) {
+      if (freeReadingsUsed < 0 || freeReadingsUsed > ANONYMOUS_FREE_READINGS_LIMIT) {
         console.log('Resetting invalid freeReadingsUsed value:', freeReadingsUsed);
         freeReadingsUsed = 0;
         localStorage.removeItem('freeReadingsUsed');
       }
       
-      // If they've used all free readings, prompt to login
-      if (freeReadingsUsed >= FREE_READINGS_LIMIT) {
+      // If they've used all anonymous free readings, prompt to login with message about 3 more free readings
+      if (freeReadingsUsed >= ANONYMOUS_FREE_READINGS_LIMIT) {
         setShowLoginModal(true);
+        return;
+      }
+    }
+    // For authenticated users
+    else if (user && profiles?.[0]) {
+      // If they've used all free readings and are not premium, show payment modal
+      if (!profiles[0].is_premium && profiles[0].readings_count >= FREE_READINGS_LIMIT) {
+        setShowPaymentModal(true);
         return;
       }
     }
@@ -189,7 +226,11 @@ const App: React.FC = () => {
         headers,
         body: JSON.stringify({
           readingType: selectedReadingType?.id,
-          userInput: formData,
+          userInput: {
+            ...formData,
+            // Pass the current anonymous readings count for the backend to check
+            anonymousReadingsUsed: !user ? freeReadingsUsed : 0
+          },
           isAnonymous: !user,
         }),
       });

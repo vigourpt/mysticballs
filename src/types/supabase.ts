@@ -16,6 +16,7 @@ export interface Database {
           display_name: string | null
           readings_count: number
           is_premium: boolean
+          is_admin: boolean
           last_reading_date: string | null
           created_at: string
           updated_at: string
@@ -26,6 +27,7 @@ export interface Database {
           display_name?: string | null
           readings_count?: number
           is_premium?: boolean
+          is_admin?: boolean
           last_reading_date?: string | null
           created_at?: string
           updated_at?: string
@@ -36,6 +38,7 @@ export interface Database {
           display_name?: string | null
           readings_count?: number
           is_premium?: boolean
+          is_admin?: boolean
           last_reading_date?: string | null
           created_at?: string
           updated_at?: string
