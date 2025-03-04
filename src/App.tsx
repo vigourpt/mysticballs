@@ -260,7 +260,7 @@ const App: React.FC = () => {
       
       setReadingOutput(data.reading);
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 5000);
+      setTimeout(() => setShowConfetti(false), 7000); // Increased from 5000ms to 7000ms
     } catch (error) {
       console.error('Error getting reading:', error);
       setReadingOutput(error instanceof Error ? error.message : "There was an error getting your reading. Please try again.");
@@ -360,6 +360,7 @@ const App: React.FC = () => {
         onDarkModeToggle={handleDarkModeToggle}
         onSignOut={signOut}
         userProfile={profiles?.[0]}
+        onLogin={() => setShowLoginModal(true)}
       />
       <div className="container mx-auto px-4">
         <div className="pt-16 pb-16 max-w-3xl mx-auto text-center">

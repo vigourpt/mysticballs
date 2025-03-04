@@ -17,6 +17,7 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [windowDimensions, setWindowDimensions] = useState({
     width: window.innerWidth,
     height: window.innerHeight
@@ -83,11 +84,18 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
         // Don't close modal, wait for confirmation screen
       } else {
         await signIn(email, password);
-        // Show confetti on successful sign in
+        // Show success animation on successful sign in
+        setShowSuccessAnimation(true);
         setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 5000);
-        // Close modal on successful sign in
-        onClose();
+        
+        // Keep animation visible for a moment before closing
+        setTimeout(() => {
+          setShowConfetti(false);
+          setTimeout(() => {
+            setShowSuccessAnimation(false);
+            onClose();
+          }, 1000);
+        }, 3000);
       }
     } catch (err: unknown) {
       console.error('Auth error:', err);
@@ -122,12 +130,18 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
       const { error } = await signInWithGoogle();
       if (error) throw error;
       
-      // Show confetti on successful sign in
+      // Show success animation on successful sign in
+      setShowSuccessAnimation(true);
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 5000);
       
-      // Close modal on successful Google sign in
-      onClose();
+      // Keep animation visible for a moment before closing
+      setTimeout(() => {
+        setShowConfetti(false);
+        setTimeout(() => {
+          setShowSuccessAnimation(false);
+          onClose();
+        }, 1000);
+      }, 3000);
     } catch (err: unknown) {
       console.error('Google sign in error:', err);
       const googleErrorMessage = 'Failed to sign in with Google';
@@ -195,8 +209,32 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
           colors={['#f472b6', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b']}
         />
       )}
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      <div className="relative bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 rounded-lg shadow-xl max-w-md w-full p-8 border border-indigo-800/30">
+      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={showSuccessAnimation ? undefined : onClose} />
+      {showSuccessAnimation ? (
+        <div className="relative bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 rounded-lg shadow-xl max-w-md w-full p-8 border border-indigo-800/30 animate-fadeIn">
+          <div className="text-center py-8">
+            <div className="relative mx-auto w-32 h-32 mb-6">
+              {/* Pulsing circles animation */}
+              <div className="absolute inset-0 rounded-full bg-indigo-600 opacity-75 animate-ping"></div>
+              <div className="absolute inset-3 rounded-full bg-indigo-500 opacity-90 animate-pulse"></div>
+              <div className="absolute inset-6 rounded-full bg-indigo-400 opacity-100"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">Welcome!</h2>
+            <p className="text-xl text-indigo-200 mb-6">Login successful</p>
+            <div className="flex justify-center space-x-2">
+              <div className="w-3 h-3 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="relative bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 rounded-lg shadow-xl max-w-md w-full p-8 border border-indigo-800/30">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-indigo-300 hover:text-white"
@@ -235,9 +273,9 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
                     </>
                   )}
                 </p>
-              </div>
-            );
-          })()}
+                </div>
+              );
+            })()}
         </div>
 
         {error && (
@@ -349,7 +387,8 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
             </button>
           </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 };

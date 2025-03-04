@@ -1,7 +1,7 @@
 import React from 'react';
 import { User } from '@supabase/supabase-js';
 import { UserProfile } from '../services/supabase';
-import { Moon, Sun, RefreshCw } from 'lucide-react';
+import { Moon, Sun, RefreshCw, LogIn } from 'lucide-react';
 import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT, ADMIN_EMAIL } from '../config/constants';
 
 interface HeaderProps {
@@ -10,6 +10,7 @@ interface HeaderProps {
   onDarkModeToggle: () => void;
   onSignOut: () => Promise<{ success: boolean }>;
   userProfile?: UserProfile;
+  onLogin?: () => void;
 }
 
 // Function to reset free readings count in localStorage
@@ -29,7 +30,8 @@ const Header: React.FC<HeaderProps> = ({
   isDarkMode,
   onDarkModeToggle,
   onSignOut,
-  userProfile
+  userProfile,
+  onLogin
 }) => {
   return (
     <header className={`${isDarkMode ? 'bg-gray-800/20' : 'bg-white/10'} shadow-sm`}>
@@ -109,17 +111,28 @@ const Header: React.FC<HeaderProps> = ({
                     );
                   })()}
                   
-                  {/* Only show Reset Counter for admin */}
-                  {isAdmin(user) && (
+                  <div className="flex space-x-3">
+                    {/* Login button for non-authenticated users */}
                     <button
-                      onClick={resetFreeReadings}
-                      className="flex items-center text-xs text-gray-300 hover:text-white transition-colors"
-                      title="Admin: Reset free readings counter"
+                      onClick={onLogin}
+                      className="flex items-center text-sm text-gray-300 hover:text-white transition-colors"
                     >
-                      <RefreshCw className="w-3 h-3 mr-1" />
-                      Reset Counter (Admin)
+                      <LogIn className="w-4 h-4 mr-1" />
+                      Sign In
                     </button>
-                  )}
+                    
+                    {/* Only show Reset Counter for admin */}
+                    {isAdmin(user) && (
+                      <button
+                        onClick={resetFreeReadings}
+                        className="flex items-center text-xs text-gray-300 hover:text-white transition-colors"
+                        title="Admin: Reset free readings counter"
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Reset Counter (Admin)
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
