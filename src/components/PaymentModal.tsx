@@ -36,10 +36,34 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     try {
       setIsLoading(true);
       setError(null);
+      
+      // Log the subscription attempt
+      console.log('Attempting to subscribe to plan:', plan.id);
+      
+      // Add a small delay to ensure UI state is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       await onSubscribe(plan);
+      
+      // If we get here, the subscription was initiated successfully
+      console.log('Subscription initiated successfully, redirecting to Stripe');
     } catch (err) {
       console.error('Error subscribing:', err);
-      setError(err instanceof Error ? err.message : 'Failed to subscribe');
+      
+      // Provide more detailed error message
+      let errorMessage = 'Failed to subscribe';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        
+        // Add more context for specific error types
+        if (errorMessage.includes('network')) {
+          errorMessage = 'Network error: Please check your internet connection and try again.';
+        } else if (errorMessage.includes('stripe')) {
+          errorMessage = 'Payment processing error: ' + errorMessage;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { signInWithGoogle, supabase, updateUserReadingsCount } from '../services/supabase';
 import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT } from '../config/constants';
 import ReactConfetti from 'react-confetti';
+import { Mail, Check } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;
@@ -18,6 +19,7 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
   const [windowDimensions, setWindowDimensions] = useState({
     width: window.innerWidth,
     height: window.innerHeight
@@ -80,13 +82,26 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
       }
 
       if (isSignUp) {
-        await signUp(email, password);
-        // Don't close modal, wait for confirmation screen
+        console.log('Attempting to sign up with email:', email);
+        const result = await signUp(email, password);
+        console.log('Sign up result:', result);
+        
+        // Always show email confirmation screen after sign up
+        setShowEmailConfirmation(true);
+        
+        // Log that we're showing the email confirmation screen
+        console.log('Showing email confirmation screen for:', email);
       } else {
-        await signIn(email, password);
+        console.log('Attempting to sign in with email:', email);
+        const result = await signIn(email, password);
+        console.log('Sign in result:', result);
+        
         // Show success animation on successful sign in
         setShowSuccessAnimation(true);
         setShowConfetti(true);
+        
+        // Log that we're showing the success animation
+        console.log('Showing success animation for sign in');
         
         // Keep animation visible for a moment before closing
         setTimeout(() => {
@@ -160,13 +175,14 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       // Only close if we have a successful auth AND no errors
-      if (!isLoading && !error && !confirmEmail && user) {
+      // Don't close if we're showing email confirmation screen
+      if (!isLoading && !error && !confirmEmail && user && !showEmailConfirmation) {
         onClose();
       }
     };
     
     checkUser();
-  }, [isLoading, error, confirmEmail, onClose]);
+  }, [isLoading, error, confirmEmail, onClose, showEmailConfirmation]);
 
   // Function to check and reset localStorage if needed
   const checkAndResetLocalStorage = () => {
@@ -189,6 +205,7 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
       setError(null);
       setIsLoading(false);
       setIsSignUp(false);
+      setShowEmailConfirmation(false);
       
       // Check localStorage when modal closes without login
       checkAndResetLocalStorage();
@@ -209,8 +226,36 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
           colors={['#f472b6', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b']}
         />
       )}
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={showSuccessAnimation ? undefined : onClose} />
-      {showSuccessAnimation ? (
+      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={(showSuccessAnimation || showEmailConfirmation) ? undefined : onClose} />
+      {showEmailConfirmation ? (
+        <div className="relative bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 rounded-lg shadow-xl max-w-md w-full p-8 border border-indigo-800/30 animate-fadeIn">
+          <div className="text-center py-8">
+            <div className="relative mx-auto w-32 h-32 mb-6">
+              {/* Email icon with animation */}
+              <div className="absolute inset-0 rounded-full bg-indigo-600 opacity-75 animate-pulse"></div>
+              <div className="absolute inset-3 rounded-full bg-indigo-500 opacity-90"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Mail className="w-16 h-16 text-white" />
+              </div>
+            </div>
+            <h2 className="text-3xl font-bold text-white mb-4">Check Your Email</h2>
+            <p className="text-xl text-indigo-200 mb-6">
+              We've sent a confirmation link to:
+              <br />
+              <span className="font-bold">{email}</span>
+            </p>
+            <p className="text-md text-indigo-300 mb-8">
+              Please click the link in your email to complete your registration and get 3 more free readings!
+            </p>
+            <button
+              onClick={onClose}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      ) : showSuccessAnimation ? (
         <div className="relative bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 rounded-lg shadow-xl max-w-md w-full p-8 border border-indigo-800/30 animate-fadeIn">
           <div className="text-center py-8">
             <div className="relative mx-auto w-32 h-32 mb-6">

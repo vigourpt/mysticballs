@@ -61,6 +61,10 @@ export const signUpWithEmail = async (email: string, password: string) => {
   }
 
   try {
+    // Supabase handles PKCE flow automatically when using signUp
+    // We just need to ensure we're using the correct flowType in the client config
+    console.log('Signing up with email:', email);
+    
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: password,
@@ -72,6 +76,8 @@ export const signUpWithEmail = async (email: string, password: string) => {
         }
       }
     });
+    
+    console.log('Sign up response:', data, error);
 
     if (error) throw error;
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { supabase, createUserProfile, getUserProfile } from '../services/supabase';
+import { supabase, createUserProfile, getUserProfile, updateUserReadingsCount } from '../services/supabase';
 import ReactConfetti from 'react-confetti';
+import { ANONYMOUS_FREE_READINGS_LIMIT } from '../config/constants';
 
 const AuthCallback: React.FC = () => {
   const [message, setMessage] = useState<string>('Processing authentication...');
@@ -34,15 +35,19 @@ const AuthCallback: React.FC = () => {
         const hashFragment = window.location.hash;
         const params = new URLSearchParams(window.location.search);
         const code = params.get('code');
+        const type = params.get('type');
         
         if (code) {
           // This is an email confirmation flow
           setMessage('Confirming your email...');
           
           // Exchange the code for a session
+          // Note: The code verifier is automatically handled by Supabase client
+          // when using PKCE flow, we don't need to pass it explicitly
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           
           if (error) {
+            console.error('Code exchange error:', error);
             throw error;
           }
           
@@ -55,12 +60,24 @@ const AuthCallback: React.FC = () => {
             
             try {
               // Try to get existing profile
-              const profile = await getUserProfile(userId);
+              let profile = await getUserProfile(userId);
               
               if (!profile) {
                 // Create profile if it doesn't exist
                 setMessage('Creating your profile...');
-                await createUserProfile(userId, email);
+                profile = await createUserProfile(userId, email);
+                
+                // Transfer anonymous readings and add additional free readings
+                const storedReadings = localStorage.getItem('freeReadingsUsed');
+                const anonymousReadings = storedReadings ? parseInt(storedReadings, 10) : 0;
+                
+                if (anonymousReadings > 0) {
+                  // Transfer the anonymous readings to the user profile
+                  await updateUserReadingsCount(userId, Math.min(anonymousReadings, ANONYMOUS_FREE_READINGS_LIMIT));
+                  
+                  // Clear anonymous readings from localStorage
+                  localStorage.removeItem('freeReadingsUsed');
+                }
               }
               
               setSuccess(true);
@@ -72,10 +89,11 @@ const AuthCallback: React.FC = () => {
             } catch (profileError) {
               console.error('Profile error:', profileError);
               // Continue anyway, as the auth was successful
+              setSuccess(true);
               setMessage('Authentication successful! Redirecting...');
               setTimeout(() => {
                 window.location.href = '/';
-              }, 2000);
+              }, 3000);
             }
           } else {
             throw new Error('No session found after code exchange');

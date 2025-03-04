@@ -148,23 +148,47 @@ const App: React.FC = () => {
 
   const handleSubscribe = async (plan: PricingPlan) => {
     try {
+      console.log('Creating checkout session for plan:', plan.id, 'with price ID:', plan.stripePriceId);
+      
+      if (!user?.id) {
+        throw new Error('User ID is required for subscription');
+      }
+      
       const response = await fetch('/.netlify/functions/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ priceId: plan.stripePriceId, customerId: user?.id })
+        body: JSON.stringify({ 
+          priceId: plan.stripePriceId, 
+          customerId: user.id,
+          planName: plan.name
+        })
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Checkout session error response:', response.status, errorText);
+        throw new Error(`Failed to create checkout session: ${response.status} ${errorText}`);
+      }
+      
       const result = await response.json();
+      console.log('Checkout session created:', result);
       
       if (result.error) {
         throw new Error(result.error);
       }
       
       if (result.url) {
+        // Show success animation before redirecting
         setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 5000);
-        window.location.href = result.url;
+        console.log('Redirecting to Stripe checkout:', result.url);
+        
+        // Give the confetti a moment to show before redirecting
+        setTimeout(() => {
+          setShowConfetti(false);
+          window.location.href = result.url;
+        }, 1500);
       } else {
-        throw new Error('No checkout URL returned');
+        throw new Error('No checkout URL returned from server');
       }
     } catch (err) {
       console.error('Error creating checkout session:', err);
