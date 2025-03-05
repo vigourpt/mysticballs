@@ -154,9 +154,20 @@ const App: React.FC = () => {
         throw new Error('User ID is required for subscription');
       }
       
+      // Get the auth token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      
+      if (!token) {
+        throw new Error('Authentication token not found. Please sign in again.');
+      }
+      
       const response = await fetch('/.netlify/functions/create-checkout-session', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ 
           priceId: plan.stripePriceId, 
           customerId: user.id,
@@ -164,10 +175,22 @@ const App: React.FC = () => {
         })
       });
       
+      // Log the response status for debugging
+      console.log('Checkout session response status:', response.status);
+      
       if (!response.ok) {
-        const errorText = await response.text();
+        let errorText;
+        try {
+          // Try to parse the error as JSON
+          const errorJson = await response.json();
+          errorText = errorJson.error || `HTTP error ${response.status}`;
+        } catch (e) {
+          // If it's not JSON, get the text
+          errorText = await response.text();
+        }
+        
         console.error('Checkout session error response:', response.status, errorText);
-        throw new Error(`Failed to create checkout session: ${response.status} ${errorText}`);
+        throw new Error(`Failed to create checkout session: ${errorText}`);
       }
       
       const result = await response.json();

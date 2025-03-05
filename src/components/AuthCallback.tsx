@@ -3,6 +3,21 @@ import { supabase, createUserProfile, getUserProfile, updateUserReadingsCount } 
 import ReactConfetti from 'react-confetti';
 import { ANONYMOUS_FREE_READINGS_LIMIT, FREE_READINGS_LIMIT } from '../config/constants';
 
+// Store the code verifier in localStorage
+const storeCodeVerifier = (codeVerifier: string) => {
+  localStorage.setItem('pkce_code_verifier', codeVerifier);
+};
+
+// Retrieve the code verifier from localStorage
+const getCodeVerifier = (): string | null => {
+  return localStorage.getItem('pkce_code_verifier');
+};
+
+// Clear the code verifier from localStorage
+const clearCodeVerifier = () => {
+  localStorage.removeItem('pkce_code_verifier');
+};
+
 const AuthCallback: React.FC = () => {
   const [message, setMessage] = useState<string>('Processing authentication...');
   const [error, setError] = useState<boolean>(false);
@@ -41,76 +56,161 @@ const AuthCallback: React.FC = () => {
           setMessage('Confirming your email...');
           
           try {
-            // Exchange the code for a session
-            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            // Get the code verifier from localStorage
+            const codeVerifier = getCodeVerifier();
+            console.log('Retrieved code verifier:', codeVerifier ? 'Found' : 'Not found');
             
-            if (error) {
-              console.error('Code exchange error:', error);
-              throw error;
-            }
-            
-            if (!data?.session) {
-              throw new Error('No session found after code exchange');
-            }
-            
-            setMessage('Email confirmed! Setting up your account...');
-            
-            // Get user info
-            const userId = data.session.user.id;
-            const email = data.session.user.email || '';
-            
-            console.log('User authenticated:', { userId, email });
-            
-            try {
-              // Try to get existing profile
-              let profile = await getUserProfile(userId);
-              console.log('Existing profile:', profile);
+            // If we have a code verifier, use it with the code
+            if (codeVerifier) {
+              // Exchange the code for a session using the code verifier
+              const { data, error } = await supabase.auth.exchangeCodeForSession(code);
               
-              if (!profile) {
-                // Create profile if it doesn't exist
-                setMessage('Creating your profile...');
-                console.log('Creating new profile for user:', userId);
-                
-                // Create with 3 additional free readings (on top of anonymous readings)
-                profile = await createUserProfile(userId, email);
-                
-                // Transfer anonymous readings if any
-                const storedReadings = localStorage.getItem('freeReadingsUsed');
-                const anonymousReadings = storedReadings ? parseInt(storedReadings, 10) : 0;
-                
-                if (anonymousReadings > 0) {
-                  console.log('Transferring anonymous readings:', anonymousReadings);
-                  
-                  // Add the additional free readings (FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT)
-                  const additionalReadings = FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT;
-                  
-                  // Update the user's readings count
-                  await updateUserReadingsCount(userId, Math.min(anonymousReadings, ANONYMOUS_FREE_READINGS_LIMIT) + additionalReadings);
-                  
-                  // Clear anonymous readings from localStorage
-                  localStorage.removeItem('freeReadingsUsed');
-                } else {
-                  // If no anonymous readings, just add the additional free readings
-                  const additionalReadings = FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT;
-                  await updateUserReadingsCount(userId, additionalReadings);
-                }
+              if (error) {
+                console.error('Code exchange error with verifier:', error);
+                throw error;
               }
               
-              setSuccess(true);
-              setMessage('Authentication successful! Redirecting...');
+              if (!data?.session) {
+                throw new Error('No session found after code exchange with verifier');
+              }
               
-              // Redirect to home page after successful authentication
-              setTimeout(() => {
-                window.location.href = '/';
-              }, 3000);
-            } catch (profileError) {
-              console.error('Profile error:', profileError);
-              // Continue anyway, as the auth was successful
-              setSuccess(true);
-              setMessage('Authentication successful! Redirecting...');
-              setTimeout(() => {
-                window.location.href = '/';
-              }, 3000);
+              // Clear the code verifier as it's no longer needed
+              clearCodeVerifier();
+              
+              setMessage('Email confirmed! Setting up your account...');
+              
+              // Get user info
+              const userId = data.session.user.id;
+              const email = data.session.user.email || '';
+              
+              console.log('User authenticated:', { userId, email });
+              
+              try {
+                // Try to get existing profile
+                let profile = await getUserProfile(userId);
+                console.log('Existing profile:', profile);
+                
+                if (!profile) {
+                  // Create profile if it doesn't exist
+                  setMessage('Creating your profile...');
+                  console.log('Creating new profile for user:', userId);
+                  
+                  // Create with 3 additional free readings (on top of anonymous readings)
+                  profile = await createUserProfile(userId, email);
+                  
+                  // Transfer anonymous readings if any
+                  const storedReadings = localStorage.getItem('freeReadingsUsed');
+                  const anonymousReadings = storedReadings ? parseInt(storedReadings, 10) : 0;
+                  
+                  if (anonymousReadings > 0) {
+                    console.log('Transferring anonymous readings:', anonymousReadings);
+                    
+                    // Add the additional free readings (FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT)
+                    const additionalReadings = FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT;
+                    
+                    // Update the user's readings count
+                    await updateUserReadingsCount(userId, Math.min(anonymousReadings, ANONYMOUS_FREE_READINGS_LIMIT) + additionalReadings);
+                    
+                    // Clear anonymous readings from localStorage
+                    localStorage.removeItem('freeReadingsUsed');
+                  } else {
+                    // If no anonymous readings, just add the additional free readings
+                    const additionalReadings = FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT;
+                    await updateUserReadingsCount(userId, additionalReadings);
+                  }
+                }
+                
+                setSuccess(true);
+                setMessage('Authentication successful! Redirecting...');
+                
+                // Redirect to home page after successful authentication
+                setTimeout(() => {
+                  window.location.href = '/';
+                }, 3000);
+              } catch (profileError) {
+                console.error('Profile error:', profileError);
+                // Continue anyway, as the auth was successful
+                setSuccess(true);
+                setMessage('Authentication successful! Redirecting...');
+                setTimeout(() => {
+                  window.location.href = '/';
+                }, 3000);
+              }
+            } else {
+              // If we don't have a code verifier, try without it
+              console.log('No code verifier found, trying without it');
+              
+              // Exchange the code for a session without a code verifier
+              const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+              
+              if (error) {
+                console.error('Code exchange error without verifier:', error);
+                throw error;
+              }
+              
+              if (!data?.session) {
+                throw new Error('No session found after code exchange without verifier');
+              }
+              
+              setMessage('Email confirmed! Setting up your account...');
+              
+              // Get user info
+              const userId = data.session.user.id;
+              const email = data.session.user.email || '';
+              
+              console.log('User authenticated without verifier:', { userId, email });
+              
+              try {
+                // Try to get existing profile
+                let profile = await getUserProfile(userId);
+                console.log('Existing profile:', profile);
+                
+                if (!profile) {
+                  // Create profile if it doesn't exist
+                  setMessage('Creating your profile...');
+                  console.log('Creating new profile for user:', userId);
+                  
+                  // Create with 3 additional free readings (on top of anonymous readings)
+                  profile = await createUserProfile(userId, email);
+                  
+                  // Transfer anonymous readings if any
+                  const storedReadings = localStorage.getItem('freeReadingsUsed');
+                  const anonymousReadings = storedReadings ? parseInt(storedReadings, 10) : 0;
+                  
+                  if (anonymousReadings > 0) {
+                    console.log('Transferring anonymous readings:', anonymousReadings);
+                    
+                    // Add the additional free readings (FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT)
+                    const additionalReadings = FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT;
+                    
+                    // Update the user's readings count
+                    await updateUserReadingsCount(userId, Math.min(anonymousReadings, ANONYMOUS_FREE_READINGS_LIMIT) + additionalReadings);
+                    
+                    // Clear anonymous readings from localStorage
+                    localStorage.removeItem('freeReadingsUsed');
+                  } else {
+                    // If no anonymous readings, just add the additional free readings
+                    const additionalReadings = FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT;
+                    await updateUserReadingsCount(userId, additionalReadings);
+                  }
+                }
+                
+                setSuccess(true);
+                setMessage('Authentication successful! Redirecting...');
+                
+                // Redirect to home page after successful authentication
+                setTimeout(() => {
+                  window.location.href = '/';
+                }, 3000);
+              } catch (profileError) {
+                console.error('Profile error:', profileError);
+                // Continue anyway, as the auth was successful
+                setSuccess(true);
+                setMessage('Authentication successful! Redirecting...');
+                setTimeout(() => {
+                  window.location.href = '/';
+                }, 3000);
+              }
             }
           } catch (sessionError) {
             console.error('Session error:', sessionError);
@@ -200,9 +300,9 @@ const AuthCallback: React.FC = () => {
             <div className="mb-6">
               <div className="relative mx-auto w-24 h-24 mb-4">
                 {/* Pulsing circles animation */}
-                <div className="absolute inset-0 rounded-full bg-indigo-600 opacity-75 animate-ping"></div>
-                <div className="absolute inset-2 rounded-full bg-indigo-500 opacity-90 animate-pulse"></div>
-                <div className="absolute inset-4 rounded-full bg-indigo-400 opacity-100"></div>
+                <div className="absolute inset-0 rounded-full bg-purple-600 opacity-75 animate-ping"></div>
+                <div className="absolute inset-2 rounded-full bg-purple-500 opacity-90 animate-pulse"></div>
+                <div className="absolute inset-4 rounded-full bg-purple-400 opacity-100"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
@@ -210,7 +310,7 @@ const AuthCallback: React.FC = () => {
                 </div>
               </div>
               <p className="text-xl font-medium text-white mb-2">Login Successful!</p>
-              <p className="text-lg text-indigo-200">You now have 5 free readings!</p>
+              <p className="text-lg text-fuchsia-300">You now have 5 free readings!</p>
             </div>
           )}
           <p className={`text-lg ${error ? 'text-red-400' : 'text-gray-300'}`}>
@@ -219,7 +319,7 @@ const AuthCallback: React.FC = () => {
           {error && (
             <button
               onClick={() => window.location.href = '/'}
-              className="mt-6 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+              className="mt-6 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
             >
               Return to Home
             </button>

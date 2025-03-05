@@ -55,6 +55,21 @@ export const signInWithGoogle = async () => {
   }
 };
 
+// Store the code verifier in localStorage
+const storeCodeVerifier = (codeVerifier: string) => {
+  localStorage.setItem('pkce_code_verifier', codeVerifier);
+};
+
+// Retrieve the code verifier from localStorage
+const getCodeVerifier = (): string | null => {
+  return localStorage.getItem('pkce_code_verifier');
+};
+
+// Clear the code verifier from localStorage
+const clearCodeVerifier = () => {
+  localStorage.removeItem('pkce_code_verifier');
+};
+
 export const signUpWithEmail = async (email: string, password: string) => {
   if (!email || !password) {
     throw new Error('Email and password are required');
@@ -69,11 +84,23 @@ export const signUpWithEmail = async (email: string, password: string) => {
     // We just need to ensure we're using the correct flowType in the client config
     console.log('Signing up with email:', email);
     
+    // Generate a random code verifier for PKCE flow
+    const generateCodeVerifier = () => {
+      const array = new Uint8Array(32);
+      window.crypto.getRandomValues(array);
+      return Array.from(array, (byte) => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join('');
+    };
+    
+    // Generate and store the code verifier
+    const codeVerifier = generateCodeVerifier();
+    storeCodeVerifier(codeVerifier);
+    console.log('Generated and stored code verifier for PKCE flow');
+    
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: password,
       options: {
-        emailRedirectTo: siteUrl,
+        emailRedirectTo: `${siteUrl}/auth/callback`,
         data: {
           email: email.trim(),
           email_confirmed: false

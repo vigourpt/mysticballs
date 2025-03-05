@@ -231,41 +231,41 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
       )}
       <div className="fixed inset-0 bg-black bg-opacity-50" onClick={(showSuccessAnimation || showEmailConfirmation) ? undefined : onClose} />
       {showEmailConfirmation ? (
-        <div className="relative bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 rounded-lg shadow-xl max-w-md w-full p-8 border border-indigo-800/30 animate-fadeIn">
+        <div className="relative bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 rounded-lg shadow-xl max-w-md w-full p-8 border border-purple-800/30 animate-fadeIn">
           <div className="text-center py-8">
             <div className="relative mx-auto w-32 h-32 mb-6">
               {/* Email icon with animation */}
-              <div className="absolute inset-0 rounded-full bg-indigo-600 opacity-75 animate-pulse"></div>
-              <div className="absolute inset-3 rounded-full bg-indigo-500 opacity-90"></div>
+              <div className="absolute inset-0 rounded-full bg-purple-600 opacity-75 animate-pulse"></div>
+              <div className="absolute inset-3 rounded-full bg-purple-500 opacity-90"></div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <Mail className="w-16 h-16 text-white" />
               </div>
             </div>
             <h2 className="text-3xl font-bold text-white mb-4">Check Your Email</h2>
-            <p className="text-xl text-indigo-200 mb-6">
+            <p className="text-xl text-fuchsia-200 mb-6">
               We've sent a confirmation link to:
               <br />
               <span className="font-bold">{email}</span>
             </p>
-            <p className="text-md text-indigo-300 mb-8">
+            <p className="text-md text-fuchsia-300 mb-8">
               Please click the link in your email to complete your registration and get 3 more free readings!
             </p>
             <button
               onClick={onClose}
-              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
             >
               Close
             </button>
           </div>
         </div>
       ) : showSuccessAnimation ? (
-        <div className="relative bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 rounded-lg shadow-xl max-w-md w-full p-8 border border-indigo-800/30 animate-fadeIn">
+        <div className="relative bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 rounded-lg shadow-xl max-w-md w-full p-8 border border-purple-800/30 animate-fadeIn">
           <div className="text-center py-8">
             <div className="relative mx-auto w-32 h-32 mb-6">
               {/* Pulsing circles animation */}
-              <div className="absolute inset-0 rounded-full bg-indigo-600 opacity-75 animate-ping"></div>
-              <div className="absolute inset-3 rounded-full bg-indigo-500 opacity-90 animate-pulse"></div>
-              <div className="absolute inset-6 rounded-full bg-indigo-400 opacity-100"></div>
+              <div className="absolute inset-0 rounded-full bg-purple-600 opacity-75 animate-ping"></div>
+              <div className="absolute inset-3 rounded-full bg-purple-500 opacity-90 animate-pulse"></div>
+              <div className="absolute inset-6 rounded-full bg-purple-400 opacity-100"></div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
@@ -273,11 +273,11 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
               </div>
             </div>
             <h2 className="text-3xl font-bold text-white mb-4">Welcome!</h2>
-            <p className="text-xl text-indigo-200 mb-6">Login successful</p>
+            <p className="text-xl text-fuchsia-200 mb-6">Login successful</p>
             <div className="flex justify-center space-x-2">
-              <div className="w-3 h-3 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-3 h-3 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-3 h-3 rounded-full bg-indigo-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              <div className="w-3 h-3 rounded-full bg-fuchsia-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="w-3 h-3 rounded-full bg-fuchsia-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+              <div className="w-3 h-3 rounded-full bg-fuchsia-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
             </div>
           </div>
         </div>
