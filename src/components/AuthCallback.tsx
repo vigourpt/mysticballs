@@ -3,11 +3,6 @@ import { supabase, createUserProfile, getUserProfile, updateUserReadingsCount } 
 import ReactConfetti from 'react-confetti';
 import { ANONYMOUS_FREE_READINGS_LIMIT, FREE_READINGS_LIMIT } from '../config/constants';
 
-// Store the code verifier in localStorage
-const storeCodeVerifier = (codeVerifier: string) => {
-  localStorage.setItem('pkce_code_verifier', codeVerifier);
-};
-
 // Retrieve the code verifier from localStorage
 const getCodeVerifier = (): string | null => {
   return localStorage.getItem('pkce_code_verifier');

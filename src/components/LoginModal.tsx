@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { signInWithGoogle, supabase, updateUserReadingsCount } from '../services/supabase';
 import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT } from '../config/constants';
 import ReactConfetti from 'react-confetti';
-import { Mail, Check } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 interface Props {
   isOpen: boolean;

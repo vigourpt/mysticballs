@@ -60,16 +60,6 @@ const storeCodeVerifier = (codeVerifier: string) => {
   localStorage.setItem('pkce_code_verifier', codeVerifier);
 };
 
-// Retrieve the code verifier from localStorage
-const getCodeVerifier = (): string | null => {
-  return localStorage.getItem('pkce_code_verifier');
-};
-
-// Clear the code verifier from localStorage
-const clearCodeVerifier = () => {
-  localStorage.removeItem('pkce_code_verifier');
-};
-
 export const signUpWithEmail = async (email: string, password: string) => {
   if (!email || !password) {
     throw new Error('Email and password are required');
