@@ -10,6 +10,8 @@ import SubscriptionManager from './components/SubscriptionManager';
 import ReadingSelector from './components/ReadingSelector';
 import ReadingForm from './components/ReadingForm';
 import AuthCallback from './components/AuthCallback';
+import PaymentSuccess from './components/PaymentSuccess';
+import PaymentCancel from './components/PaymentCancel';
 import { PricingPlan, ReadingType } from './types';
 import { supabaseClient } from './lib/supabaseClient';
 import { createClient, User } from '@supabase/supabase-js';
@@ -403,11 +405,21 @@ const App: React.FC = () => {
     }
   }, [user]);
 
-  // Check if the current URL path is /auth/callback
+  // Check if the current URL path is /auth/callback, /payment/success, or /payment/cancel
   const isAuthCallback = window.location.pathname === '/auth/callback';
+  const isPaymentSuccess = window.location.pathname === '/payment/success';
+  const isPaymentCancel = window.location.pathname === '/payment/cancel';
 
   if (isAuthCallback) {
     return <AuthCallback />;
+  }
+
+  if (isPaymentSuccess) {
+    return <PaymentSuccess />;
+  }
+
+  if (isPaymentCancel) {
+    return <PaymentCancel />;
   }
 
   if (authLoading) {

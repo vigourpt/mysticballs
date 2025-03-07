@@ -151,6 +151,7 @@ exports.handler = async (event, context) => {
         userId: userId,
         planName: requestBody.planName || 'Premium Plan'
       },
+      allow_promotion_codes: true,
     });
 
     // Return the checkout session URL
