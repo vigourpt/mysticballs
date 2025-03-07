@@ -1,7 +1,7 @@
 import React from 'react';
 import { User } from '@supabase/supabase-js';
 import { UserProfile } from '../services/supabase';
-import { Moon, Sun, RefreshCw, LogIn } from 'lucide-react';
+import { Moon, Sun, RefreshCw, LogIn, CreditCard } from 'lucide-react';
 import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT, ADMIN_EMAIL } from '../config/constants';
 
 interface HeaderProps {
@@ -11,6 +11,7 @@ interface HeaderProps {
   onSignOut: () => Promise<{ success: boolean }>;
   userProfile?: UserProfile;
   onLogin?: () => void;
+  onManageSubscription?: () => void;
 }
 
 // Function to reset free readings count in localStorage
@@ -31,7 +32,8 @@ const Header: React.FC<HeaderProps> = ({
   onDarkModeToggle,
   onSignOut,
   userProfile,
-  onLogin
+  onLogin,
+  onManageSubscription
 }) => {
   return (
     <header className={`${isDarkMode ? 'bg-gray-800/20' : 'bg-white/10'} shadow-sm`}>
@@ -71,6 +73,17 @@ const Header: React.FC<HeaderProps> = ({
                     </span>
                   )}
                   <div className="flex space-x-3">
+                    {userProfile?.is_premium && onManageSubscription && (
+                      <button
+                        onClick={onManageSubscription}
+                        className="flex items-center text-sm text-gray-300 hover:text-white transition-colors"
+                        title="Manage your subscription"
+                      >
+                        <CreditCard className="w-4 h-4 mr-1" />
+                        Manage Subscription
+                      </button>
+                    )}
+                    
                     <button
                       onClick={onSignOut}
                       className="text-sm text-gray-300 hover:text-white transition-colors"

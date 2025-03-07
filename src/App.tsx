@@ -6,6 +6,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import LoginModal from './components/LoginModal';
 import PaymentModal from './components/PaymentModal';
+import SubscriptionManager from './components/SubscriptionManager';
 import ReadingSelector from './components/ReadingSelector';
 import ReadingForm from './components/ReadingForm';
 import AuthCallback from './components/AuthCallback';
@@ -37,6 +38,7 @@ const App: React.FC = () => {
   const [selectedReadingType, setSelectedReadingType] = useState<ReadingType | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState<Step | null>(() => {
@@ -439,6 +441,7 @@ const App: React.FC = () => {
         onSignOut={signOut}
         userProfile={profiles?.[0]}
         onLogin={() => setShowLoginModal(true)}
+        onManageSubscription={() => setShowSubscriptionManager(true)}
       />
       <div className="container mx-auto px-4">
         <div className="pt-16 pb-16 max-w-3xl mx-auto text-center">
@@ -531,6 +534,14 @@ const App: React.FC = () => {
           Math.max(0, FREE_READINGS_LIMIT - (profiles[0].readings_count || 0)) :
           FREE_READINGS_LIMIT}
       />
+
+      {user && showSubscriptionManager && (
+        <SubscriptionManager
+          user={user}
+          isDarkMode={isDarkMode}
+          onClose={() => setShowSubscriptionManager(false)}
+        />
+      )}
 
       {currentStep && (
         <TourGuide

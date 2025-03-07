@@ -304,8 +304,9 @@ const AuthCallback: React.FC = () => {
                   </svg>
                 </div>
               </div>
-              <p className="text-xl font-medium text-white mb-2">Login Successful!</p>
-              <p className="text-lg text-fuchsia-300">You now have 5 free readings!</p>
+                <p className="text-xl font-medium text-white mb-2">Login Successful!</p>
+                <p className="text-lg text-fuchsia-300 mb-2">You now have 5 free readings!</p>
+                <p className="text-sm text-gray-300">Thank you for confirming your email.</p>
             </div>
           )}
           <p className={`text-lg ${error ? 'text-red-400' : 'text-gray-300'}`}>

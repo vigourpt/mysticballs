@@ -36,6 +36,7 @@ console.log('Supabase client initialized with flowType:', 'pkce');
 
 type Tables = Database['public']['Tables'];
 export type UserProfile = Tables['user_profiles']['Row'];
+export type Subscription = Tables['subscriptions']['Row'];
 
 export const signInWithGoogle = async () => {
   try {
@@ -208,6 +209,107 @@ export const updatePremiumStatus = async (userId: string, isPremium: boolean): P
 
   if (error) {
     console.error('Error updating premium status:', error);
+    throw error;
+  }
+};
+
+// Subscription Management Functions
+export const getSubscription = async (userId: string): Promise<Subscription | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // No subscription found
+        return null;
+      }
+      console.error('Error getting subscription:', error);
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in getSubscription:', error);
+    throw error;
+  }
+};
+
+export const cancelSubscription = async (subscriptionId: string): Promise<void> => {
+  try {
+    // Get the auth token
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    
+    if (!token) {
+      throw new Error('Authentication token not found. Please sign in again.');
+    }
+    
+    // Call the Netlify function to cancel the subscription
+    const response = await fetch('/.netlify/functions/cancel-subscription', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ subscriptionId })
+    });
+    
+    if (!response.ok) {
+      let errorText;
+      try {
+        const errorJson = await response.json();
+        errorText = errorJson.error || `HTTP error ${response.status}`;
+      } catch (e) {
+        errorText = await response.text();
+      }
+      
+      throw new Error(`Failed to cancel subscription: ${errorText}`);
+    }
+    
+    // The webhook will handle updating the database
+  } catch (error) {
+    console.error('Error canceling subscription:', error);
+    throw error;
+  }
+};
+
+export const updateSubscriptionPaymentMethod = async (subscriptionId: string, paymentMethodId: string): Promise<void> => {
+  try {
+    // Get the auth token
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    
+    if (!token) {
+      throw new Error('Authentication token not found. Please sign in again.');
+    }
+    
+    // Call the Netlify function to update the payment method
+    const response = await fetch('/.netlify/functions/update-payment-method', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ subscriptionId, paymentMethodId })
+    });
+    
+    if (!response.ok) {
+      let errorText;
+      try {
+        const errorJson = await response.json();
+        errorText = errorJson.error || `HTTP error ${response.status}`;
+      } catch (e) {
+        errorText = await response.text();
+      }
+      
+      throw new Error(`Failed to update payment method: ${errorText}`);
+    }
+  } catch (error) {
+    console.error('Error updating payment method:', error);
     throw error;
   }
 };
