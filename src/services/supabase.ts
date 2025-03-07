@@ -56,9 +56,22 @@ export const signInWithGoogle = async () => {
   }
 };
 
+// Generate a random code verifier for PKCE flow
+const generateCodeVerifier = () => {
+  const array = new Uint8Array(32);
+  window.crypto.getRandomValues(array);
+  return Array.from(array, (byte) => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join('');
+};
+
 // Store the code verifier in localStorage
 const storeCodeVerifier = (codeVerifier: string) => {
   localStorage.setItem('pkce_code_verifier', codeVerifier);
+  
+  // Also store in sessionStorage as a backup
+  sessionStorage.setItem('pkce_code_verifier', codeVerifier);
+  
+  // Set a cookie as well for cross-tab access
+  document.cookie = `pkce_code_verifier=${codeVerifier};path=/;max-age=3600;SameSite=Lax`;
 };
 
 export const signUpWithEmail = async (email: string, password: string) => {
@@ -75,23 +88,20 @@ export const signUpWithEmail = async (email: string, password: string) => {
     // We just need to ensure we're using the correct flowType in the client config
     console.log('Signing up with email:', email);
     
-    // Generate a random code verifier for PKCE flow
-    const generateCodeVerifier = () => {
-      const array = new Uint8Array(32);
-      window.crypto.getRandomValues(array);
-      return Array.from(array, (byte) => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join('');
-    };
-    
     // Generate and store the code verifier
     const codeVerifier = generateCodeVerifier();
     storeCodeVerifier(codeVerifier);
     console.log('Generated and stored code verifier for PKCE flow');
     
+    // Include the code verifier in the redirect URL as a query parameter
+    const redirectTo = new URL(`${siteUrl}/auth/callback`);
+    redirectTo.searchParams.append('code_verifier', codeVerifier);
+    
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: password,
       options: {
-        emailRedirectTo: `${siteUrl}/auth/callback`,
+        emailRedirectTo: redirectTo.toString(),
         data: {
           email: email.trim(),
           email_confirmed: false
