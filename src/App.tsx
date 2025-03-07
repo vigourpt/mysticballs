@@ -513,6 +513,9 @@ const App: React.FC = () => {
               handleReadingTypeSelect={handleReadingTypeSelect}
               isDarkMode={isDarkMode}
               isPremium={user ? profiles?.[0]?.is_premium : false}
+              freeReadingsRemaining={user && profiles?.[0]
+                ? Math.max(0, FREE_READINGS_LIMIT - (profiles[0].readings_count || 0))
+                : Math.max(0, ANONYMOUS_FREE_READINGS_LIMIT - (localStorage.getItem('freeReadingsUsed') ? parseInt(localStorage.getItem('freeReadingsUsed') || '0', 10) : 0))}
             />
             {profiles && (
               <p className={`text-sm text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-700'} mt-2`}>

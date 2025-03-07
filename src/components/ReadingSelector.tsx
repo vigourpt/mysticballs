@@ -6,9 +6,16 @@ interface Props {
   handleReadingTypeSelect: (reading: ReadingType) => void;
   isDarkMode: boolean;
   isPremium?: boolean;
+  freeReadingsRemaining?: number;
 }
 
-const ReadingSelector: React.FC<Props> = ({ READING_TYPES, handleReadingTypeSelect, isDarkMode, isPremium = false }) => {
+const ReadingSelector: React.FC<Props> = ({ 
+  READING_TYPES, 
+  handleReadingTypeSelect, 
+  isDarkMode, 
+  isPremium = false,
+  freeReadingsRemaining = 0
+}) => {
   return (
     <section id="reading-types">
       <h2 className="text-2xl md:text-3xl font-bold text-white relative group mb-12">
@@ -25,10 +32,11 @@ const ReadingSelector: React.FC<Props> = ({ READING_TYPES, handleReadingTypeSele
               <button
                 key={type.id}
                 onClick={() => {
-                  if (!type.premiumOnly || isPremium) {
+                  // Allow premium readings if user is premium OR has free readings remaining
+                  if (!type.premiumOnly || isPremium || freeReadingsRemaining > 0) {
                     handleReadingTypeSelect(type);
                   } else {
-                    // Could show a premium upgrade modal here
+                    // Only show alert if user has no free readings and is not premium
                     alert('This reading type requires a premium subscription');
                   }
                 }}
@@ -46,9 +54,15 @@ const ReadingSelector: React.FC<Props> = ({ READING_TYPES, handleReadingTypeSele
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         isPremium 
                           ? 'bg-gradient-to-r from-green-500 to-green-300 text-green-900'
+                          : freeReadingsRemaining > 0
+                          ? 'bg-gradient-to-r from-blue-500 to-blue-300 text-blue-900'
                           : 'bg-gradient-to-r from-amber-500 to-amber-300 text-amber-900'
                       }`}>
-                        {isPremium ? 'Premium' : 'Premium Only'}
+                        {isPremium 
+                          ? 'Premium' 
+                          : freeReadingsRemaining > 0
+                          ? `Free (${freeReadingsRemaining} left)`
+                          : 'Premium Only'}
                       </span>
                     </div>
                   )}
