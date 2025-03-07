@@ -63,15 +63,52 @@ const generateCodeVerifier = () => {
   return Array.from(array, (byte) => ('0' + (byte & 0xFF).toString(16)).slice(-2)).join('');
 };
 
-// Store the code verifier in localStorage
-const storeCodeVerifier = (codeVerifier: string) => {
+// Store the code verifier in localStorage and on the server
+const storeCodeVerifier = async (email: string, codeVerifier: string) => {
+  // Store locally
   localStorage.setItem('pkce_code_verifier', codeVerifier);
-  
-  // Also store in sessionStorage as a backup
   sessionStorage.setItem('pkce_code_verifier', codeVerifier);
-  
-  // Set a cookie as well for cross-tab access
   document.cookie = `pkce_code_verifier=${codeVerifier};path=/;max-age=3600;SameSite=Lax`;
+  
+  // Store on the server
+  try {
+    const response = await fetch('/.netlify/functions/store-code-verifier', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, codeVerifier })
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to store code verifier on server:', await response.text());
+    }
+  } catch (error) {
+    console.error('Error storing code verifier on server:', error);
+  }
+};
+
+// Retrieve the code verifier from the server
+export const getCodeVerifierFromServer = async (email: string): Promise<string | null> => {
+  try {
+    const response = await fetch(`/.netlify/functions/get-code-verifier?email=${encodeURIComponent(email)}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      console.error('Failed to retrieve code verifier from server:', await response.text());
+      return null;
+    }
+    
+    const data = await response.json();
+    return data.codeVerifier || null;
+  } catch (error) {
+    console.error('Error retrieving code verifier from server:', error);
+    return null;
+  }
 };
 
 export const signUpWithEmail = async (email: string, password: string) => {
@@ -90,18 +127,17 @@ export const signUpWithEmail = async (email: string, password: string) => {
     
     // Generate and store the code verifier
     const codeVerifier = generateCodeVerifier();
-    storeCodeVerifier(codeVerifier);
+    await storeCodeVerifier(email.trim(), codeVerifier);
     console.log('Generated and stored code verifier for PKCE flow');
     
-    // Include the code verifier in the redirect URL as a query parameter
-    const redirectTo = new URL(`${siteUrl}/auth/callback`);
-    redirectTo.searchParams.append('code_verifier', codeVerifier);
+    // Use the standard redirect URL (without code_verifier in the URL)
+    const redirectTo = `${siteUrl}/auth/callback`;
     
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password: password,
       options: {
-        emailRedirectTo: redirectTo.toString(),
+        emailRedirectTo: redirectTo,
         data: {
           email: email.trim(),
           email_confirmed: false

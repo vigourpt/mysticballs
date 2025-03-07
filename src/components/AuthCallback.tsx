@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { supabase, createUserProfile, getUserProfile, updateUserReadingsCount } from '../services/supabase';
+import { supabase, createUserProfile, getUserProfile, updateUserReadingsCount, getCodeVerifierFromServer } from '../services/supabase';
 import ReactConfetti from 'react-confetti';
 import { ANONYMOUS_FREE_READINGS_LIMIT, FREE_READINGS_LIMIT } from '../config/constants';
 
 // Retrieve the code verifier from various storage options
-const getCodeVerifier = (): string | null => {
+const getCodeVerifier = async (email?: string): Promise<string | null> => {
   // First try to get it from URL parameters
   const params = new URLSearchParams(window.location.search);
   const codeVerifierFromUrl = params.get('code_verifier');
@@ -27,7 +27,7 @@ const getCodeVerifier = (): string | null => {
     return codeVerifierFromSessionStorage;
   }
   
-  // Finally try cookies
+  // Then try cookies
   const cookies = document.cookie.split(';');
   for (let i = 0; i < cookies.length; i++) {
     const cookie = cookies[i]?.trim() || '';
@@ -35,6 +35,16 @@ const getCodeVerifier = (): string | null => {
       const codeVerifierFromCookie = cookie.substring('pkce_code_verifier='.length, cookie.length);
       console.log('Retrieved code verifier from cookies');
       return codeVerifierFromCookie;
+    }
+  }
+  
+  // Finally try to get it from the server if we have an email
+  if (email) {
+    console.log('Attempting to retrieve code verifier from server for email:', email);
+    const codeVerifierFromServer = await getCodeVerifierFromServer(email);
+    if (codeVerifierFromServer) {
+      console.log('Retrieved code verifier from server');
+      return codeVerifierFromServer;
     }
   }
   
@@ -96,9 +106,16 @@ const AuthCallback: React.FC = () => {
           setMessage('Confirming your email...');
           
           try {
+            // First try to get the email from the URL
+            const emailParam = params.get('email');
+            
             // Get the code verifier from various storage options
-            const codeVerifier = getCodeVerifier();
+            const codeVerifier = await getCodeVerifier(emailParam || undefined);
             console.log('Retrieved code verifier:', codeVerifier ? 'Found' : 'Not found');
+            
+            if (!codeVerifier) {
+              console.error('No code verifier found. Authentication will likely fail.');
+            }
             
             // Exchange the code for a session using the code verifier
             const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -119,9 +136,9 @@ const AuthCallback: React.FC = () => {
             
             // Get user info
             const userId = data.session.user.id;
-            const email = data.session.user.email || '';
+            const userEmail = data.session.user.email || '';
             
-            console.log('User authenticated:', { userId, email });
+            console.log('User authenticated:', { userId, userEmail });
             
             try {
               // Try to get existing profile
@@ -134,7 +151,7 @@ const AuthCallback: React.FC = () => {
                 console.log('Creating new profile for user:', userId);
                 
                 // Create with 3 additional free readings (on top of anonymous readings)
-                profile = await createUserProfile(userId, email);
+                profile = await createUserProfile(userId, userEmail);
                 
                 // Transfer anonymous readings if any
                 const storedReadings = localStorage.getItem('freeReadingsUsed');

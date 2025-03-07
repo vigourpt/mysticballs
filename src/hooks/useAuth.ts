@@ -63,11 +63,15 @@ export const useAuth = () => {
       setError(null);
       setConfirmEmail(false);
 
+      // Create a redirect URL with the email parameter
+      const redirectUrl = new URL(`${window.location.origin}/auth/callback`);
+      redirectUrl.searchParams.append('email', email.trim());
+      
       const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password: password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: redirectUrl.toString(),
           data: {
             email_confirmed: false
           }
