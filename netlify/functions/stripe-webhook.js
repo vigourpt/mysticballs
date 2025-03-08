@@ -48,18 +48,45 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Determine if we're in test mode based on the event data
-    // Stripe sends events with test data from test mode, and live data from live mode
-    // We can detect this by checking the event ID prefix or examining the event object
+    // Log the raw request for debugging
+    console.log('Webhook request headers:', {
+      signature: event.headers['stripe-signature'] ? event.headers['stripe-signature'].substring(0, 20) + '...' : 'missing',
+      contentType: event.headers['content-type'],
+      contentLength: event.headers['content-length']
+    });
     
-    // Get the raw event first to check for test mode
-    const rawEvent = JSON.parse(event.body);
+    // For Netlify functions, we need to ensure we're using the raw body for signature verification
+    // The raw body is available in event.body
+    const rawBody = event.body;
     
-    // Test mode events have IDs that start with 'evt_test_'
-    // Live mode events have IDs that start with 'evt_'
-    const isTestMode = rawEvent.id && rawEvent.id.startsWith('evt_test_');
+    // Parse the event to determine test mode
+    let rawEvent;
+    try {
+      rawEvent = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error('Error parsing webhook body:', parseError);
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: `Invalid JSON: ${parseError.message}` })
+      };
+    }
     
-    console.log('Stripe webhook mode:', isTestMode ? 'TEST' : 'LIVE', 'Event ID:', rawEvent.id);
+    // Check if this is a test event
+    // First check if it's explicitly marked as test mode in the event object
+    let isTestMode = rawEvent.livemode === false;
+    
+    // If not explicitly marked, check the event ID
+    if (!isTestMode && rawEvent.id) {
+      isTestMode = rawEvent.id.startsWith('evt_test_');
+    }
+    
+    // If it's a checkout session event, check the session ID
+    if (!isTestMode && rawEvent.data && rawEvent.data.object && rawEvent.data.object.id) {
+      isTestMode = rawEvent.data.object.id.startsWith('cs_test_');
+    }
+    
+    console.log('Stripe webhook mode:', isTestMode ? 'TEST' : 'LIVE', 'Event type:', rawEvent.type, 'Event ID:', rawEvent.id);
     
     // Initialize Stripe with the appropriate key
     stripe = initializeStripe(isTestMode);
@@ -94,8 +121,9 @@ exports.handler = async (event) => {
     // Construct the Stripe event
     let stripeEvent;
     try {
+      // Use the raw body for signature verification
       stripeEvent = stripe.webhooks.constructEvent(
-        event.body,
+        rawBody,
         stripeSignature,
         webhookSecret
       );
