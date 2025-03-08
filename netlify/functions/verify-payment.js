@@ -102,6 +102,7 @@ exports.handler = async (event, context) => {
     let session;
     try {
       session = await stripe.checkout.sessions.retrieve(sessionId);
+      console.log('Successfully retrieved session:', sessionId);
     } catch (stripeError) {
       console.error('Stripe session retrieval error:', stripeError);
       
@@ -340,11 +341,30 @@ exports.handler = async (event, context) => {
   } catch (error) {
     console.error('Verify payment error:', error);
     
+    // Provide more detailed error information
+    let errorMessage = error.message || 'An unexpected error occurred';
+    let statusCode = 500;
+    
+    // Check for specific error types
+    if (error.name === 'StripeError') {
+      errorMessage = `Stripe API error: ${errorMessage}`;
+    } else if (error.name === 'PostgrestError') {
+      errorMessage = `Database error: ${errorMessage}`;
+      // Most database errors are client errors (e.g., constraints)
+      statusCode = 400;
+    } else if (error.message && error.message.includes('webhook')) {
+      errorMessage = `Webhook error: ${errorMessage}`;
+      // Add instructions for test mode webhook setup
+      if (isTestMode) {
+        errorMessage += '. Make sure you have set up a webhook endpoint in your Stripe test dashboard and added the webhook secret to your Netlify environment variables.';
+      }
+    }
+    
     return {
-      statusCode: 500,
+      statusCode,
       headers,
       body: JSON.stringify({
-        error: `Server error: ${error.message || 'An unexpected error occurred'}`
+        error: `Server error: ${errorMessage}`
       })
     };
   }

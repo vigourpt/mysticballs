@@ -30,7 +30,23 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// CORS headers
+const headers = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, stripe-signature',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json'
+};
+
 exports.handler = async (event) => {
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers
+    };
+  }
+
   try {
     // Check if we're in test mode
     const isTestMode = event.headers['x-stripe-test-mode'] === 'true';
@@ -45,6 +61,7 @@ exports.handler = async (event) => {
     if (!stripeSignature) {
       return {
         statusCode: 400,
+        headers,
         body: JSON.stringify({ error: 'Missing Stripe signature' })
       };
     }
@@ -58,6 +75,7 @@ exports.handler = async (event) => {
       console.error(`Stripe ${isTestMode ? 'test' : 'live'} webhook secret is missing`);
       return {
         statusCode: 500,
+        headers,
         body: JSON.stringify({ 
           error: `Stripe ${isTestMode ? 'test' : 'live'} webhook secret is missing. Please check your environment variables.` 
         })
@@ -76,6 +94,7 @@ exports.handler = async (event) => {
       console.error(`Webhook signature verification failed: ${err.message}`);
       return {
         statusCode: 400,
+        headers,
         body: JSON.stringify({ error: `Webhook Error: ${err.message}` })
       };
     }
@@ -114,12 +133,14 @@ exports.handler = async (event) => {
 
     return {
       statusCode: 200,
+      headers,
       body: JSON.stringify({ received: true })
     };
   } catch (err) {
     console.error(`Webhook error: ${err.message}`);
     return {
       statusCode: 500,
+      headers,
       body: JSON.stringify({ error: `Webhook Error: ${err.message}` })
     };
   }
