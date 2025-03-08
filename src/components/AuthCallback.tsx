@@ -3,7 +3,7 @@ import { supabase, createUserProfile, getUserProfile, updateUserReadingsCount, g
 import ReactConfetti from 'react-confetti';
 import { ANONYMOUS_FREE_READINGS_LIMIT, FREE_READINGS_LIMIT } from '../config/constants';
 
-// Retrieve the code verifier from various storage options
+// Retrieve the code verifier from various storage options with retry logic
 const getCodeVerifier = async (email?: string): Promise<string | null> => {
   // First try to get it from URL parameters
   const params = new URLSearchParams(window.location.search);
@@ -41,14 +41,38 @@ const getCodeVerifier = async (email?: string): Promise<string | null> => {
   // Finally try to get it from the server if we have an email
   if (email) {
     console.log('Attempting to retrieve code verifier from server for email:', email);
-    const codeVerifierFromServer = await getCodeVerifierFromServer(email);
-    if (codeVerifierFromServer) {
-      console.log('Retrieved code verifier from server');
-      return codeVerifierFromServer;
+    
+    // Implement retry logic for server retrieval
+    let retryCount = 0;
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
+    
+    while (retryCount <= maxRetries) {
+      try {
+        const codeVerifierFromServer = await getCodeVerifierFromServer(email);
+        if (codeVerifierFromServer) {
+          console.log('Retrieved code verifier from server on attempt', retryCount + 1);
+          return codeVerifierFromServer;
+        }
+        
+        // If we get here, the code verifier was not found but no error was thrown
+        console.log(`Code verifier not found on server (attempt ${retryCount + 1}/${maxRetries + 1})`);
+      } catch (error) {
+        console.error(`Error retrieving code verifier on attempt ${retryCount + 1}:`, error);
+      }
+      
+      // If we've reached the max retries, break out of the loop
+      if (retryCount >= maxRetries) break;
+      
+      // Exponential backoff with jitter
+      const delay = Math.min(baseDelay * Math.pow(2, retryCount), 10000) * (0.75 + Math.random() * 0.5);
+      console.log(`Retrying in ${Math.round(delay)}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      retryCount++;
     }
   }
   
-  console.log('No code verifier found in any storage');
+  console.log('No code verifier found in any storage after all attempts');
   return null;
 };
 
@@ -70,8 +94,10 @@ const clearCodeVerifier = (): void => {
 
 const AuthCallback: React.FC = () => {
   const [message, setMessage] = useState<string>('Processing authentication...');
+  const [detailMessage, setDetailMessage] = useState<string>('');
   const [error, setError] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(true);
   const [windowDimensions, setWindowDimensions] = useState({
     width: window.innerWidth,
     height: window.innerHeight
@@ -100,6 +126,7 @@ const AuthCallback: React.FC = () => {
         const hashFragment = window.location.hash;
         
         console.log('Auth callback params:', { code, type, hashFragment });
+        setDetailMessage('Initializing authentication process...');
         
         // Handle email confirmation flow
         if (code) {
@@ -110,24 +137,33 @@ const AuthCallback: React.FC = () => {
             const emailParam = params.get('email');
             
             // Get the code verifier from various storage options
+            setDetailMessage('Retrieving authentication data...');
             const codeVerifier = await getCodeVerifier(emailParam || undefined);
             console.log('Retrieved code verifier:', codeVerifier ? 'Found' : 'Not found');
             
             if (!codeVerifier) {
+              setDetailMessage('Authentication data not found. Attempting to continue...');
               console.error('No code verifier found. Authentication will likely fail.');
+            } else {
+              setDetailMessage('Authentication data retrieved successfully');
             }
             
             // Exchange the code for a session using the code verifier
+            setDetailMessage('Exchanging authentication code for session...');
             const { data, error } = await supabase.auth.exchangeCodeForSession(code);
             
             if (error) {
+              setDetailMessage('Error during code exchange: ' + error.message);
               console.error('Code exchange error:', error);
               throw error;
             }
             
             if (!data?.session) {
+              setDetailMessage('No session found after code exchange');
               throw new Error('No session found after code exchange');
             }
+            
+            setDetailMessage('Session established successfully');
             
             // Clear the code verifier as it's no longer needed
             clearCodeVerifier();
@@ -142,22 +178,26 @@ const AuthCallback: React.FC = () => {
             
             try {
               // Try to get existing profile
+              setDetailMessage('Checking for existing user profile...');
               let profile = await getUserProfile(userId);
               console.log('Existing profile:', profile);
               
               if (!profile) {
                 // Create profile if it doesn't exist
                 setMessage('Creating your profile...');
+                setDetailMessage('Setting up new user account...');
                 console.log('Creating new profile for user:', userId);
                 
                 // Create with 3 additional free readings (on top of anonymous readings)
                 profile = await createUserProfile(userId, userEmail);
+                setDetailMessage('User profile created successfully');
                 
                 // Transfer anonymous readings if any
                 const storedReadings = localStorage.getItem('freeReadingsUsed');
                 const anonymousReadings = storedReadings ? parseInt(storedReadings, 10) : 0;
                 
                 if (anonymousReadings > 0) {
+                  setDetailMessage('Transferring your previous readings...');
                   console.log('Transferring anonymous readings:', anonymousReadings);
                   
                   // Add the additional free readings (FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT)
@@ -165,14 +205,19 @@ const AuthCallback: React.FC = () => {
                   
                   // Update the user's readings count
                   await updateUserReadingsCount(userId, Math.min(anonymousReadings, ANONYMOUS_FREE_READINGS_LIMIT) + additionalReadings);
+                  setDetailMessage('Previous readings transferred successfully');
                   
                   // Clear anonymous readings from localStorage
                   localStorage.removeItem('freeReadingsUsed');
                 } else {
                   // If no anonymous readings, just add the additional free readings
+                  setDetailMessage('Adding your free readings...');
                   const additionalReadings = FREE_READINGS_LIMIT - ANONYMOUS_FREE_READINGS_LIMIT;
                   await updateUserReadingsCount(userId, additionalReadings);
+                  setDetailMessage('Free readings added to your account');
                 }
+              } else {
+                setDetailMessage('Existing profile found, preparing your dashboard...');
               }
               
               setSuccess(true);
@@ -199,16 +244,38 @@ const AuthCallback: React.FC = () => {
         // Handle OAuth flow (Google, etc.)
         else if (hashFragment) {
           setMessage('Processing OAuth login...');
+          setDetailMessage('Verifying OAuth authentication...');
           
           try {
             // The Supabase client should handle this automatically
             const { data, error } = await supabase.auth.getSession();
             
             if (error) {
+              setDetailMessage('OAuth verification error: ' + error.message);
               throw error;
             }
             
             if (data?.session) {
+              setDetailMessage('OAuth authentication verified successfully');
+              
+              // Check if we need to create a profile
+              const userId = data.session.user.id;
+              const userEmail = data.session.user.email || '';
+              
+              setDetailMessage('Checking user profile status...');
+              const profile = await getUserProfile(userId);
+              
+              if (!profile) {
+                setDetailMessage('Creating new user profile for OAuth login...');
+                await createUserProfile(userId, userEmail);
+                setDetailMessage('Profile created successfully');
+                
+                // Add free readings
+                setDetailMessage('Adding your free readings...');
+                await updateUserReadingsCount(userId, FREE_READINGS_LIMIT);
+                setDetailMessage('Free readings added to your account');
+              }
+              
               setSuccess(true);
               setMessage('Authentication successful! Redirecting...');
               
@@ -217,6 +284,7 @@ const AuthCallback: React.FC = () => {
                 window.location.href = '/';
               }, 3000);
             } else {
+              setDetailMessage('No session found after OAuth verification');
               throw new Error('No session found');
             }
           } catch (oauthError) {
@@ -293,9 +361,14 @@ const AuthCallback: React.FC = () => {
                 <p className="text-sm text-gray-300">Thank you for confirming your email.</p>
             </div>
           )}
-          <p className={`text-lg ${error ? 'text-red-400' : 'text-gray-300'}`}>
+          <p className={`text-lg font-medium ${error ? 'text-red-400' : 'text-gray-300'}`}>
             {message}
           </p>
+          {!error && !success && detailMessage && (
+            <p className="text-sm text-purple-300 mt-2 animate-pulse">
+              {detailMessage}
+            </p>
+          )}
           {error && (
             <button
               onClick={() => window.location.href = '/'}

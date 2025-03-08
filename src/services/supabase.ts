@@ -88,25 +88,38 @@ const storeCodeVerifier = async (email: string, codeVerifier: string) => {
   }
 };
 
-// Retrieve the code verifier from the server
+// Retrieve the code verifier from the server with retry logic
 export const getCodeVerifierFromServer = async (email: string): Promise<string | null> => {
   try {
-    const response = await fetch(`/.netlify/functions/get-code-verifier?email=${encodeURIComponent(email)}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    // Import the retryFetch utility
+    const { retryFetch } = await import('../utils/retryFetch');
+    
+    // Use retryFetch with 3 retries (4 total attempts)
+    const response = await retryFetch(
+      `/.netlify/functions/get-code-verifier?email=${encodeURIComponent(email)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        }
+      },
+      3 // Max retries
+    );
     
     if (!response.ok) {
-      console.error('Failed to retrieve code verifier from server:', await response.text());
+      const errorText = await response.text();
+      console.error(`Failed to retrieve code verifier from server (Status: ${response.status}):`, errorText);
       return null;
     }
     
     const data = await response.json();
+    if (!data.codeVerifier) {
+      console.warn('Code verifier was retrieved but is empty or null');
+    }
     return data.codeVerifier || null;
   } catch (error) {
-    console.error('Error retrieving code verifier from server:', error);
+    console.error('Error retrieving code verifier from server after retries:', error);
     return null;
   }
 };
