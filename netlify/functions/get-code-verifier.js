@@ -70,11 +70,22 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Delete the code verifier after retrieving it (one-time use)
+    // Set an expiration time for the code verifier (10 minutes from now)
+    // This allows multiple retrieval attempts while still ensuring it's eventually cleaned up
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+    
+    // Update the code verifier with an expiration time instead of deleting it immediately
     await supabase
       .from('auth_code_verifiers')
-      .delete()
+      .update({ 
+        updated_at: new Date().toISOString(),
+        expires_at: expiresAt.toISOString()
+      })
       .eq('email', email);
+      
+    // Log that we're keeping the verifier available for a short time
+    console.log(`Code verifier for ${email} will expire at ${expiresAt.toISOString()}`);
 
     return {
       statusCode: 200,
