@@ -1,12 +1,41 @@
 import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
+import { ADMIN_EMAIL } from '../config/constants';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmEmail, setConfirmEmail] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Function to check if user is admin from database
+  const checkAdminStatus = async (currentUser: User | null) => {
+    if (!currentUser) {
+      setIsAdmin(false);
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('is_admin')
+        .eq('id', currentUser.id)
+        .single();
+        
+      if (error) {
+        console.error('Error checking admin status:', error);
+        setIsAdmin(false);
+        return;
+      }
+      
+      setIsAdmin(!!data?.is_admin);
+    } catch (err) {
+      console.error('Error in checkAdminStatus:', err);
+      setIsAdmin(false);
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -17,16 +46,35 @@ export const useAuth = () => {
       if (!mounted) return;
       
       if (event === 'SIGNED_IN') {
-        setUser(session?.user ?? null);
+        const sessionUser = session?.user ?? null;
+        setUser(sessionUser);
         setConfirmEmail(false);
         setError(null);
+        
+        // Check if user is admin
+        if (sessionUser?.email === ADMIN_EMAIL) {
+          setIsAdmin(true);
+        } else {
+          // Check database for admin status
+          checkAdminStatus(sessionUser);
+        }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setConfirmEmail(false);
         setError(null);
+        setIsAdmin(false);
       } else if (event === 'USER_UPDATED') {
-        setUser(session?.user ?? null);
+        const updatedUser = session?.user ?? null;
+        setUser(updatedUser);
         setError(null);
+        
+        // Check if user is admin
+        if (updatedUser?.email === ADMIN_EMAIL) {
+          setIsAdmin(true);
+        } else {
+          // Check database for admin status
+          checkAdminStatus(updatedUser);
+        }
       }
     });
 
@@ -42,10 +90,19 @@ export const useAuth = () => {
           setUser(session.user);
           setConfirmEmail(false);
           setError(null);
+          
+          // Check if user is admin
+          if (session.user.email === ADMIN_EMAIL) {
+            setIsAdmin(true);
+          } else {
+            // Check database for admin status
+            checkAdminStatus(session.user);
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to initialize auth');
         setUser(null);
+        setIsAdmin(false);
       }
     };
 
@@ -151,6 +208,7 @@ export const useAuth = () => {
     loading,
     error,
     confirmEmail,
+    isAdmin,
     signUp,
     signIn,
     signOut

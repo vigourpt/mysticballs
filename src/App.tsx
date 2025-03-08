@@ -12,6 +12,7 @@ import ReadingForm from './components/ReadingForm';
 import AuthCallback from './components/AuthCallback';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancel from './components/PaymentCancel';
+import AdminControls from './components/AdminControls';
 import { PricingPlan, ReadingType } from './types';
 import { supabaseClient } from './lib/supabaseClient';
 import { createClient, User } from '@supabase/supabase-js';
@@ -455,6 +456,11 @@ const App: React.FC = () => {
         onLogin={() => setShowLoginModal(true)}
         onManageSubscription={() => setShowSubscriptionManager(true)}
       />
+      
+      {/* Admin Controls - only visible to admin users */}
+      <div className="container mx-auto px-4 mt-4">
+        <AdminControls />
+      </div>
       <div className="container mx-auto px-4">
         <div className="pt-16 pb-16 max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white relative group mb-8">

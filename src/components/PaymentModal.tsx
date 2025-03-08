@@ -4,6 +4,7 @@ import { PricingPlan } from '../types';
 import { PAYMENT_PLANS } from '../config/plans';
 import LoadingSpinner from './LoadingSpinner';
 import { Check } from 'lucide-react';
+import { STRIPE_TEST_MODE } from '../config/constants';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -90,6 +91,11 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         </button>
 
         <div className="text-center mb-8">
+          {STRIPE_TEST_MODE && (
+            <div className="bg-yellow-600 text-white p-3 rounded-lg mb-4 text-center font-bold">
+              ⚠️ STRIPE TEST MODE ACTIVE - No real charges will be made
+            </div>
+          )}
           <h2 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Upgrade Your Spiritual Journey</h2>
           <p className={`${isDarkMode ? 'text-indigo-200' : 'text-gray-600'}`}>
             {remainingReadings > 0 ? (
