@@ -8,15 +8,13 @@ const initializeStripe = (isTestMode) => {
     ? process.env.STRIPE_TEST_SECRET_KEY 
     : process.env.STRIPE_SECRET_KEY;
   
-  // If test key is missing but requested, try to fall back to live key
-  if (!secretKey && isTestMode && process.env.STRIPE_SECRET_KEY) {
-    console.warn('Stripe test secret key is missing, falling back to live key');
-    secretKey = process.env.STRIPE_SECRET_KEY;
-    // We'll continue with the live key but in test mode
-  } else if (!secretKey) {
-    // If no keys are available at all
+  // If no keys are available at all
+  if (!secretKey) {
     throw new Error(`Stripe ${isTestMode ? 'test' : 'live'} secret key is missing. Please check your environment variables.`);
   }
+  
+  // Log which key we're using
+  console.log(`Using Stripe ${isTestMode ? 'test' : 'live'} mode with key: ${secretKey.substring(0, 8)}...`);
   
   return require('stripe')(secretKey, {
     apiVersion: '2023-10-16', // Specify a stable API version
@@ -24,6 +22,7 @@ const initializeStripe = (isTestMode) => {
     maxNetworkRetries: 3 // Automatically retry failed requests
   });
 };
+
 const { createClient } = require('@supabase/supabase-js');
 
 // Set up Supabase client
