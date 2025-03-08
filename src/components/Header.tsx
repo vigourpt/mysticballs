@@ -1,7 +1,7 @@
 import React from 'react';
 import { User } from '@supabase/supabase-js';
 import { UserProfile } from '../services/supabase';
-import { Moon, Sun, RefreshCw, LogIn, CreditCard, Sparkles } from 'lucide-react';
+import { Moon, Sun, RefreshCw, LogIn, CreditCard, Sparkles, History } from 'lucide-react';
 import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT, ADMIN_EMAIL } from '../config/constants';
 
 interface HeaderProps {
@@ -13,6 +13,7 @@ interface HeaderProps {
   onLogin?: () => void;
   onManageSubscription?: () => void;
   onSubscribe?: () => void;
+  onViewReadingHistory?: () => void;
 }
 
 // Function to reset free readings count in localStorage
@@ -35,7 +36,8 @@ const Header: React.FC<HeaderProps> = ({
   userProfile,
   onLogin,
   onManageSubscription,
-  onSubscribe
+  onSubscribe,
+  onViewReadingHistory
 }) => {
   return (
     <header className={`${isDarkMode ? 'bg-gray-800/20' : 'bg-white/10'} shadow-sm`}>
@@ -75,15 +77,30 @@ const Header: React.FC<HeaderProps> = ({
                     </span>
                   )}
                   <div className="flex space-x-3">
-                    {userProfile?.is_premium && onManageSubscription && (
-                      <button
-                        onClick={onManageSubscription}
-                        className="flex items-center text-sm text-gray-300 hover:text-white transition-colors"
-                        title="Manage your subscription"
-                      >
-                        <CreditCard className="w-4 h-4 mr-1" />
-                        Manage Subscription
-                      </button>
+                    {userProfile?.is_premium && (
+                      <>
+                        {onManageSubscription && (
+                          <button
+                            onClick={onManageSubscription}
+                            className="flex items-center text-sm text-gray-300 hover:text-white transition-colors"
+                            title="Manage your subscription"
+                          >
+                            <CreditCard className="w-4 h-4 mr-1" />
+                            Manage Subscription
+                          </button>
+                        )}
+                        
+                        {onViewReadingHistory && (
+                          <button
+                            onClick={onViewReadingHistory}
+                            className="flex items-center text-sm text-gray-300 hover:text-white transition-colors"
+                            title="View your reading history"
+                          >
+                            <History className="w-4 h-4 mr-1" />
+                            Reading History
+                          </button>
+                        )}
+                      </>
                     )}
                     
                     {/* Subscribe button for authenticated users who don't have premium */}

@@ -484,6 +484,24 @@ const handler: Handler = async (event, context) => {
           console.error('Failed to update readings count:', updateError);
         }
       }
+      
+      // Store reading in history table for authenticated users
+      if (user !== null && completion.choices && completion.choices[0] && completion.choices[0].message && completion.choices[0].message.content) {
+        const readingOutput = completion.choices[0].message.content.trim();
+        
+        const { error: historyError } = await supabase
+          .from('reading_history')
+          .insert([{
+            user_id: user.id,
+            reading_type: readingType,
+            user_input: userInput,
+            reading_output: readingOutput
+          }]);
+
+        if (historyError) {
+          console.error('Failed to store reading history:', historyError);
+        }
+      }
 
       const responseBody: { reading?: string; error?: string; readingsRemaining?: number | null } = { };
 

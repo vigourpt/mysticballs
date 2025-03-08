@@ -9,6 +9,7 @@ import PaymentModal from './components/PaymentModal';
 import SubscriptionManager from './components/SubscriptionManager';
 import ReadingSelector from './components/ReadingSelector';
 import ReadingForm from './components/ReadingForm';
+import ReadingHistory from './components/ReadingHistory';
 import AuthCallback from './components/AuthCallback';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancel from './components/PaymentCancel';
@@ -44,6 +45,7 @@ const App: React.FC = () => {
   const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
   const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
+  const [showReadingHistory, setShowReadingHistory] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step | null>(() => {
     return ONBOARDING_STEPS.length > 0 ? ONBOARDING_STEPS[0] as Step : null;
   });
@@ -457,6 +459,7 @@ const App: React.FC = () => {
         onLogin={() => setShowLoginModal(true)}
         onManageSubscription={() => setShowSubscriptionManager(true)}
         onSubscribe={() => setShowPaymentModal(true)}
+        onViewReadingHistory={() => setShowReadingHistory(true)}
       />
       
       {/* Admin Controls - only visible to admin users */}
@@ -488,6 +491,11 @@ const App: React.FC = () => {
           <TermsOfService 
             isDarkMode={isDarkMode} 
             onBack={() => setCurrentPage(null)} 
+          />
+        ) : showReadingHistory ? (
+          <ReadingHistory
+            isDarkMode={isDarkMode}
+            onBack={() => setShowReadingHistory(false)}
           />
         ) : selectedReadingType ? (
           <div className="max-w-4xl mx-auto">
