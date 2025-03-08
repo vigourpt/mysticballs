@@ -11,5 +11,5 @@ export const STRIPE_TEST_MODE =
 // Test price IDs from your Stripe test dashboard
 export const TEST_PRICE_IDS = {
   basic: 'price_1R0CJxG3HGXKeksqy7NYmuh8',
-  premium: 'price_1R0CKrG3HGXKeksqieKEA1ox'
+  premium: 'price_1R0CKrG3HGXKeksqjeKEA1ox'
 };

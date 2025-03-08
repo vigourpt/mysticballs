@@ -1,4 +1,28 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// Initialize Stripe with the appropriate key based on the mode
+let stripe;
+
+// Function to initialize Stripe with the appropriate key
+const initializeStripe = (isTestMode) => {
+  // Try to get the requested key
+  let secretKey = isTestMode 
+    ? process.env.STRIPE_TEST_SECRET_KEY 
+    : process.env.STRIPE_SECRET_KEY;
+  
+  // If no keys are available at all
+  if (!secretKey) {
+    throw new Error(`Stripe ${isTestMode ? 'test' : 'live'} secret key is missing. Please check your environment variables.`);
+  }
+  
+  // Log which key we're using
+  console.log(`Using Stripe ${isTestMode ? 'test' : 'live'} mode with key: ${secretKey.substring(0, 8)}...`);
+  
+  return require('stripe')(secretKey, {
+    apiVersion: '2023-10-16', // Specify a stable API version
+    timeout: 30000, // Increase timeout to 30 seconds
+    maxNetworkRetries: 3 // Automatically retry failed requests
+  });
+};
+
 const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase client
@@ -8,6 +32,13 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 exports.handler = async (event) => {
   try {
+    // Check if we're in test mode
+    const isTestMode = event.headers['x-stripe-test-mode'] === 'true';
+    console.log('Stripe webhook mode:', isTestMode ? 'TEST' : 'LIVE');
+    
+    // Initialize Stripe with the appropriate key
+    stripe = initializeStripe(isTestMode);
+    
     // Verify the webhook signature
     const stripeSignature = event.headers['stripe-signature'];
     
@@ -18,13 +49,28 @@ exports.handler = async (event) => {
       };
     }
 
+    // Get the appropriate webhook secret based on mode
+    const webhookSecret = isTestMode
+      ? process.env.STRIPE_TEST_WEBHOOK_SECRET
+      : process.env.STRIPE_WEBHOOK_SECRET;
+      
+    if (!webhookSecret) {
+      console.error(`Stripe ${isTestMode ? 'test' : 'live'} webhook secret is missing`);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ 
+          error: `Stripe ${isTestMode ? 'test' : 'live'} webhook secret is missing. Please check your environment variables.` 
+        })
+      };
+    }
+
     // Construct the Stripe event
     let stripeEvent;
     try {
       stripeEvent = stripe.webhooks.constructEvent(
         event.body,
         stripeSignature,
-        process.env.STRIPE_WEBHOOK_SECRET
+        webhookSecret
       );
     } catch (err) {
       console.error(`Webhook signature verification failed: ${err.message}`);
