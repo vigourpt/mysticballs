@@ -7,7 +7,15 @@ const initializeStripe = (isTestMode) => {
     ? process.env.STRIPE_TEST_SECRET_KEY 
     : process.env.STRIPE_SECRET_KEY;
   
-  return require('stripe')(secretKey);
+  if (!secretKey) {
+    throw new Error(`Stripe ${isTestMode ? 'test' : 'live'} secret key is missing`);
+  }
+  
+  return require('stripe')(secretKey, {
+    apiVersion: '2023-10-16', // Specify a stable API version
+    timeout: 30000, // Increase timeout to 30 seconds
+    maxNetworkRetries: 3 // Automatically retry failed requests
+  });
 };
 const { createClient } = require('@supabase/supabase-js');
 
@@ -150,26 +158,42 @@ exports.handler = async (event, context) => {
     // Get the origin for success/cancel URLs
     const origin = event.headers.origin || 'https://mysticballs.com';
 
-    // Create checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: stripeCustomerId,
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
+    // Create checkout session with retry logic
+    let session;
+    try {
+      session = await stripe.checkout.sessions.create({
+        customer: stripeCustomerId,
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        mode: 'subscription',
+        success_url: `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${origin}/payment/cancel`,
+        client_reference_id: userId,
+        metadata: {
+          userId: userId,
+          planName: requestBody.planName || 'Premium Plan'
         },
-      ],
-      mode: 'subscription',
-      success_url: `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/payment/cancel`,
-      client_reference_id: userId,
-      metadata: {
-        userId: userId,
-        planName: requestBody.planName || 'Premium Plan'
-      },
-      allow_promotion_codes: true,
-    });
+        allow_promotion_codes: true,
+      });
+    } catch (stripeError) {
+      console.error('Stripe checkout session creation error:', stripeError);
+      
+      // Return a more detailed error message
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({
+          error: `Stripe error: ${stripeError.message}`,
+          code: stripeError.code || 'unknown',
+          type: stripeError.type || 'unknown'
+        })
+      };
+    }
 
     // Return the checkout session URL
     return {
@@ -183,11 +207,21 @@ exports.handler = async (event, context) => {
   } catch (error) {
     console.error('Checkout session error:', error);
     
+    // Determine if this is a network error
+    const isNetworkError = error.code === 'ECONNREFUSED' || 
+                          error.code === 'ECONNRESET' || 
+                          error.code === 'ETIMEDOUT' ||
+                          error.message.includes('network') ||
+                          error.message.includes('connection');
+    
     return {
-      statusCode: 500,
+      statusCode: isNetworkError ? 503 : 500,
       headers,
       body: JSON.stringify({
-        error: `Server error: ${error.message || 'The payment service is currently unavailable. Please try again later.'}`
+        error: isNetworkError 
+          ? 'Network error: Unable to connect to payment service. Please try again later.'
+          : `Server error: ${error.message || 'The payment service is currently unavailable. Please try again later.'}`,
+        code: error.code || 'unknown'
       })
     };
   }
