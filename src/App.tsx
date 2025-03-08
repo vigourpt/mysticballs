@@ -433,8 +433,8 @@ const App: React.FC = () => {
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
       isDarkMode 
-        ? 'bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950' 
-        : 'bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100'
+        ? 'bg-indigo-950 bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950 bg-fixed' 
+        : 'bg-indigo-100 bg-gradient-to-br from-indigo-100 via-purple-100 to-blue-100 bg-fixed'
     }`}>
       {showConfetti && (
         <ReactConfetti
@@ -494,6 +494,7 @@ const App: React.FC = () => {
               readingType={selectedReadingType}
               onSubmit={handleReadingSubmit}
               isDarkMode={isDarkMode}
+              isLoading={isLoading}
             />
             {readingOutput && (
               <div className="mt-8">
