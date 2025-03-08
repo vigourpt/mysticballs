@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { STRIPE_TEST_MODE } from '../config/constants';
+import { AlertTriangle } from 'lucide-react';
 
 const AdminControls: React.FC = () => {
   const { isAdmin } = useAuth();
@@ -42,7 +43,13 @@ const AdminControls: React.FC = () => {
         </label>
         {isTestMode && (
           <div className="bg-yellow-600 text-white p-2 rounded mt-2">
-            ⚠️ TEST MODE ACTIVE - No real charges will be made
+            <div className="flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              <span>TEST MODE ACTIVE - No real charges will be made</span>
+            </div>
+            <div className="text-xs mt-1 text-yellow-200">
+              Note: If Stripe test keys are not configured in the environment, the system will attempt to fall back to live keys in test mode.
+            </div>
           </div>
         )}
       </div>

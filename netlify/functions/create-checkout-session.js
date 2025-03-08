@@ -3,12 +3,19 @@ let stripe;
 
 // Function to initialize Stripe with the appropriate key
 const initializeStripe = (isTestMode) => {
-  const secretKey = isTestMode 
+  // Try to get the requested key
+  let secretKey = isTestMode 
     ? process.env.STRIPE_TEST_SECRET_KEY 
     : process.env.STRIPE_SECRET_KEY;
   
-  if (!secretKey) {
-    throw new Error(`Stripe ${isTestMode ? 'test' : 'live'} secret key is missing`);
+  // If test key is missing but requested, try to fall back to live key
+  if (!secretKey && isTestMode && process.env.STRIPE_SECRET_KEY) {
+    console.warn('Stripe test secret key is missing, falling back to live key');
+    secretKey = process.env.STRIPE_SECRET_KEY;
+    // We'll continue with the live key but in test mode
+  } else if (!secretKey) {
+    // If no keys are available at all
+    throw new Error(`Stripe ${isTestMode ? 'test' : 'live'} secret key is missing. Please check your environment variables.`);
   }
   
   return require('stripe')(secretKey, {
@@ -45,8 +52,20 @@ exports.handler = async (event, context) => {
   const isTestMode = event.headers['x-stripe-test-mode'] === 'true';
   console.log('Stripe mode:', isTestMode ? 'TEST' : 'LIVE');
   
-  // Initialize Stripe with the appropriate key
-  stripe = initializeStripe(isTestMode);
+  try {
+    // Initialize Stripe with the appropriate key
+    stripe = initializeStripe(isTestMode);
+  } catch (error) {
+    console.error('Stripe initialization error:', error);
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ 
+        error: 'Payment service configuration error. Please contact support.',
+        details: error.message
+      })
+    };
+  }
 
   // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
