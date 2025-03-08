@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuthState } from '../hooks/useAuthState';
 import { supabase } from '../services/supabase';
 import ReactConfetti from 'react-confetti';
+import { STRIPE_TEST_MODE } from '../config/constants';
 
 const PaymentSuccess: React.FC = () => {
   const [message, setMessage] = useState<string>('Processing your payment...');
@@ -50,7 +51,8 @@ const PaymentSuccess: React.FC = () => {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'x-stripe-test-mode': STRIPE_TEST_MODE ? 'true' : 'false'
           },
           body: JSON.stringify({ sessionId })
         });
