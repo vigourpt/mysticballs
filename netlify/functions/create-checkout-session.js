@@ -1,4 +1,14 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// Initialize Stripe with the appropriate key based on the mode
+let stripe;
+
+// Function to initialize Stripe with the appropriate key
+const initializeStripe = (isTestMode) => {
+  const secretKey = isTestMode 
+    ? process.env.STRIPE_TEST_SECRET_KEY 
+    : process.env.STRIPE_SECRET_KEY;
+  
+  return require('stripe')(secretKey);
+};
 const { createClient } = require('@supabase/supabase-js');
 
 // Set up Supabase client
@@ -22,6 +32,13 @@ exports.handler = async (event, context) => {
     headers: event.headers,
     body: event.body ? JSON.parse(event.body) : null
   });
+  
+  // Check if we're in test mode
+  const isTestMode = event.headers['x-stripe-test-mode'] === 'true';
+  console.log('Stripe mode:', isTestMode ? 'TEST' : 'LIVE');
+  
+  // Initialize Stripe with the appropriate key
+  stripe = initializeStripe(isTestMode);
 
   // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {

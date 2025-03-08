@@ -17,7 +17,7 @@ import { PricingPlan, ReadingType } from './types';
 import { supabaseClient } from './lib/supabaseClient';
 import { createClient, User } from '@supabase/supabase-js';
 import { UserProfile, createUserProfile } from './services/supabase';
-import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT, ADMIN_EMAIL } from './config/constants';
+import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT, ADMIN_EMAIL, STRIPE_TEST_MODE } from './config/constants';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import TourGuide from './components/TourGuide';
@@ -171,7 +171,8 @@ const App: React.FC = () => {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'X-Stripe-Test-Mode': STRIPE_TEST_MODE ? 'true' : 'false'
         },
         body: JSON.stringify({ 
           priceId: plan.stripePriceId, 
@@ -455,6 +456,7 @@ const App: React.FC = () => {
         userProfile={profiles?.[0]}
         onLogin={() => setShowLoginModal(true)}
         onManageSubscription={() => setShowSubscriptionManager(true)}
+        onSubscribe={() => setShowPaymentModal(true)}
       />
       
       {/* Admin Controls - only visible to admin users */}

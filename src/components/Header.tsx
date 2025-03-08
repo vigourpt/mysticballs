@@ -1,7 +1,7 @@
 import React from 'react';
 import { User } from '@supabase/supabase-js';
 import { UserProfile } from '../services/supabase';
-import { Moon, Sun, RefreshCw, LogIn, CreditCard } from 'lucide-react';
+import { Moon, Sun, RefreshCw, LogIn, CreditCard, Sparkles } from 'lucide-react';
 import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT, ADMIN_EMAIL } from '../config/constants';
 
 interface HeaderProps {
@@ -12,6 +12,7 @@ interface HeaderProps {
   userProfile?: UserProfile;
   onLogin?: () => void;
   onManageSubscription?: () => void;
+  onSubscribe?: () => void;
 }
 
 // Function to reset free readings count in localStorage
@@ -33,7 +34,8 @@ const Header: React.FC<HeaderProps> = ({
   onSignOut,
   userProfile,
   onLogin,
-  onManageSubscription
+  onManageSubscription,
+  onSubscribe
 }) => {
   return (
     <header className={`${isDarkMode ? 'bg-gray-800/20' : 'bg-white/10'} shadow-sm`}>
@@ -81,6 +83,18 @@ const Header: React.FC<HeaderProps> = ({
                       >
                         <CreditCard className="w-4 h-4 mr-1" />
                         Manage Subscription
+                      </button>
+                    )}
+                    
+                    {/* Subscribe button for authenticated users who don't have premium */}
+                    {!userProfile?.is_premium && onSubscribe && (
+                      <button
+                        onClick={onSubscribe}
+                        className="flex items-center text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded-md transition-colors"
+                        title="Upgrade to premium"
+                      >
+                        <Sparkles className="w-4 h-4 mr-1" />
+                        Upgrade
                       </button>
                     )}
                     
@@ -133,6 +147,18 @@ const Header: React.FC<HeaderProps> = ({
                       <LogIn className="w-4 h-4 mr-1" />
                       Sign In
                     </button>
+                    
+                    {/* Subscribe button for non-authenticated users */}
+                    {onSubscribe && (
+                      <button
+                        onClick={onSubscribe}
+                        className="flex items-center text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded-md transition-colors"
+                        title="Get premium access"
+                      >
+                        <Sparkles className="w-4 h-4 mr-1" />
+                        Subscribe
+                      </button>
+                    )}
                     
                     {/* Only show Reset Counter for admin */}
                     {isAdmin(user) && (
