@@ -48,8 +48,16 @@ exports.handler = async (event, context) => {
   });
   
   // Check if we're in test mode
+  // First check the header
   const isTestMode = event.headers['x-stripe-test-mode'] === 'true';
   console.log('Stripe mode:', isTestMode ? 'TEST' : 'LIVE');
+  
+  // Log the request headers for debugging
+  console.log('Request headers:', {
+    testModeHeader: event.headers['x-stripe-test-mode'],
+    origin: event.headers.origin,
+    referer: event.headers.referer
+  });
   
   try {
     // Initialize Stripe with the appropriate key
@@ -179,7 +187,8 @@ exports.handler = async (event, context) => {
     // Create checkout session with retry logic
     let session;
     try {
-      session = await stripe.checkout.sessions.create({
+      // Create the session options
+      const sessionOptions = {
         customer: stripeCustomerId,
         payment_method_types: ['card'],
         line_items: [
@@ -194,10 +203,21 @@ exports.handler = async (event, context) => {
         client_reference_id: userId,
         metadata: {
           userId: userId,
-          planName: requestBody.planName || 'Premium Plan'
+          planName: requestBody.planName || 'Premium Plan',
+          isTestMode: isTestMode ? 'true' : 'false' // Add test mode flag to metadata
         },
         allow_promotion_codes: true,
+      };
+      
+      // Log the session options for debugging
+      console.log('Creating checkout session with options:', {
+        priceId,
+        customer: stripeCustomerId,
+        mode: 'subscription',
+        isTestMode
       });
+      
+      session = await stripe.checkout.sessions.create(sessionOptions);
     } catch (stripeError) {
       console.error('Stripe checkout session creation error:', stripeError);
       

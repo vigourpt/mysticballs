@@ -56,15 +56,24 @@ exports.handler = async (event, context) => {
   }
   
   // Check if we're in test mode
-  const isTestMode = event.headers['x-stripe-test-mode'] === 'true';
-  console.log('Stripe mode:', isTestMode ? 'TEST' : 'LIVE');
+  // First check the header, then check the session ID if available
+  let isTestMode = event.headers['x-stripe-test-mode'] === 'true';
+  
+  // Parse request body to check session ID
+  const requestBody = JSON.parse(event.body);
+  const { sessionId } = requestBody;
+  
+  // If session ID starts with 'cs_test_', it's a test mode session
+  if (sessionId && sessionId.startsWith('cs_test_')) {
+    isTestMode = true;
+  }
+  
+  console.log('Stripe mode:', isTestMode ? 'TEST' : 'LIVE', 'Session ID:', sessionId);
   
   try {
     // Initialize Stripe with the appropriate key
     stripe = initializeStripe(isTestMode);
-    // Parse request body
-    const requestBody = JSON.parse(event.body);
-    const { sessionId } = requestBody;
+    // We've already parsed the request body above
 
     // Validate required parameters
     if (!sessionId) {
@@ -232,17 +241,48 @@ exports.handler = async (event, context) => {
     }
 
     // Check if a subscription record already exists for this user
-    const { data: existingSubscriptions, error: queryError } = await supabase
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', user.id);
+    let existingSubscriptions;
+    let queryError;
+    
+    try {
+      const result = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id);
       
-    if (queryError) {
-      console.error('Error querying existing subscriptions:', queryError);
+      existingSubscriptions = result.data;
+      queryError = result.error;
+      
+      if (queryError) {
+        console.error('Error querying existing subscriptions:', queryError);
+        
+        // Log more details about the error
+        console.error('Error details:', {
+          code: queryError.code,
+          message: queryError.message,
+          details: queryError.details,
+          hint: queryError.hint
+        });
+        
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Database error when querying subscriptions',
+            details: queryError.message,
+            code: queryError.code
+          })
+        };
+      }
+    } catch (dbError) {
+      console.error('Exception during subscription query:', dbError);
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: 'Database error when querying subscriptions' })
+        body: JSON.stringify({ 
+          error: 'Database exception when querying subscriptions',
+          details: dbError.message
+        })
       };
     }
     
@@ -250,55 +290,117 @@ exports.handler = async (event, context) => {
     
     if (existingSubscriptions && existingSubscriptions.length > 0) {
       // Update existing subscription
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .update({
-          stripe_customer_id: session.customer,
-          stripe_subscription_id: subscriptionId,
-          plan_id: planId,
-          status: subscription.status,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-          cancel_at_period_end: subscription.cancel_at_period_end,
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', user.id)
-        .select()
-        .single();
+      let data;
+      let error;
+      
+      try {
+        const result = await supabase
+          .from('subscriptions')
+          .update({
+            stripe_customer_id: session.customer,
+            stripe_subscription_id: subscriptionId,
+            plan_id: planId,
+            status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id)
+          .select()
+          .single();
         
-      if (error) {
-        console.error('Error updating subscription:', error);
+        data = result.data;
+        error = result.error;
+        
+        if (error) {
+          console.error('Error updating subscription:', error);
+          
+          // Log more details about the error
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          
+          return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ 
+              error: 'Database error when updating subscription',
+              details: error.message,
+              code: error.code
+            })
+          };
+        }
+      } catch (dbError) {
+        console.error('Exception during subscription update:', dbError);
         return {
           statusCode: 500,
           headers,
-          body: JSON.stringify({ error: 'Database error when updating subscription' })
+          body: JSON.stringify({ 
+            error: 'Database exception when updating subscription',
+            details: dbError.message
+          })
         };
       }
       
       subscriptionRecord = data;
     } else {
       // Create new subscription
-      const { data, error } = await supabase
-        .from('subscriptions')
-        .insert([{
-          user_id: user.id,
-          stripe_customer_id: session.customer,
-          stripe_subscription_id: subscriptionId,
-          plan_id: planId,
-          status: subscription.status,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-          cancel_at_period_end: subscription.cancel_at_period_end
-        }])
-        .select()
-        .single();
+      let data;
+      let error;
+      
+      try {
+        const result = await supabase
+          .from('subscriptions')
+          .insert([{
+            user_id: user.id,
+            stripe_customer_id: session.customer,
+            stripe_subscription_id: subscriptionId,
+            plan_id: planId,
+            status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end
+          }])
+          .select()
+          .single();
         
-      if (error) {
-        console.error('Error creating subscription:', error);
+        data = result.data;
+        error = result.error;
+        
+        if (error) {
+          console.error('Error creating subscription:', error);
+          
+          // Log more details about the error
+          console.error('Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          
+          return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ 
+              error: 'Database error when creating subscription',
+              details: error.message,
+              code: error.code
+            })
+          };
+        }
+      } catch (dbError) {
+        console.error('Exception during subscription creation:', dbError);
         return {
           statusCode: 500,
           headers,
-          body: JSON.stringify({ error: 'Database error when creating subscription' })
+          body: JSON.stringify({ 
+            error: 'Database exception when creating subscription',
+            details: dbError.message
+          })
         };
       }
       
@@ -306,21 +408,48 @@ exports.handler = async (event, context) => {
     }
     
     // Update user profile to set premium status and link subscription
-    const { error: updateError } = await supabase
-      .from('user_profiles')
-      .update({
-        is_premium: true,
-        subscription_id: subscriptionRecord.id,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id);
+    try {
+      const result = await supabase
+        .from('user_profiles')
+        .update({
+          is_premium: true,
+          subscription_id: subscriptionRecord.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
       
-    if (updateError) {
-      console.error('Error updating user profile:', updateError);
+      const updateError = result.error;
+      
+      if (updateError) {
+        console.error('Error updating user profile:', updateError);
+        
+        // Log more details about the error
+        console.error('Error details:', {
+          code: updateError.code,
+          message: updateError.message,
+          details: updateError.details,
+          hint: updateError.hint
+        });
+        
+        return {
+          statusCode: 500,
+          headers,
+          body: JSON.stringify({ 
+            error: 'Database error when updating user profile',
+            details: updateError.message,
+            code: updateError.code
+          })
+        };
+      }
+    } catch (dbError) {
+      console.error('Exception during user profile update:', dbError);
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: 'Database error when updating user profile' })
+        body: JSON.stringify({ 
+          error: 'Database exception when updating user profile',
+          details: dbError.message
+        })
       };
     }
 

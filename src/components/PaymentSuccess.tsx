@@ -46,13 +46,18 @@ const PaymentSuccess: React.FC = () => {
           throw new Error('Authentication token not found. Please sign in again.');
         }
         
+        // Check if the session ID starts with 'cs_test_' to determine if it's a test mode session
+        const isTestMode = STRIPE_TEST_MODE || (sessionId && sessionId.startsWith('cs_test_'));
+        
+        console.log('Payment verification mode:', isTestMode ? 'TEST' : 'LIVE', 'Session ID:', sessionId);
+        
         // Verify the payment with the server
         const response = await fetch('/.netlify/functions/verify-payment', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`,
-            'x-stripe-test-mode': STRIPE_TEST_MODE ? 'true' : 'false'
+            'x-stripe-test-mode': isTestMode ? 'true' : 'false'
           },
           body: JSON.stringify({ sessionId })
         });

@@ -48,9 +48,18 @@ exports.handler = async (event) => {
   }
 
   try {
-    // Check if we're in test mode
-    const isTestMode = event.headers['x-stripe-test-mode'] === 'true';
-    console.log('Stripe webhook mode:', isTestMode ? 'TEST' : 'LIVE');
+    // Determine if we're in test mode based on the event data
+    // Stripe sends events with test data from test mode, and live data from live mode
+    // We can detect this by checking the event ID prefix or examining the event object
+    
+    // Get the raw event first to check for test mode
+    const rawEvent = JSON.parse(event.body);
+    
+    // Test mode events have IDs that start with 'evt_test_'
+    // Live mode events have IDs that start with 'evt_'
+    const isTestMode = rawEvent.id && rawEvent.id.startsWith('evt_test_');
+    
+    console.log('Stripe webhook mode:', isTestMode ? 'TEST' : 'LIVE', 'Event ID:', rawEvent.id);
     
     // Initialize Stripe with the appropriate key
     stripe = initializeStripe(isTestMode);
@@ -92,6 +101,15 @@ exports.handler = async (event) => {
       );
     } catch (err) {
       console.error(`Webhook signature verification failed: ${err.message}`);
+      
+      // Log more details about the webhook to help with debugging
+      console.error('Webhook details:', {
+        signatureHeader: stripeSignature ? stripeSignature.substring(0, 20) + '...' : 'missing',
+        webhookSecretPrefix: webhookSecret ? webhookSecret.substring(0, 8) + '...' : 'missing',
+        bodyLength: event.body ? event.body.length : 0,
+        isTestMode: isTestMode
+      });
+      
       return {
         statusCode: 400,
         headers,
