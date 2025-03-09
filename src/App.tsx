@@ -43,7 +43,7 @@ const App: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showSubscriptionManager, setShowSubscriptionManager] = useState(false);
-  const [profiles, setProfiles] = useState<UserProfile[] | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
   const [showReadingHistory, setShowReadingHistory] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step | null>(() => {
@@ -124,12 +124,12 @@ const App: React.FC = () => {
     }
     
     // For authenticated users, check against FREE_READINGS_LIMIT
-    const freeReadingsRemaining = user && profiles?.[0]
-      ? Math.max(0, FREE_READINGS_LIMIT - (profiles[0].readings_count || 0))
+    const freeReadingsRemaining = user && profile
+      ? Math.max(0, FREE_READINGS_LIMIT - (profile.readings_count || 0))
       : ANONYMOUS_FREE_READINGS_LIMIT;
     
     // If it's a premium reading and user is not premium and has no free readings left
-    if (readingType.premiumOnly && (!user || !profiles?.[0]?.is_premium) && freeReadingsRemaining <= 0) {
+    if (readingType.premiumOnly && (!user || !profile?.is_premium) && freeReadingsRemaining <= 0) {
       setShowPaymentModal(true);
       return;
     }
@@ -256,9 +256,9 @@ const App: React.FC = () => {
       }
     }
     // For authenticated users
-    else if (user && profiles?.[0]) {
+    else if (user && profile) {
       // If they've used all free readings and are not premium, show payment modal
-      if (!profiles[0].is_premium && profiles[0].readings_count >= FREE_READINGS_LIMIT) {
+      if (!profile.is_premium && profile.readings_count >= FREE_READINGS_LIMIT) {
         setShowPaymentModal(true);
         return;
       }
@@ -373,11 +373,11 @@ const App: React.FC = () => {
               
             if (updatedProfile) {
               console.log('Updated profile with free readings:', updatedProfile);
-              setProfiles([updatedProfile]);
+              setProfile(updatedProfile);
               return updatedProfile;
             } else {
               // If we couldn't fetch the updated profile, return the original one
-              setProfiles([newProfile]);
+              setProfile(newProfile);
               return newProfile;
             }
           } else {
@@ -391,8 +391,8 @@ const App: React.FC = () => {
         // Log the profile data
         console.log('Fetched user profile:', data);
         
-        // Update profiles state with the fetched profile
-        setProfiles([data]);
+        // Update profile state with the fetched profile
+        setProfile(data);
         return data;
       }
     } catch (err) {
@@ -405,7 +405,7 @@ const App: React.FC = () => {
     if (user) {
       fetchUserProfile(user.id);
     } else {
-      setProfiles(null);
+      setProfile(null);
     }
   }, [user]);
 
@@ -455,7 +455,7 @@ const App: React.FC = () => {
         isDarkMode={isDarkMode}
         onDarkModeToggle={handleDarkModeToggle}
         onSignOut={signOut}
-        userProfile={profiles?.[0]}
+        userProfile={profile ?? undefined}
         onLogin={() => setShowLoginModal(true)}
         onManageSubscription={() => setShowSubscriptionManager(true)}
         onSubscribe={() => setShowPaymentModal(true)}
@@ -529,14 +529,14 @@ const App: React.FC = () => {
               READING_TYPES={READING_TYPES}
               handleReadingTypeSelect={handleReadingTypeSelect}
               isDarkMode={isDarkMode}
-              isPremium={user ? profiles?.[0]?.is_premium : false}
-              freeReadingsRemaining={user && profiles?.[0]
-                ? Math.max(0, FREE_READINGS_LIMIT - (profiles[0].readings_count || 0))
+              isPremium={user ? profile?.is_premium : false}
+              freeReadingsRemaining={user && profile
+                ? Math.max(0, FREE_READINGS_LIMIT - (profile.readings_count || 0))
                 : Math.max(0, ANONYMOUS_FREE_READINGS_LIMIT - (localStorage.getItem('freeReadingsUsed') ? parseInt(localStorage.getItem('freeReadingsUsed') || '0', 10) : 0))}
             />
-            {profiles && (
+            {profile && (
               <p className={`text-sm text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-700'} mt-2`}>
-                {profiles.length} user profiles loaded.
+                User profile loaded.
               </p>
             )}
           </div>
@@ -562,8 +562,8 @@ const App: React.FC = () => {
         isDarkMode={isDarkMode}
         user={user}
         onSubscribe={handleSubscribe}
-        remainingReadings={user && profiles?.[0] ?
-          Math.max(0, FREE_READINGS_LIMIT - (profiles[0].readings_count || 0)) :
+        remainingReadings={user && profile ?
+          Math.max(0, FREE_READINGS_LIMIT - (profile.readings_count || 0)) :
           FREE_READINGS_LIMIT}
       />
 
