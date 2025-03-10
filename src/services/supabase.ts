@@ -213,6 +213,7 @@ export const createUserProfile = async (userId: string, email: string, displayNa
     is_premium: false,
     is_admin: false,
     last_reading_date: null,
+    plan_type: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   };

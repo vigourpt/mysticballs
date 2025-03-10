@@ -210,7 +210,6 @@ async function handleCheckoutSessionCompleted(session) {
     
     // Get subscription details from Stripe
     const subscriptionData = await stripe.subscriptions.retrieve(subscription);
-    const planId = subscriptionData.items.data[0].plan.id;
     
     // Check if a subscription record already exists for this user
     const { data: existingSubscriptions, error: queryError } = await supabase
@@ -224,6 +223,9 @@ async function handleCheckoutSessionCompleted(session) {
     }
     
     let subscriptionId;
+    
+    // Get the plan ID from the subscription data
+    const planId = subscriptionData.items.data[0].plan.id;
     
     if (existingSubscriptions && existingSubscriptions.length > 0) {
       // Update existing subscription
@@ -274,11 +276,16 @@ async function handleCheckoutSessionCompleted(session) {
       subscriptionId = data.id;
     }
     
-    // Update user profile to set premium status and link subscription
+    // Determine if this is a premium plan based on the plan ID
+    // Premium plans have "premium" in their ID or price ID
+    const isPremium = planId.includes('premium');
+    
+    // Update user profile to set premium status, plan type, and link subscription
     const { error: updateError } = await supabase
       .from('user_profiles')
       .update({
-        is_premium: true,
+        is_premium: isPremium,
+        plan_type: isPremium ? 'premium' : 'basic',
         subscription_id: subscriptionId,
         updated_at: new Date().toISOString()
       })

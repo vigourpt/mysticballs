@@ -407,12 +407,17 @@ exports.handler = async (event, context) => {
       subscriptionRecord = data;
     }
     
-    // Update user profile to set premium status and link subscription
+    // Determine if this is a premium plan based on the plan ID
+    // Premium plans have "premium" in their ID or price ID
+    const isPremium = planId.includes('premium');
+    
+    // Update user profile to set premium status, plan type, and link subscription
     try {
       const result = await supabase
         .from('user_profiles')
         .update({
-          is_premium: true,
+          is_premium: isPremium,
+          plan_type: isPremium ? 'premium' : 'basic',
           subscription_id: subscriptionRecord.id,
           updated_at: new Date().toISOString()
         })

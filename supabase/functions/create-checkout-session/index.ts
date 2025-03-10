@@ -202,9 +202,10 @@ export const handler: Handler = async (event) => {
       client_reference_id: userId,
       metadata: {
         userId: userId,
-        planName: planName || 'Premium Plan'
+        planName: planName || 'Premium Plan',
+        isTestMode: isTestMode ? 'true' : 'false' // Add test mode flag to metadata
       },
-      allow_promotion_codes: true,
+      allow_promotion_codes: true, // This enables coupon code support
     });
 
     console.log('Created checkout session:', session.id);
