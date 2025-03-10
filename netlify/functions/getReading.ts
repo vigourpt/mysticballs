@@ -16,7 +16,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'vigourpt@googlemail.com';
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
 const readingConfigs: Record<string, { maxTokens: number; temperature: number; systemPrompt: string }> = {
