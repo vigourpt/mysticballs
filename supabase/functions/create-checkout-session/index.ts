@@ -2,9 +2,30 @@ import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import { Handler } from '@netlify/functions';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-01-27.acacia'
-});
+// Initialize Stripe with the appropriate key based on the mode
+let stripe: Stripe;
+
+// Function to initialize Stripe with the appropriate key
+const initializeStripe = (isTestMode: boolean): Stripe => {
+  // Try to get the requested key
+  let secretKey = isTestMode 
+    ? process.env.STRIPE_TEST_SECRET_KEY 
+    : process.env.STRIPE_SECRET_KEY;
+  
+  // If no keys are available at all
+  if (!secretKey) {
+    throw new Error(`Stripe ${isTestMode ? 'test' : 'live'} secret key is missing. Please check your environment variables.`);
+  }
+  
+  // Log which key we're using
+  console.log(`Using Stripe ${isTestMode ? 'test' : 'live'} mode with key: ${secretKey.substring(0, 8)}...`);
+  
+  return new Stripe(secretKey, {
+    apiVersion: '2025-01-27.acacia',
+    timeout: 30000, // Increase timeout to 30 seconds
+    maxNetworkRetries: 3 // Automatically retry failed requests
+  });
+};
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,6 +50,33 @@ export const handler: Handler = async (event) => {
   }
 
   try {
+    // Check if we're in test mode
+    // First check the header
+    const isTestMode = event.headers['x-stripe-test-mode'] === 'true';
+    console.log('Stripe mode:', isTestMode ? 'TEST' : 'LIVE');
+    
+    // Log the request headers for debugging
+    console.log('Request headers:', {
+      testModeHeader: event.headers['x-stripe-test-mode'],
+      origin: event.headers.origin,
+      referer: event.headers.referer
+    });
+    
+    try {
+      // Initialize Stripe with the appropriate key
+      stripe = initializeStripe(isTestMode);
+    } catch (error) {
+      console.error('Stripe initialization error:', error);
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ 
+          error: 'Payment service configuration error. Please contact support.',
+          details: error instanceof Error ? error.message : 'Unknown error'
+        })
+      };
+    }
+    
     // Validate Supabase environment variables
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
@@ -36,12 +84,6 @@ export const handler: Handler = async (event) => {
     if (!supabaseUrl || !supabaseKey) {
       console.error('Missing Supabase environment variables');
       throw new Error('Server configuration error: Missing Supabase environment variables');
-    }
-
-    // Validate Stripe environment variables
-    if (!process.env.STRIPE_SECRET_KEY) {
-      console.error('Missing Stripe secret key');
-      throw new Error('Server configuration error: Missing Stripe secret key');
     }
 
     // Initialize Supabase client
@@ -162,6 +204,7 @@ export const handler: Handler = async (event) => {
         userId: userId,
         planName: planName || 'Premium Plan'
       },
+      allow_promotion_codes: true,
     });
 
     console.log('Created checkout session:', session.id);
