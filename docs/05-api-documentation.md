@@ -6,7 +6,7 @@ MYSTICBALLS uses several APIs to provide its functionality. This document outlin
 
 ## Netlify Functions
 
-Netlify Functions serve as the backend for MYSTICBALLS, handling authentication, reading generation, and payment processing.
+Netlify Functions serve as the backend for MYSTICBALLS, handling authentication, reading generation, reading history, and payment processing.
 
 ### 1. getReading
 
@@ -77,7 +77,54 @@ The `userInput` object varies based on the reading type:
 - 429 Too Many Requests: Rate limit exceeded
 - 500 Internal Server Error: Server-side error
 
-### 2. create-checkout-session
+### 2. getReadingHistory
+
+Retrieves the reading history for a premium user.
+
+**Endpoint:** `/.netlify/functions/getReadingHistory`
+
+**Method:** GET
+
+**Headers:**
+- `Content-Type: application/json`
+- `Authorization: Bearer {supabase_access_token}`
+
+**Query Parameters:**
+- `page`: Page number for pagination (default: 1)
+- `pageSize`: Number of readings per page (default: 10)
+- `readingType`: Filter by reading type (optional)
+- `startDate`: Filter by start date (ISO format, optional)
+- `endDate`: Filter by end date (ISO format, optional)
+
+**Response (200 OK):**
+```json
+{
+  "readings": [
+    {
+      "id": "uuid",
+      "reading_type": "tarot",
+      "user_input": {
+        "question": "What does my future hold?"
+      },
+      "reading_output": "Your detailed reading text here...",
+      "created_at": "2023-01-01T00:00:00Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "pageSize": 10,
+    "totalItems": 25,
+    "totalPages": 3
+  }
+}
+```
+
+**Error Responses:**
+- 401 Unauthorized: Missing or invalid authentication
+- 403 Forbidden: User is not a premium member
+- 500 Internal Server Error: Server-side error
+
+### 3. create-checkout-session
 
 Creates a Stripe checkout session for subscription payments.
 

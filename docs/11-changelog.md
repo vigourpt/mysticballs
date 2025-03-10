@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Admin user functionality for `vigourpt@googlemail.com`
 - Admin-only "Reset Counter" button (previously available to all users)
 - Compelling message to create an account to get 3 more free readings
+- Reading History feature for premium users
+- Database table for storing reading history
 
 ### Changed
 - Modified free readings model: 2 for anonymous users + 3 more after login (total of 5)

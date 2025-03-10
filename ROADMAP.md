@@ -89,7 +89,7 @@ This roadmap outlines the path to MVP (Minimum Viable Product) and beyond for th
 
 ### Phase 7: User Experience
 - [ ] Enhanced Features
-  - [ ] Reading history
+  - [x] Reading history
   - [ ] Favorite readings
   - [ ] Custom reading preferences
   - [ ] Personalized recommendations

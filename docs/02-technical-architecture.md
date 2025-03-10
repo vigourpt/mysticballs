@@ -76,6 +76,13 @@ The backend is primarily serverless, using Netlify Functions and Supabase:
    - Checks user's reading quota
    - Formats prompts for OpenAI
    - Returns generated reading
+   - Stores reading in history for authenticated users
+
+2. **getReadingHistory.ts**: Handles reading history retrieval
+   - Validates user authentication
+   - Checks if user is premium
+   - Retrieves reading history from database
+   - Supports pagination and filtering
 
 2. **create-checkout-session.ts**: Handles Stripe payment flow
    - Creates Stripe checkout sessions
