@@ -3,7 +3,6 @@ import { useAuthState } from '../hooks/useAuthState';
 import { supabase } from '../services/supabase';
 import ReactConfetti from 'react-confetti';
 import { STRIPE_TEST_MODE } from '../config/constants';
-import { PAYMENT_PLANS } from '../config/plans';
 
 const PaymentSuccess: React.FC = () => {
   const [message, setMessage] = useState<string>('Processing your payment...');
