@@ -236,7 +236,7 @@ export const READING_TYPES: ReadingType[] = [
   },
   {
     id: 'magic8ball',
-    name: 'Magic 8 Ball',
+    name: 'Mystic Orb Reading',
     description: 'Quick answers to yes/no questions',
     icon: Dice5,
     fields: [
