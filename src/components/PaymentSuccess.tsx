@@ -40,10 +40,19 @@ const PaymentSuccess: React.FC = () => {
         
         // Get the auth token
         const { data: sessionData } = await supabase.auth.getSession();
-        const token = sessionData.session?.access_token;
+        let token = sessionData.session?.access_token;
         
         if (!token) {
-          throw new Error('Authentication token not found. Please sign in again.');
+          // If token is not found, try to refresh the session
+          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+          
+          if (refreshError || !refreshData.session) {
+            console.error('Failed to refresh authentication session:', refreshError);
+            throw new Error('Authentication token not found. Please sign in again.');
+          }
+          
+          // Use the refreshed token
+          token = refreshData.session.access_token;
         }
         
         // Check if the session ID starts with 'cs_test_' to determine if it's a test mode session

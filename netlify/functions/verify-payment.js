@@ -411,17 +411,30 @@ exports.handler = async (event, context) => {
     // Premium plans have "premium" in their ID or price ID
     const isPremium = planId.includes('premium');
     
-    // Update user profile to set premium status, plan type, and link subscription
+    // Update user profile to set premium status and link subscription
+    // Note: We're not updating plan_type yet as the migration might not be applied
     try {
       const result = await supabase
         .from('user_profiles')
         .update({
           is_premium: isPremium,
-          plan_type: isPremium ? 'premium' : 'basic',
           subscription_id: subscriptionRecord.id,
           updated_at: new Date().toISOString()
         })
         .eq('id', user.id);
+      
+      // Try to update plan_type separately, catching any errors if the column doesn't exist yet
+      try {
+        await supabase
+          .from('user_profiles')
+          .update({
+            plan_type: isPremium ? 'premium' : 'basic'
+          })
+          .eq('id', user.id);
+      } catch (planTypeError) {
+        console.log('Note: Could not update plan_type, column may not exist yet:', planTypeError.message);
+        // This is expected if the migration hasn't been applied yet, so we don't throw an error
+      }
       
       const updateError = result.error;
       
