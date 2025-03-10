@@ -68,13 +68,13 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="text-sm text-white">
                     {user.email} {isAdmin(user) && <span className="ml-1 px-1 bg-fuchsia-700 rounded text-xs">Admin</span>}
                   </span>
-                  {userProfile && (
+                      {userProfile && (
                     <span className="text-sm text-fuchsia-300">
                       {userProfile.is_premium ? 
                         userProfile.plan_type === 'premium' ?
                           'Premium Member (Unlimited readings)' :
                           userProfile.plan_type === 'basic' ?
-                            'Basic Member (30 readings per month)' :
+                            'Basic Member (50 readings per month)' :
                             // For existing users who don't have plan_type set yet
                             'Premium Member (Unlimited readings)' : 
                         `${userProfile.readings_count >= 0 ? Math.max(0, FREE_READINGS_LIMIT - userProfile.readings_count) : FREE_READINGS_LIMIT} free readings remaining`

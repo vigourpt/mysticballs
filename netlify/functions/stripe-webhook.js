@@ -276,16 +276,28 @@ async function handleCheckoutSessionCompleted(session) {
       subscriptionId = data.id;
     }
     
-    // Determine if this is a premium plan based on the plan ID
-    // Premium plans have "premium" in their ID or price ID
-    const isPremium = planId.includes('premium');
+    // Determine the plan type based on the plan ID
+    // This is a more robust approach than just checking if the ID includes "premium"
+    let planType = 'basic'; // Default to basic
+    
+    // Check if the plan ID matches any of the premium plan IDs
+    const premiumPlanIds = [
+      'price_1QKja1G3HGXKeksqUqC0edF0', // Live premium plan ID
+      'price_1R0CKrG3HGXKeksqjeKEA1ox'  // Test premium plan ID
+    ];
+    
+    if (premiumPlanIds.includes(planId) || planId.includes('premium')) {
+      planType = 'premium';
+    }
+    
+    const isPremium = planType === 'premium';
     
     // Update user profile to set premium status, plan type, and link subscription
     const { error: updateError } = await supabase
       .from('user_profiles')
       .update({
         is_premium: isPremium,
-        plan_type: isPremium ? 'premium' : 'basic',
+        plan_type: planType,
         subscription_id: subscriptionId,
         updated_at: new Date().toISOString()
       })

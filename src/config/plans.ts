@@ -11,12 +11,12 @@ export const PAYMENT_PLANS: PricingPlan[] = [
       : 'price_1QKjTIG3HGXKeksq3NJSoxfN',
     description: 'Perfect for occasional guidance',
     features: [
-      '30 readings per month',
+      '50 readings per month',
       'Standard reading types',
       'Basic support',
       'Email notifications'
     ],
-    readingsPerMonth: 30
+    readingsPerMonth: 50
   },
   {
     id: 'premium',

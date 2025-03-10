@@ -3,16 +3,43 @@ import { useAuthState } from '../hooks/useAuthState';
 import { supabase } from '../services/supabase';
 import ReactConfetti from 'react-confetti';
 import { STRIPE_TEST_MODE } from '../config/constants';
+import { PAYMENT_PLANS } from '../config/plans';
 
 const PaymentSuccess: React.FC = () => {
   const [message, setMessage] = useState<string>('Processing your payment...');
   const [error, setError] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
+  const [planType, setPlanType] = useState<string | null>(null);
   const [windowDimensions, setWindowDimensions] = useState({
     width: window.innerWidth,
     height: window.innerHeight
   });
   const { user } = useAuthState();
+  
+  // Function to fetch user profile and subscription details
+  const fetchUserProfile = async () => {
+    if (!user) return;
+    
+    try {
+      // Get user profile
+      const { data: userProfile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('plan_type, is_premium')
+        .eq('id', user.id)
+        .single();
+        
+      if (profileError) {
+        console.error('Error fetching user profile:', profileError);
+        return;
+      }
+      
+      if (userProfile) {
+        setPlanType(userProfile.plan_type || (userProfile.is_premium ? 'premium' : 'basic'));
+      }
+    } catch (err) {
+      console.error('Error in fetchUserProfile:', err);
+    }
+  };
 
   // Update window dimensions when window is resized
   useEffect(() => {
@@ -93,6 +120,9 @@ const PaymentSuccess: React.FC = () => {
         setSuccess(true);
         setMessage('Payment successful! Your account has been upgraded.');
         
+        // Fetch user profile to get plan type
+        await fetchUserProfile();
+        
         // Redirect to home page after a delay
         setTimeout(() => {
           window.location.href = '/';
@@ -146,7 +176,13 @@ const PaymentSuccess: React.FC = () => {
                 </div>
               </div>
               <p className="text-xl font-medium text-white mb-2">Subscription Activated!</p>
-              <p className="text-lg text-fuchsia-300 mb-2">You now have unlimited readings!</p>
+              <p className="text-lg text-fuchsia-300 mb-2" id="subscription-message">
+                {planType === 'premium' 
+                  ? 'You now have unlimited readings!' 
+                  : planType === 'basic' 
+                    ? 'You now have 50 readings per month!' 
+                    : 'Subscription activated successfully!'}
+              </p>
               <p className="text-sm text-gray-300">Redirecting you to the home page...</p>
             </div>
           )}
