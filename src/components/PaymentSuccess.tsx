@@ -115,6 +115,20 @@ const PaymentSuccess: React.FC = () => {
           throw new Error(result.error);
         }
         
+        // Fetch the updated subscription status directly from the database
+        if (user) {
+          const { data: subscriptionData } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', user.id)
+            .single();
+            
+          if (subscriptionData) {
+            console.log('Fetched updated subscription data:', subscriptionData);
+            // You can store this in local state if needed
+          }
+        }
+        
         // Payment was successful
         setSuccess(true);
         setMessage('Payment successful! Your account has been upgraded.');

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
-import { Subscription, getSubscription, cancelSubscription } from '../services/supabase';
+import { Subscription, getSubscription, cancelSubscription, supabase } from '../services/supabase';
 import LoadingSpinner from './LoadingSpinner';
 
 interface SubscriptionManagerProps {
@@ -34,6 +34,23 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ user, isDarkM
     };
 
     fetchSubscription();
+    
+    // Set up real-time subscription for updates
+    const subscription = supabase
+      .channel('subscription-status')
+      .on('postgres_changes', 
+        { event: 'UPDATE', schema: 'public', table: 'subscriptions', filter: `user_id=eq.${user.id}` }, 
+        (payload) => {
+          console.log('Subscription status updated:', payload.new);
+          setSubscription(payload.new as Subscription);
+        }
+      )
+      .subscribe();
+
+    // Clean up subscription when component unmounts
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [user.id]);
 
   const handleCancelSubscription = async () => {

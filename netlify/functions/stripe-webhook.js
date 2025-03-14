@@ -131,14 +131,38 @@ async function handleCheckoutSessionCompleted(stripe, session) {
 
     let response;
     if (existingSubscription) {
-      response = await supabase.from('subscriptions').update(subscriptionPayload).eq('user_id', client_reference_id);
+      console.log('Updating existing subscription for user:', client_reference_id);
+      response = await supabase
+        .from('subscriptions')
+        .update(subscriptionPayload)
+        .eq('user_id', client_reference_id);
     } else {
-      response = await supabase.from('subscriptions').insert([subscriptionPayload]);
+      console.log('Creating new subscription for user:', client_reference_id);
+      response = await supabase
+        .from('subscriptions')
+        .insert([subscriptionPayload]);
     }
 
     if (response.error) {
       console.error('❌ Supabase Insert/Update Error:', response.error);
       return;
+    }
+
+    // Also update the user's premium status in their profile
+    const isPremium = subscriptionData.items.data[0].plan.id.includes('premium');
+    const { error: profileError } = await supabase
+      .from('user_profiles')
+      .update({
+        is_premium: isPremium || subscriptionData.status === 'active',
+        plan_type: isPremium ? 'premium' : 'basic',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', client_reference_id);
+
+    if (profileError) {
+      console.error('❌ Error updating user profile premium status:', profileError);
+    } else {
+      console.log(`✅ Updated premium status for user ${client_reference_id}`);
     }
 
     console.log(`✅ Subscription processed successfully for user ${client_reference_id}`);
@@ -171,10 +195,39 @@ async function handleSubscriptionEvent(stripe, eventType, subscription) {
       updated_at: new Date().toISOString()
     };
 
-    const { error } = await supabase.from('subscriptions').update(subscriptionUpdatePayload).eq('stripe_subscription_id', subscription.id);
-    if (error) console.error('❌ Supabase Update Error:', error);
+    // Update the subscription in the database
+    // This will trigger the real-time subscription event
+    const { error } = await supabase
+      .from('subscriptions')
+      .update(subscriptionUpdatePayload)
+      .eq('stripe_subscription_id', subscription.id);
+      
+    if (error) {
+      console.error('❌ Supabase Update Error:', error);
+      return;
+    }
 
     console.log(`✅ Processed ${eventType} for subscription ${subscription.id}`);
+    
+    // If it's a status update to 'active', also update the user's premium status
+    if (subscription.status === 'active' && existingSubscription.user_id) {
+      const isPremium = subscription.plan && subscription.plan.id && subscription.plan.id.includes('premium');
+      
+      // Update the user profile with premium status
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .update({
+          is_premium: isPremium || subscription.status === 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingSubscription.user_id);
+        
+      if (profileError) {
+        console.error('❌ Error updating user profile premium status:', profileError);
+      } else {
+        console.log(`✅ Updated premium status for user ${existingSubscription.user_id}`);
+      }
+    }
   } catch (err) {
     console.error(`❌ Error in handleSubscriptionEvent: ${err.message}`);
   }

@@ -131,6 +131,32 @@ exports.handler = async (event, context) => {
     // Use the provided customerId or the user's ID
     const userId = customerId || user.id;
 
+    // Check if the user already has an active subscription
+    const { data: existingSubscription, error: subscriptionError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .single();
+
+    if (existingSubscription) {
+      // Extract the plan name from the price ID
+      const planName = requestBody.planName || 'this plan';
+      
+      // If user already has an active subscription to the same plan
+      if (existingSubscription.plan_id === priceId) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ 
+            error: `You already have an active subscription to ${planName}.` 
+          })
+        };
+      }
+      
+      console.log('User has an existing subscription but is changing plans');
+    }
+
     // Get the user's profile to check if they already have a Stripe customer ID
     const { data: profile, error: profileError } = await supabase
       .from('user_profiles')
