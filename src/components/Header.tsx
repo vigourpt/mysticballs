@@ -1,205 +1,279 @@
-import React from 'react';
+import React, { useState, useContext } from 'react';
 import { User } from '@supabase/supabase-js';
-import { UserProfile } from '../services/supabase';
-import { Moon, Sun, RefreshCw, LogIn, CreditCard, Sparkles, History } from 'lucide-react';
-import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT, ADMIN_EMAIL } from '../config/constants';
+import { UserContext } from '../context/UserContext';
 
 interface HeaderProps {
   user: User | null;
   isDarkMode: boolean;
   onDarkModeToggle: () => void;
-  onSignOut: () => Promise<{ success: boolean }>;
-  userProfile?: UserProfile;
-  onLogin?: () => void;
-  onManageSubscription?: () => void;
-  onSubscribe?: () => void;
-  onViewReadingHistory?: () => void;
+  onSignOut: () => void;
+  onLogin: () => void;
+  onManageSubscription: () => void;
+  onSubscribe: () => void;
+  onViewReadingHistory: () => void;
 }
-
-// Function to reset free readings count in localStorage
-const resetFreeReadings = () => {
-  localStorage.removeItem('freeReadingsUsed');
-  // Force a page reload to update the UI
-  window.location.reload();
-};
-
-// Check if user is admin
-const isAdmin = (user: User | null): boolean => {
-  return !!user && user.email === ADMIN_EMAIL;
-};
 
 const Header: React.FC<HeaderProps> = ({
   user,
   isDarkMode,
   onDarkModeToggle,
   onSignOut,
-  userProfile,
   onLogin,
   onManageSubscription,
   onSubscribe,
   onViewReadingHistory
 }) => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { profile, subscription } = useContext(UserContext);
+  
+  // Determine subscription status from context
+  const isPremium = profile?.is_premium || false;
+  const subscriptionStatus = subscription?.status || 'inactive';
+  const planType = profile?.plan_type || 'basic';
+  
+  // Function to get subscription badge text
+  const getSubscriptionBadge = () => {
+    if (isPremium && subscriptionStatus === 'active') {
+      return 'Premium';
+    } else if (planType === 'basic' && subscriptionStatus === 'active') {
+      return 'Basic';
+    } else {
+      return 'Free';
+    }
+  };
+
   return (
-    <header className={`${isDarkMode ? 'bg-gray-800/20' : 'bg-white/10'} shadow-sm`}>
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex justify-between items-start">
-          <h1 className="text-4xl font-bold text-white relative group">
-            <span className="absolute inset-0 -left-8 -right-8 bg-fuchsia-500/20 blur-xl rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute inset-0 -left-8 -right-8 bg-fuchsia-500/20 blur-lg rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="absolute inset-0 -left-8 -right-8 bg-fuchsia-500/20 blur-md rounded-lg opacity-75 group-hover:opacity-100 transition-opacity"></span>
-            <span className="relative glow-text">Mystic Balls</span>
-          </h1>
-          <div className="flex flex-col items-end gap-2">
+    <header className="bg-opacity-30 backdrop-blur-md bg-black fixed w-full z-50 transition-all duration-300">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center py-4">
+          {/* Logo */}
+          <div className="flex items-center">
+            <a href="/" className="flex items-center">
+              <div className="relative">
+                <div className="absolute -inset-1 bg-fuchsia-500/30 blur-md rounded-full"></div>
+                <div className="relative">
+                  <span className="text-2xl font-bold text-white">
+                    <span className="text-fuchsia-400">Mystic</span>
+                    <span className="text-purple-300">Balls</span>
+                  </span>
+                </div>
+              </div>
+            </a>
+          </div>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-4">
+            {/* Dark Mode Toggle */}
             <button
               onClick={onDarkModeToggle}
-              className="p-2 rounded-lg bg-indigo-900/40 hover:bg-indigo-900/60 transition-colors"
-              aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="p-2 rounded-full hover:bg-gray-700/30 transition-colors"
+              aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
             >
               {isDarkMode ? (
-                <Sun className="w-5 h-5 text-white" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
               ) : (
-                <Moon className="w-5 h-5 text-white" />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-indigo-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
               )}
             </button>
 
-            <div className="flex flex-col items-end space-y-1">
-              {user ? (
-                <>
-                  <span className="text-sm text-white">
-                    {user.email} {isAdmin(user) && <span className="ml-1 px-1 bg-fuchsia-700 rounded text-xs">Admin</span>}
+            {user ? (
+              <>
+                {/* Subscription Badge */}
+                <div className="flex items-center">
+                  <span 
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      isPremium 
+                        ? 'bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white' 
+                        : planType === 'basic' && subscriptionStatus === 'active'
+                          ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+                          : 'bg-gray-700 text-gray-300'
+                    }`}
+                  >
+                    {getSubscriptionBadge()}
                   </span>
-                      {userProfile && (
-                    <span className="text-sm text-fuchsia-300">
-                      {userProfile.is_premium ? 
-                        userProfile.plan_type === 'premium' ?
-                          'Premium Member (Unlimited readings)' :
-                          userProfile.plan_type === 'basic' ?
-                            'Basic Member (50 readings per month)' :
-                            // For existing users who don't have plan_type set yet
-                            'Premium Member (Unlimited readings)' : 
-                        `${userProfile.readings_count >= 0 ? Math.max(0, FREE_READINGS_LIMIT - userProfile.readings_count) : FREE_READINGS_LIMIT} free readings remaining`
-                      }
-                    </span>
-                  )}
-                  <div className="flex space-x-3">
-                    {userProfile?.is_premium && (
-                      <>
-                        {onManageSubscription && (
-                          <button
-                            onClick={onManageSubscription}
-                            className="flex items-center text-sm text-gray-300 hover:text-white transition-colors"
-                            title="Manage your subscription"
-                          >
-                            <CreditCard className="w-4 h-4 mr-1" />
-                            Manage Subscription
-                          </button>
-                        )}
-                        
-                        {onViewReadingHistory && (
-                          <button
-                            onClick={onViewReadingHistory}
-                            className="flex items-center text-sm text-gray-300 hover:text-white transition-colors"
-                            title="View your reading history"
-                          >
-                            <History className="w-4 h-4 mr-1" />
-                            Reading History
-                          </button>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* Subscribe button for authenticated users who don't have premium */}
-                    {!userProfile?.is_premium && onSubscribe && (
-                      <button
-                        onClick={onSubscribe}
-                        className="flex items-center text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded-md transition-colors"
-                        title="Upgrade to premium"
-                      >
-                        <Sparkles className="w-4 h-4 mr-1" />
-                        Upgrade
-                      </button>
-                    )}
-                    
-                    <button
-                      onClick={onSignOut}
-                      className="text-sm text-gray-300 hover:text-white transition-colors"
-                    >
-                      Sign Out
-                    </button>
-                    
-                    {/* Admin-only reset button */}
-                    {isAdmin(user) && (
-                      <button
-                        onClick={resetFreeReadings}
-                        className="flex items-center text-xs text-gray-300 hover:text-white transition-colors"
-                        title="Admin: Reset free readings counter"
-                      >
-                        <RefreshCw className="w-3 h-3 mr-1" />
-                        Reset Counter
-                      </button>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-end space-y-1">
-                  {/* Get free readings used from localStorage */}
-                  {(() => {
-                    const storedReadings = localStorage.getItem('freeReadingsUsed');
-                    const freeReadingsUsed = storedReadings ? parseInt(storedReadings, 10) : 0;
-                    const remainingReadings = Math.max(0, ANONYMOUS_FREE_READINGS_LIMIT - freeReadingsUsed);
-                    
-                    return (
-                      <span className="text-sm text-fuchsia-300">
-                        {remainingReadings} free {remainingReadings === 1 ? 'reading' : 'readings'} remaining
-                        {remainingReadings === 0 && 
-                          <span className="block text-xs mt-1">
-                            Create an account to get 3 more free readings!
-                          </span>
-                        }
-                      </span>
-                    );
-                  })()}
-                  
-                  <div className="flex space-x-3">
-                    {/* Login button for non-authenticated users */}
-                    <button
-                      onClick={onLogin}
-                      className="flex items-center text-sm text-gray-300 hover:text-white transition-colors"
-                    >
-                      <LogIn className="w-4 h-4 mr-1" />
-                      Sign In
-                    </button>
-                    
-                    {/* Subscribe button for non-authenticated users */}
-                    {onSubscribe && (
-                      <button
-                        onClick={onSubscribe}
-                        className="flex items-center text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded-md transition-colors"
-                        title="Get premium access"
-                      >
-                        <Sparkles className="w-4 h-4 mr-1" />
-                        Subscribe
-                      </button>
-                    )}
-                    
-                    {/* Only show Reset Counter for admin */}
-                    {isAdmin(user) && (
-                      <button
-                        onClick={resetFreeReadings}
-                        className="flex items-center text-xs text-gray-300 hover:text-white transition-colors"
-                        title="Admin: Reset free readings counter"
-                      >
-                        <RefreshCw className="w-3 h-3 mr-1" />
-                        Reset Counter (Admin)
-                      </button>
-                    )}
+                </div>
+
+                {/* Reading History Button */}
+                <button
+                  onClick={onViewReadingHistory}
+                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
+                >
+                  Reading History
+                </button>
+
+                {/* Manage Subscription Button */}
+                <button
+                  onClick={onManageSubscription}
+                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
+                >
+                  Manage Subscription
+                </button>
+
+                {/* Sign Out Button */}
+                <button
+                  onClick={onSignOut}
+                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
+                >
+                  Sign Out
+                </button>
+
+                {/* User Avatar */}
+                <div className="relative ml-3">
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-500 flex items-center justify-center text-white font-medium">
+                    {user.email ? user.email.charAt(0).toUpperCase() : '?'}
                   </div>
                 </div>
+              </>
+            ) : (
+              <>
+                {/* Sign In Button */}
+                <button
+                  onClick={onLogin}
+                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
+                >
+                  Sign In
+                </button>
+
+                {/* Subscribe Button */}
+                <button
+                  onClick={onSubscribe}
+                  className="bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-purple-600 hover:to-fuchsia-600 transition-colors"
+                >
+                  Subscribe
+                </button>
+              </>
+            )}
+          </nav>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="text-gray-300 hover:text-white p-2"
+              aria-label="Toggle menu"
+            >
+              {isMenuOpen ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
               )}
-            </div>
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden bg-black bg-opacity-90 backdrop-blur-md">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={onDarkModeToggle}
+              className="w-full text-left flex items-center text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors"
+            >
+              {isDarkMode ? (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                  Switch to Light Mode
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-indigo-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                  </svg>
+                  Switch to Dark Mode
+                </>
+              )}
+            </button>
+
+            {user ? (
+              <>
+                {/* Subscription Badge */}
+                <div className="flex items-center px-3 py-2">
+                  <span 
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      isPremium 
+                        ? 'bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white' 
+                        : planType === 'basic' && subscriptionStatus === 'active'
+                          ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+                          : 'bg-gray-700 text-gray-300'
+                    }`}
+                  >
+                    {getSubscriptionBadge()}
+                  </span>
+                </div>
+
+                {/* Reading History Button */}
+                <button
+                  onClick={() => {
+                    onViewReadingHistory();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors"
+                >
+                  Reading History
+                </button>
+
+                {/* Manage Subscription Button */}
+                <button
+                  onClick={() => {
+                    onManageSubscription();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors"
+                >
+                  Manage Subscription
+                </button>
+
+                {/* Sign Out Button */}
+                <button
+                  onClick={() => {
+                    onSignOut();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Sign In Button */}
+                <button
+                  onClick={() => {
+                    onLogin();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors"
+                >
+                  Sign In
+                </button>
+
+                {/* Subscribe Button */}
+                <button
+                  onClick={() => {
+                    onSubscribe();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full text-left bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white px-3 py-2 rounded-md text-base font-medium hover:from-purple-600 hover:to-fuchsia-600 transition-colors"
+                >
+                  Subscribe
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 };

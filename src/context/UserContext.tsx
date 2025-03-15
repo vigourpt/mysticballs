@@ -1,52 +1,40 @@
-import React, { createContext, useState, useEffect, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
-import { useAuthState } from '../hooks/useAuthState';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { UserProfile } from '../types';
 
-interface UserProfile {
-  id: string;
-  is_premium: boolean;
-  plan_type: string;
-  subscription_id?: string;
-  created_at?: string;
-  updated_at?: string;
-  [key: string]: any;
-}
-
-interface Subscription {
+interface SubscriptionData {
   id: string;
   user_id: string;
-  stripe_customer_id?: string;
-  stripe_subscription_id?: string;
-  plan_id?: string;
+  stripe_customer_id: string;
+  stripe_subscription_id: string;
+  plan_id: string;
   status: string;
-  current_period_start?: string;
-  current_period_end?: string;
-  cancel_at_period_end?: boolean;
-  created_at?: string;
-  updated_at?: string;
+  current_period_start: string;
+  current_period_end: string;
+  cancel_at_period_end: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface UserContextType {
-  user: any;
-  loading: boolean;
+  user: User | null;
   profile: UserProfile | null;
-  subscription: Subscription | null;
-  isPremium: boolean;
-  planType: string | null;
-  remainingReadings: number;
+  subscription: SubscriptionData | null;
+  loading: boolean;
+  refreshUserData: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  refreshSubscription: () => Promise<void>;
 }
 
-const UserContext = createContext<UserContextType>({
+export const UserContext = createContext<UserContextType>({
   user: null,
-  loading: true,
   profile: null,
   subscription: null,
-  isPremium: false,
-  planType: null,
-  remainingReadings: 0,
-  refreshProfile: async () => {}
+  loading: true,
+  refreshUserData: async () => {},
+  refreshProfile: async () => {},
+  refreshSubscription: async () => {},
 });
 
 interface UserProviderProps {
@@ -54,143 +42,249 @@ interface UserProviderProps {
 }
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  const { user, loading } = useAuthState();
+  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [realtimeSubscription, setRealtimeSubscription] = useState<RealtimeChannel | null>(null);
-  const [remainingReadings, setRemainingReadings] = useState<number>(0);
-  
-  // Derived state
-  const isPremium = profile?.is_premium || false;
-  const planType = profile?.plan_type || null;
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Function to fetch user profile and subscription data
-  const refreshProfile = async () => {
-    if (!user) {
-      setProfile(null);
-      setSubscription(null);
-      return;
-    }
-    
+  // Fetch user profile from Supabase
+  const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('Fetching user profile data...');
-      
-      // Get user profile with subscription data
       const { data, error } = await supabase
         .from('user_profiles')
-        .select(`
-          *,
-          subscriptions:subscription_id (*)
-        `)
-        .eq('id', user.id)
+        .select('*')
+        .eq('id', userId)
         .single();
-        
+
       if (error) {
         console.error('Error fetching user profile:', error);
-        return;
+        return null;
       }
-      
-      console.log('User profile data:', data);
-      
-      // Update state with profile and subscription data
-      setProfile(data);
-      
-      if (data.subscriptions) {
-        setSubscription(data.subscriptions);
+
+      return data as UserProfile;
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+      return null;
+    }
+  };
+
+  // Fetch user subscription from Supabase
+  const fetchUserSubscription = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user subscription:', error);
+        return null;
       }
-      
-      // Get remaining readings from readings table
-      const { data: readingsData, error: readingsError } = await supabase
-        .from('readings')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('month', new Date().getMonth() + 1) // Current month (1-12)
-        .eq('year', new Date().getFullYear());
+
+      return data as SubscriptionData;
+    } catch (error) {
+      console.error('Error in fetchUserSubscription:', error);
+      return null;
+    }
+  };
+
+  // Refresh user profile
+  const refreshProfile = async () => {
+    if (!user) return;
+    
+    try {
+      const profileData = await fetchUserProfile(user.id);
+      if (profileData) {
+        setProfile(profileData);
+      }
+    } catch (error) {
+      console.error('Error refreshing user profile:', error);
+    }
+  };
+
+  // Refresh user subscription
+  const refreshSubscription = async () => {
+    if (!user) return;
+    
+    try {
+      const subscriptionData = await fetchUserSubscription(user.id);
+      if (subscriptionData) {
+        setSubscription(subscriptionData);
         
-      if (!readingsError && readingsData) {
-        // If premium, set to unlimited, otherwise calculate based on plan
-        if (data.is_premium) {
-          setRemainingReadings(Infinity);
-        } else {
-          // Determine monthly limit based on plan type
-          const monthlyLimit = data.plan_type === 'basic' ? 50 : 5; // 5 is free tier
-          setRemainingReadings(Math.max(0, monthlyLimit - readingsData.length));
+        // Update profile's is_premium status based on subscription
+        if (profile) {
+          const isPremium = subscriptionData.status === 'active' && 
+                           subscriptionData.plan_id.includes('premium');
+          
+          if (profile.is_premium !== isPremium) {
+            // Update the profile if premium status has changed
+            const { error } = await supabase
+              .from('user_profiles')
+              .update({ 
+                is_premium: isPremium,
+                plan_type: isPremium ? 'premium' : 'basic'
+              })
+              .eq('id', user.id);
+            
+            if (error) {
+              console.error('Error updating user profile premium status:', error);
+            } else {
+              // Refresh the profile after updating
+              await refreshProfile();
+            }
+          }
         }
       }
-    } catch (err) {
-      console.error('Error refreshing profile:', err);
+    } catch (error) {
+      console.error('Error refreshing user subscription:', error);
     }
   };
 
-  // Subscribe to profile changes
-  const subscribeToProfileChanges = (userId: string) => {
-    console.log('Setting up real-time subscription for profile changes...');
+  // Refresh all user data
+  const refreshUserData = async () => {
+    if (!user) return;
     
-    // Unsubscribe from any existing subscription
-    if (realtimeSubscription) {
-      realtimeSubscription.unsubscribe();
+    try {
+      await refreshProfile();
+      await refreshSubscription();
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
     }
-    
-    // Create a new subscription for profile updates
-    const subscription = supabase
-      .channel(`profile-${userId}`)
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'user_profiles',
-        filter: `id=eq.${userId}`
-      }, (payload) => {
-        console.log('Profile update received:', payload);
-        // When profile is updated, refresh all profile data
-        refreshProfile();
-      })
-      .subscribe();
-      
-    setRealtimeSubscription(subscription);
-    return subscription;
   };
 
-  // Initial profile fetch and subscription setup when user changes
+  // Initialize user, profile, and subscription
   useEffect(() => {
-    if (user) {
-      refreshProfile();
-      const subscription = subscribeToProfileChanges(user.id);
-      
-      return () => {
-        // Clean up subscription on unmount or when user changes
-        subscription.unsubscribe();
-      };
-    } else {
-      // Reset state when logged out
-      setProfile(null);
-      setSubscription(null);
-      
-      if (realtimeSubscription) {
-        realtimeSubscription.unsubscribe();
-        setRealtimeSubscription(null);
+    const initializeUser = async () => {
+      try {
+        setLoading(true);
+        
+        // Get current session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          setUser(session.user);
+          
+          // Fetch user profile
+          const profileData = await fetchUserProfile(session.user.id);
+          if (profileData) {
+            setProfile(profileData);
+          }
+          
+          // Fetch user subscription
+          const subscriptionData = await fetchUserSubscription(session.user.id);
+          if (subscriptionData) {
+            setSubscription(subscriptionData);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing user:', error);
+      } finally {
+        setLoading(false);
       }
-    }
-  }, [user]);
+    };
+
+    initializeUser();
+
+    // Set up auth state change listener
+    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user);
+          
+          // Fetch user profile
+          const profileData = await fetchUserProfile(session.user.id);
+          if (profileData) {
+            setProfile(profileData);
+          }
+          
+          // Fetch user subscription
+          const subscriptionData = await fetchUserSubscription(session.user.id);
+          if (subscriptionData) {
+            setSubscription(subscriptionData);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setProfile(null);
+          setSubscription(null);
+        }
+      }
+    );
+
+    // Set up real-time subscription for user_profiles table
+    const profileSubscription = supabase
+      .channel('user_profiles_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_profiles',
+          filter: user ? `id=eq.${user.id}` : undefined
+        },
+        async (payload: { new: Record<string, any>; old: Record<string, any> }) => {
+          console.log('Profile change detected:', payload);
+          if (user && payload.new && typeof payload.new === 'object' && 'id' in payload.new && payload.new.id === user.id) {
+            setProfile(payload.new as UserProfile);
+          }
+        }
+      )
+      .subscribe();
+
+    // Set up real-time subscription for subscriptions table
+    const subscriptionsSubscription = supabase
+      .channel('subscriptions_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'subscriptions',
+          filter: user ? `user_id=eq.${user.id}` : undefined
+        },
+        async (payload: { new: Record<string, any>; old: Record<string, any> }) => {
+          console.log('Subscription change detected:', payload);
+          if (user && payload.new && typeof payload.new === 'object' && 
+              'user_id' in payload.new && payload.new.user_id === user.id) {
+            setSubscription(payload.new as SubscriptionData);
+            
+            // Update profile's is_premium status based on subscription
+            if ('status' in payload.new && 'plan_id' in payload.new) {
+              const isPremium = payload.new.status === 'active' && 
+                              typeof payload.new.plan_id === 'string' && 
+                              payload.new.plan_id.includes('premium');
+              
+              if (profile && profile.is_premium !== isPremium) {
+                // Refresh the profile to get the updated premium status
+                await refreshProfile();
+              }
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    // Clean up subscriptions
+    return () => {
+      authSubscription.unsubscribe();
+      profileSubscription.unsubscribe();
+      subscriptionsSubscription.unsubscribe();
+    };
+  }, [user?.id]);
 
   return (
-    <UserContext.Provider 
-      value={{ 
-        user, 
-        loading, 
-        profile, 
+    <UserContext.Provider
+      value={{
+        user,
+        profile,
         subscription,
-        isPremium,
-        planType,
-        remainingReadings,
-        refreshProfile
+        loading,
+        refreshUserData,
+        refreshProfile,
+        refreshSubscription
       }}
     >
       {children}
     </UserContext.Provider>
   );
 };
-
-// Custom hook to use the user context
-export const useUser = () => useContext(UserContext);
-
-export default UserContext;

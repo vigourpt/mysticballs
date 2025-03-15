@@ -1,216 +1,138 @@
-import React, { useEffect, useState } from 'react';
-import { useAuthState } from '../hooks/useAuthState';
-import { supabase } from '../services/supabase';
-import ReactConfetti from 'react-confetti';
-import { STRIPE_TEST_MODE } from '../config/constants';
+import React, { useEffect, useState, useContext } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { UserContext } from '../context/UserContext';
 
-const PaymentSuccess: React.FC = () => {
-  const [message, setMessage] = useState<string>('Processing your payment...');
-  const [error, setError] = useState<boolean>(false);
-  const [success, setSuccess] = useState<boolean>(false);
-  const [planType, setPlanType] = useState<string | null>(null);
-  const [windowDimensions, setWindowDimensions] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight
-  });
-  const { user } = useAuthState();
-  
-  // Function to fetch user profile and subscription details
-  const fetchUserProfile = async () => {
-    if (!user) return;
-    
-    try {
-      // Get user profile
-      const { data: userProfile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('plan_type, is_premium')
-        .eq('id', user.id)
-        .single();
-        
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-        return;
-      }
-      
-      if (userProfile) {
-        setPlanType(userProfile.plan_type || (userProfile.is_premium ? 'premium' : 'basic'));
-      }
-    } catch (err) {
-      console.error('Error in fetchUserProfile:', err);
-    }
-  };
+interface PaymentSuccessProps {
+  onComplete?: () => void;
+}
 
-  // Update window dimensions when window is resized
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight
-      });
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) => {
+  const navigate = useNavigate();
+  const { user, refreshUserData } = useContext(UserContext);
+  const [verificationStatus, setVerificationStatus] = useState<'pending' | 'success' | 'error'>('pending');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const verifyPayment = async () => {
       try {
-        // Get the session ID from the URL
-        const params = new URLSearchParams(window.location.search);
-        const sessionId = params.get('session_id');
-        
+        // Get the session_id from the URL
+        const url = new URL(window.location.href);
+        const sessionId = url.searchParams.get('session_id');
+
         if (!sessionId) {
-          throw new Error('No session ID found in URL');
+          setVerificationStatus('error');
+          setErrorMessage('No session ID found in URL');
+          return;
         }
-        
-        // Get the auth token
-        const { data: sessionData } = await supabase.auth.getSession();
-        let token = sessionData.session?.access_token;
-        
-        if (!token) {
-          // If token is not found, try to refresh the session
-          const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-          
-          if (refreshError || !refreshData.session) {
-            console.error('Failed to refresh authentication session:', refreshError);
-            throw new Error('Authentication token not found. Please sign in again.');
-          }
-          
-          // Use the refreshed token
-          token = refreshData.session.access_token;
+
+        if (!user) {
+          setVerificationStatus('error');
+          setErrorMessage('User not authenticated');
+          return;
         }
-        
-        // Check if the session ID starts with 'cs_test_' to determine if it's a test mode session
-        const isTestMode = STRIPE_TEST_MODE || (sessionId && sessionId.startsWith('cs_test_'));
-        
-        console.log('Payment verification mode:', isTestMode ? 'TEST' : 'LIVE', 'Session ID:', sessionId);
-        
-        // Verify the payment with the server
+
+        // Call the verify-payment function
         const response = await fetch('/.netlify/functions/verify-payment', {
           method: 'POST',
-          headers: { 
+          headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'x-stripe-test-mode': isTestMode ? 'true' : 'false'
           },
-          body: JSON.stringify({ sessionId })
+          body: JSON.stringify({ sessionId, userId: user.id }),
         });
-        
+
         if (!response.ok) {
-          let errorText;
-          try {
-            const errorJson = await response.json();
-            errorText = errorJson.error || `HTTP error ${response.status}`;
-          } catch (e) {
-            errorText = await response.text();
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to verify payment');
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Payment verification successful
+          setVerificationStatus('success');
+          
+          // Refresh user data to get updated subscription status
+          if (refreshUserData) {
+            await refreshUserData();
           }
           
-          throw new Error(`Failed to verify payment: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        
-        if (result.error) {
-          throw new Error(result.error);
-        }
-        
-        // Fetch the updated subscription status directly from the database
-        if (user) {
-          const { data: subscriptionData } = await supabase
-            .from('subscriptions')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
-            
-          if (subscriptionData) {
-            console.log('Fetched updated subscription data:', subscriptionData);
-            // You can store this in local state if needed
+          // Call onComplete callback if provided
+          if (onComplete) {
+            onComplete();
           }
+          
+          // Redirect to home page after 5 seconds
+          setTimeout(() => {
+            navigate('/');
+          }, 5000);
+        } else {
+          setVerificationStatus('error');
+          setErrorMessage(data.error || 'Payment verification failed');
         }
-        
-        // Payment was successful
-        setSuccess(true);
-        setMessage('Payment successful! Your account has been upgraded.');
-        
-        // Fetch user profile to get plan type
-        await fetchUserProfile();
-        
-        // Redirect to home page after a delay
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 5000);
-      } catch (err) {
-        console.error('Error verifying payment:', err);
-        setError(true);
-        setMessage(err instanceof Error ? err.message : 'Failed to verify payment');
+      } catch (error) {
+        console.error('Error verifying payment:', error);
+        setVerificationStatus('error');
+        setErrorMessage(error instanceof Error ? error.message : 'An unknown error occurred');
       }
     };
 
-    if (user) {
-      verifyPayment();
-    } else {
-      setError(true);
-      setMessage('You must be logged in to verify your payment');
-    }
-  }, [user]);
+    verifyPayment();
+  }, [navigate, user, refreshUserData, onComplete]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-950 via-purple-900 to-blue-950">
-      {success && (
-        <ReactConfetti
-          width={windowDimensions.width}
-          height={windowDimensions.height}
-          recycle={false}
-          numberOfPieces={200}
-          gravity={0.1}
-          colors={['#f472b6', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b']}
-        />
-      )}
-      <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-8 shadow-xl max-w-md w-full">
-        <h2 className="text-2xl font-bold text-white mb-4 text-center">
-          {error ? 'Payment Error' : success ? 'Payment Successful!' : 'Processing Payment'}
-        </h2>
-        <div className="text-center">
-          {!error && !success && (
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          )}
-          {success && (
-            <div className="mb-6">
-              <div className="relative mx-auto w-24 h-24 mb-4">
-                {/* Pulsing circles animation */}
-                <div className="absolute inset-0 rounded-full bg-purple-600 opacity-75 animate-ping"></div>
-                <div className="absolute inset-2 rounded-full bg-purple-500 opacity-90 animate-pulse"></div>
-                <div className="absolute inset-4 rounded-full bg-purple-400 opacity-100"></div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                </div>
-              </div>
-              <p className="text-xl font-medium text-white mb-2">Subscription Activated!</p>
-              <p className="text-lg text-fuchsia-300 mb-2" id="subscription-message">
-                {planType === 'premium' 
-                  ? 'You now have unlimited readings!' 
-                  : planType === 'basic' 
-                    ? 'You now have 50 readings per month!' 
-                    : 'Subscription activated successfully!'}
-              </p>
-              <p className="text-sm text-gray-300">Redirecting you to the home page...</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 to-indigo-900">
+      <div className="bg-white bg-opacity-10 backdrop-blur-lg rounded-xl p-8 shadow-2xl max-w-md w-full">
+        {verificationStatus === 'pending' && (
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <h2 className="text-2xl font-bold text-white mb-4">Verifying Your Payment</h2>
+            <p className="text-gray-300">Please wait while we confirm your payment with our payment provider...</p>
+          </div>
+        )}
+
+        {verificationStatus === 'success' && (
+          <div className="text-center">
+            <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
             </div>
-          )}
-          <p className={`text-lg ${error ? 'text-red-400' : 'text-gray-300'}`}>
-            {message}
-          </p>
-          {error && (
-            <button
-              onClick={() => window.location.href = '/'}
-              className="mt-6 px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-            >
-              Return to Home
-            </button>
-          )}
-        </div>
+            <h2 className="text-2xl font-bold text-white mb-4">Payment Successful!</h2>
+            <p className="text-gray-300 mb-6">Thank you for your purchase. Your subscription has been activated.</p>
+            <div className="relative">
+              <div className="absolute -inset-1 bg-fuchsia-500/30 blur-md rounded-lg"></div>
+              <button
+                onClick={() => navigate('/')}
+                className="relative bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white px-6 py-3 rounded-lg font-medium hover:from-purple-600 hover:to-fuchsia-600 transition-all duration-300 w-full"
+              >
+                Return to Home
+              </button>
+            </div>
+            <p className="text-gray-400 mt-4 text-sm">You will be redirected automatically in 5 seconds...</p>
+          </div>
+        )}
+
+        {verificationStatus === 'error' && (
+          <div className="text-center">
+            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-4">Payment Verification Failed</h2>
+            <p className="text-gray-300 mb-2">We encountered an error while verifying your payment:</p>
+            <p className="text-red-400 mb-6">{errorMessage || 'Unknown error'}</p>
+            <div className="relative">
+              <div className="absolute -inset-1 bg-fuchsia-500/30 blur-md rounded-lg"></div>
+              <button
+                onClick={() => navigate('/')}
+                className="relative bg-gradient-to-r from-purple-500 to-fuchsia-500 text-white px-6 py-3 rounded-lg font-medium hover:from-purple-600 hover:to-fuchsia-600 transition-all duration-300 w-full"
+              >
+                Return to Home
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -21,6 +21,22 @@ export interface ReadingField {
   required: boolean;
 }
 
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  is_premium: boolean;
+  plan_type: 'free' | 'basic' | 'premium';
+  readings_count: number;
+  readings_remaining: number;
+  last_reading_date?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface UserUsage {
   readingsCount: number;
   readingsRemaining: number;
