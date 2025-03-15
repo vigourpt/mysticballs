@@ -25,6 +25,7 @@ interface UserContextType {
   refreshUserData: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 export const UserContext = createContext<UserContextType>({
@@ -35,6 +36,7 @@ export const UserContext = createContext<UserContextType>({
   refreshUserData: async () => {},
   refreshProfile: async () => {},
   refreshSubscription: async () => {},
+  signOut: async () => {},
 });
 
 interface UserProviderProps {
@@ -75,10 +77,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         .from('subscriptions')
         .select('*')
         .eq('user_id', userId)
+        .eq('status', 'active')
         .single();
 
       if (error) {
-        console.error('Error fetching user subscription:', error);
+        if (error.code !== 'PGRST116') { // PGRST116 is "no rows returned" which is expected if no subscription
+          console.error('Error fetching user subscription:', error);
+        }
         return null;
       }
 
@@ -89,80 +94,86 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
   };
 
+  // Refresh user data (profile and subscription)
+  const refreshUserData = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      
+      // Refresh profile
+      await refreshProfile();
+      
+      // Refresh subscription
+      await refreshSubscription();
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Refresh user profile
   const refreshProfile = async () => {
     if (!user) return;
-    
+
     try {
       const profileData = await fetchUserProfile(user.id);
       if (profileData) {
         setProfile(profileData);
       }
     } catch (error) {
-      console.error('Error refreshing user profile:', error);
+      console.error('Error refreshing profile:', error);
     }
   };
 
   // Refresh user subscription
   const refreshSubscription = async () => {
     if (!user) return;
-    
+
     try {
       const subscriptionData = await fetchUserSubscription(user.id);
-      if (subscriptionData) {
-        setSubscription(subscriptionData);
-        
-        // Update profile's is_premium status based on subscription
-        if (profile) {
-          const isPremium = subscriptionData.status === 'active' && 
-                           subscriptionData.plan_id.includes('premium');
-          
-          if (profile.is_premium !== isPremium) {
-            // Update the profile if premium status has changed
-            const { error } = await supabase
-              .from('user_profiles')
-              .update({ 
-                is_premium: isPremium,
-                plan_type: isPremium ? 'premium' : 'basic'
-              })
-              .eq('id', user.id);
-            
-            if (error) {
-              console.error('Error updating user profile premium status:', error);
-            } else {
-              // Refresh the profile after updating
-              await refreshProfile();
-            }
-          }
-        }
-      }
+      setSubscription(subscriptionData);
     } catch (error) {
-      console.error('Error refreshing user subscription:', error);
+      console.error('Error refreshing subscription:', error);
     }
   };
 
-  // Refresh all user data
-  const refreshUserData = async () => {
-    if (!user) return;
-    
+  // Sign out user
+  const signOut = async () => {
     try {
-      await refreshProfile();
-      await refreshSubscription();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      setUser(null);
+      setProfile(null);
+      setSubscription(null);
+      
+      // Clear any local storage items that might be persisting user state
+      localStorage.removeItem('supabase.auth.token');
+      
+      // Force reload to clear any cached state
+      window.location.href = '/';
     } catch (error) {
-      console.error('Error refreshing user data:', error);
+      console.error('Error signing out:', error);
     }
   };
 
-  // Initialize user, profile, and subscription
+  // Initialize user session
   useEffect(() => {
-    const initializeUser = async () => {
+    const initSession = async () => {
       try {
         setLoading(true);
         
-        // Get current session
-        const { data: { session } } = await supabase.auth.getSession();
+        // Check for existing session
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (session?.user) {
+        if (error) {
+          console.error('Error getting session:', error);
+          return;
+        }
+        
+        if (session) {
           setUser(session.user);
           
           // Fetch user profile
@@ -178,18 +189,27 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           }
         }
       } catch (error) {
-        console.error('Error initializing user:', error);
+        console.error('Error initializing session:', error);
       } finally {
         setLoading(false);
       }
     };
+    
+    initSession();
+    
+    // Check URL parameters for session reset
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('reset_session') === 'true') {
+      signOut();
+    }
+  }, []);
 
-    initializeUser();
-
+  // Set up auth state change listener
+  useEffect(() => {
     // Set up auth state change listener
-    const { data: { subscription: authSubscription } } = supabase.auth.onAuthStateChange(
+    const authListener = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
+        if (event === 'SIGNED_IN' && session) {
           setUser(session.user);
           
           // Fetch user profile
@@ -266,7 +286,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
     // Clean up subscriptions
     return () => {
-      authSubscription.unsubscribe();
+      // Remove auth listener
+      authListener.data.subscription.unsubscribe();
       profileSubscription.unsubscribe();
       subscriptionsSubscription.unsubscribe();
     };
@@ -281,7 +302,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         loading,
         refreshUserData,
         refreshProfile,
-        refreshSubscription
+        refreshSubscription,
+        signOut
       }}
     >
       {children}

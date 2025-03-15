@@ -18,14 +18,20 @@ import { ReadingType } from './types';
 const App: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, refreshUserData } = useContext(UserContext);
+  const { user, profile, refreshUserData, signOut } = useContext(UserContext);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedReadingType, setSelectedReadingType] = useState<ReadingType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showReadingHistory, setShowReadingHistory] = useState(false);
 
   // Set initial reading type only if we're on the home page
   useEffect(() => {
+    // If we're on the pricing page but showing a reading, redirect to actual pricing
+    if (location.pathname === '/pricing') {
+      // Reset selected reading type to ensure pricing page shows correctly
+      setSelectedReadingType(null);
+    }
+    
+    // Only set initial reading type on home page
     if (location.pathname === '/' && READING_TYPES && READING_TYPES.length > 0) {
       const firstReadingType = READING_TYPES[0];
       if (firstReadingType) {
@@ -34,14 +40,46 @@ const App: React.FC = () => {
     }
   }, [location.pathname]);
 
+  // Set reading type based on URL parameter
+  useEffect(() => {
+    const match = location.pathname.match(/\/reading\/([^/]+)/);
+    if (match && match[1]) {
+      const readingTypeId = match[1];
+      const foundReadingType = READING_TYPES.find(rt => rt.id === readingTypeId);
+      if (foundReadingType) {
+        setSelectedReadingType(foundReadingType);
+      }
+    }
+  }, [location.pathname]);
+
+  // Apply dark mode styles to body
+  useEffect(() => {
+    document.body.classList.toggle('dark-mode', isDarkMode);
+    document.body.classList.toggle('light-mode', !isDarkMode);
+    
+    // Force re-render of styles
+    document.body.style.backgroundColor = isDarkMode ? '#111827' : '#f3f4f6';
+    document.body.style.color = isDarkMode ? '#ffffff' : '#111827';
+    
+    return () => {
+      document.body.classList.remove('dark-mode', 'light-mode');
+      document.body.style.backgroundColor = '';
+      document.body.style.color = '';
+    };
+  }, [isDarkMode]);
+
   // Toggle dark mode
   const handleDarkModeToggle = () => {
     setIsDarkMode(!isDarkMode);
+    localStorage.setItem('darkMode', (!isDarkMode).toString());
   };
 
   // Handle sign out
   const handleSignOut = async () => {
     try {
+      if (signOut) {
+        await signOut();
+      }
       navigate('/');
       toast.success('Signed out successfully');
     } catch (error) {
@@ -96,7 +134,6 @@ const App: React.FC = () => {
 
   // Handle view reading history
   const handleViewReadingHistory = () => {
-    setShowReadingHistory(true);
     navigate('/history');
   };
 
@@ -106,7 +143,7 @@ const App: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Subscription Plans</h1>
         <div className="grid md:grid-cols-2 gap-8">
-          <div className={`rounded-lg p-6 ${isDarkMode ? 'bg-indigo-900/40' : 'bg-indigo-100'}`}>
+          <div className={`relative rounded-lg p-6 ${isDarkMode ? 'bg-indigo-900/40' : 'bg-indigo-100'}`}>
             <h2 className="text-2xl font-bold mb-4">Basic Plan</h2>
             <p className="text-xl mb-2">$9.99/month</p>
             <ul className="list-disc pl-5 mb-6">
@@ -121,7 +158,7 @@ const App: React.FC = () => {
               Subscribe
             </button>
           </div>
-          <div className={`rounded-lg p-6 ${isDarkMode ? 'bg-purple-900/40' : 'bg-purple-100'} border-2 border-yellow-400`}>
+          <div className={`relative rounded-lg p-6 ${isDarkMode ? 'bg-purple-900/40' : 'bg-purple-100'} border-2 border-yellow-400`}>
             <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black px-4 py-1 rounded-full text-sm font-bold">
               RECOMMENDED
             </div>
@@ -160,6 +197,7 @@ const App: React.FC = () => {
       
       <main className="flex-grow container mx-auto px-4 py-8 mt-16">
         <Routes>
+          {/* Redirect from root to home if needed */}
           <Route path="/" element={
             <ReadingSelector
               READING_TYPES={READING_TYPES}
@@ -212,6 +250,9 @@ const App: React.FC = () => {
             path="/payment/cancel"
             element={<PaymentCancel />}
           />
+          
+          {/* Catch-all redirect to home page */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
       
