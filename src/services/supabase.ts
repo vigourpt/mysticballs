@@ -598,9 +598,8 @@ export const incrementFreeReadingUsed = (): number => {
 // Get total readings remaining based on user status - synchronous version for initial state
 export const getTotalReadingsRemaining = (user: any, profile: any): number => {
   if (!user) {
-    // For non-signed-in users, return a default value
-    // The actual value will be updated asynchronously
-    return 2;
+    // For non-signed-in users, return free readings from localStorage
+    return getFreeReadingsRemainingSync();
   }
   
   // Signed-in user
@@ -610,10 +609,25 @@ export const getTotalReadingsRemaining = (user: any, profile: any): number => {
   } else if (profile) {
     // Basic plan users get 50 readings per month
     const basicPlanLimit = 50;
-    return Math.max(0, basicPlanLimit - (profile.readings_count || 0));
+    
+    // If they have a subscription, they get the full 50 readings
+    // plus any remaining free readings they had before subscribing
+    if (profile.plan_type === 'basic') {
+      // Calculate remaining free readings (if any)
+      const freeReadingsUsed = profile.free_readings_used || 0;
+      const freeReadingsLimit = 5; // 2 anonymous + 3 for signing in
+      const freeReadingsRemaining = Math.max(0, freeReadingsLimit - freeReadingsUsed);
+      
+      // Add remaining free readings to the basic plan limit
+      return basicPlanLimit + freeReadingsRemaining;
+    }
+    
+    // Free user with profile - they get 5 total readings (2 anonymous + 3 for signing in)
+    const freeReadingsLimit = 5;
+    return Math.max(0, freeReadingsLimit - (profile.readings_count || 0));
   } else {
-    // Signed-in but no profile yet - they get 3 additional readings
-    return 3;
+    // Signed-in but no profile yet - they get 5 readings (2 anonymous + 3 for signing in)
+    return 5;
   }
 };
 

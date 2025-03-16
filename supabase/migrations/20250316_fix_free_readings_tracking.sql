@@ -2,6 +2,7 @@
 CREATE TABLE IF NOT EXISTS public.anonymous_readings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   device_id TEXT NOT NULL,
+  user_id UUID,
   readings_count INTEGER NOT NULL DEFAULT 0,
   last_reading_date TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
@@ -61,64 +62,82 @@ CREATE POLICY "Service role can manage conversion events"
 -- Grant permissions to service role
 GRANT ALL ON public.conversion_events TO service_role;
 
--- Create function to sync anonymous readings when a user signs in
-CREATE OR REPLACE FUNCTION public.sync_anonymous_readings(
+-- Add free_readings_used column to user_profiles if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_name = 'user_profiles'
+    AND column_name = 'free_readings_used'
+  ) THEN
+    ALTER TABLE public.user_profiles
+    ADD COLUMN free_readings_used INTEGER DEFAULT 0;
+  END IF;
+END $$;
+
+-- Add is_admin column to user_profiles if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'user_profiles' AND column_name = 'is_admin'
+  ) THEN
+    ALTER TABLE public.user_profiles ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+  END IF;
+END $$;
+
+-- Function to sync anonymous readings when a user signs in
+CREATE OR REPLACE FUNCTION sync_anonymous_readings(
   p_user_id UUID,
   p_device_id TEXT,
   p_readings_count INTEGER
 )
-RETURNS void AS $$
+RETURNS VOID AS $$
 DECLARE
-  v_user_profile public.user_profiles;
-  v_anonymous_readings public.anonymous_readings;
+  v_profile_exists BOOLEAN;
 BEGIN
-  -- Get user profile
-  SELECT * INTO v_user_profile
-  FROM public.user_profiles
-  WHERE id = p_user_id;
+  -- Check if user profile exists
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_profiles WHERE id = p_user_id
+  ) INTO v_profile_exists;
   
-  IF v_user_profile IS NULL THEN
-    RAISE EXCEPTION 'User profile not found';
-  END IF;
+  -- Insert or update the anonymous reading record
+  INSERT INTO public.anonymous_readings (device_id, user_id, readings_count)
+  VALUES (p_device_id, p_user_id, p_readings_count)
+  ON CONFLICT (device_id) 
+  DO UPDATE SET 
+    user_id = p_user_id,
+    readings_count = p_readings_count,
+    updated_at = now();
   
-  -- Get anonymous readings for device
-  SELECT * INTO v_anonymous_readings
-  FROM public.anonymous_readings
-  WHERE device_id = p_device_id;
-  
-  -- If no anonymous readings record exists, create one
-  IF v_anonymous_readings IS NULL THEN
-    INSERT INTO public.anonymous_readings (device_id, readings_count, last_reading_date)
-    VALUES (p_device_id, p_readings_count, NOW());
-  ELSE
-    -- Update anonymous readings count if provided count is higher
-    IF p_readings_count > v_anonymous_readings.readings_count THEN
-      UPDATE public.anonymous_readings
-      SET 
-        readings_count = p_readings_count,
-        updated_at = NOW()
-      WHERE device_id = p_device_id;
+  -- If user profile exists, update it with the anonymous readings
+  IF v_profile_exists THEN
+    -- Update the user profile with the anonymous readings
+    -- Free users get 5 total readings (2 anonymous + 3 for signing in)
+    UPDATE public.user_profiles
+    SET 
+      readings_count = LEAST(readings_count + p_readings_count, 5),
+      free_readings_used = p_readings_count,
+      updated_at = now()
+    WHERE id = p_user_id;
+    
+    -- Record a conversion event if the user has used readings before signing up
+    IF p_readings_count > 0 THEN
+      INSERT INTO public.conversion_events (
+        user_id, 
+        event_type, 
+        previous_readings_count, 
+        metadata
+      )
+      VALUES (
+        p_user_id, 
+        'signup_after_reading', 
+        p_readings_count, 
+        jsonb_build_object('device_id', p_device_id)
+      );
     END IF;
   END IF;
-  
-  -- Track conversion event
-  INSERT INTO public.conversion_events (
-    user_id,
-    event_type,
-    device_id,
-    previous_readings_count,
-    metadata
-  )
-  VALUES (
-    p_user_id,
-    'sign_in',
-    p_device_id,
-    p_readings_count,
-    jsonb_build_object(
-      'user_readings_count', v_user_profile.readings_count,
-      'is_premium', v_user_profile.is_premium
-    )
-  );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -148,7 +167,7 @@ BEGIN
     END IF;
     
     -- Premium users have unlimited readings
-    IF v_user_profile.is_premium THEN
+    IF v_user_profile.is_admin THEN
       RETURN TRUE;
     END IF;
     
@@ -157,8 +176,8 @@ BEGIN
       RETURN v_user_profile.readings_count < v_basic_limit;
     END IF;
     
-    -- Free users have 3 additional readings when signed in
-    RETURN v_user_profile.readings_count < 3;
+    -- Free users have 5 total readings (2 anonymous + 3 for signing in)
+    RETURN v_user_profile.readings_count < 5;
   ELSE
     -- For anonymous users
     IF p_device_id IS NULL THEN
@@ -302,14 +321,3 @@ BEGIN
   RETURN COALESCE(v_avg_readings, 0);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Add is_admin column to user_profiles if it doesn't exist
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'user_profiles' AND column_name = 'is_admin'
-  ) THEN
-    ALTER TABLE public.user_profiles ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
-  END IF;
-END $$;
