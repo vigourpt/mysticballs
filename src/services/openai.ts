@@ -23,6 +23,16 @@ const validateRequiredFields = (readingType: ReadingTypeId, userInput: Record<st
   }
 };
 
+// Helper function to get or initialize device ID
+const getOrInitDeviceId = (): string => {
+  let deviceId = localStorage.getItem('device-id');
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem('device-id', deviceId);
+  }
+  return deviceId;
+};
+
 export const getReading = async (
   readingType: ReadingType,
   userInput: Record<string, string>
@@ -38,20 +48,40 @@ export const getReading = async (
     
     // Get the access token from local storage
     const accessToken = localStorage.getItem('sb-access-token');
-
-    if (!accessToken) {
-      throw new Error('Missing access token');
+    const isAnonymous = !accessToken;
+    const deviceId = getOrInitDeviceId();
+    
+    // Track anonymous readings in localStorage
+    let anonymousReadingsUsed = 0;
+    if (isAnonymous) {
+      anonymousReadingsUsed = parseInt(localStorage.getItem('mysticballs_free_readings_used') || '0', 10);
     }
 
+    // Prepare headers
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
+    // Only add authorization header if user is signed in
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
+    // Add readings count header for anonymous users
+    if (isAnonymous) {
+      headers['X-Readings-Used'] = anonymousReadingsUsed.toString();
+    }
+
+    // Make the API call
     const response = await fetch('/.netlify/functions/getReading', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}` // Add the Authorization header
-      },
+      headers,
       body: JSON.stringify({
         readingType: readingType.id,
-        userInput
+        userInput,
+        isAnonymous,
+        anonymousReadingsUsed,
+        deviceId
       })
     });
 

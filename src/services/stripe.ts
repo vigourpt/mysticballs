@@ -10,6 +10,7 @@ export const createCheckoutSession = async (priceId: string, userId: string, use
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('sb-access-token')}`,
       },
       body: JSON.stringify({
         priceId,
