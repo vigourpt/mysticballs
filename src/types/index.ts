@@ -65,7 +65,18 @@ export interface ReadingType {
   fields: ReadingField[];
 }
 
-export type PricingPlan = 'basic' | 'premium' | 'unlimited';
+export type PricingPlanId = 'basic' | 'premium' | 'unlimited';
+
+export interface PricingPlan {
+  id: PricingPlanId;
+  name: string;
+  price: number;
+  stripePriceId: string;
+  description: string;
+  features: string[];
+  readingsPerMonth: number;
+  recommended?: boolean;
+}
 
 export type Step = {
   target: string;

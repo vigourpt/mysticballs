@@ -5,6 +5,29 @@ export const createCheckoutSession = async (priceId: string, userId: string, use
   try {
     console.log('Creating checkout session with:', { priceId, userId, userEmail });
     
+    // First, create a checkout session on the server
+    const response = await fetch('/.netlify/functions/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        priceId,
+        userId,
+        userEmail,
+        successUrl: `${window.location.origin}/payment/success?plan=basic`,
+        cancelUrl: `${window.location.origin}/payment/cancel`,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error creating checkout session:', errorData);
+      throw new Error(errorData.error || 'Failed to create checkout session');
+    }
+
+    const { sessionId } = await response.json();
+    
     // Initialize Stripe
     const stripe = await loadStripe(STRIPE_CONFIG.publishableKey);
     if (!stripe) {
@@ -12,19 +35,11 @@ export const createCheckoutSession = async (priceId: string, userId: string, use
       throw new Error('Stripe failed to load');
     }
 
-    console.log('Stripe loaded successfully, redirecting to checkout');
+    console.log('Stripe loaded successfully, redirecting to checkout with session ID:', sessionId);
     
-    // Create checkout session directly
+    // Redirect to the Stripe Checkout page
     const { error } = await stripe.redirectToCheckout({
-      lineItems: [{
-        price: priceId,
-        quantity: 1
-      }],
-      mode: 'subscription',
-      successUrl: `${window.location.origin}/payment/success?plan=basic`,
-      cancelUrl: `${window.location.origin}/payment/cancel`,
-      customerEmail: userEmail,
-      clientReferenceId: userId // Pass user ID as metadata
+      sessionId
     });
 
     if (error) {
