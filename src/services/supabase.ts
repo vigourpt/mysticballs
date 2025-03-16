@@ -36,7 +36,21 @@ console.log('Supabase client initialized with flowType:', 'pkce');
 
 type Tables = Database['public']['Tables'];
 export type UserProfile = Tables['user_profiles']['Row'];
-export type Subscription = Tables['subscriptions']['Row'];
+
+// Subscription type definition
+export type Subscription = {
+  id: string;
+  user_id: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  status: 'active' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'past_due' | 'trialing' | 'unpaid';
+  plan_id: string;
+  current_period_start: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  created_at: string;
+  updated_at: string;
+};
 
 export const signInWithGoogle = async () => {
   try {
@@ -647,5 +661,88 @@ export const getFreeReadingsRemainingSync = (): number => {
   } catch (error) {
     console.error('Error getting free readings count:', error);
     return 0;
+  }
+};
+
+// Function to create a subscription directly in the database
+export const createSubscription = async (userId: string, planId: string): Promise<Subscription | null> => {
+  try {
+    console.log(`Creating subscription for user ${userId} with plan ${planId}`);
+    
+    // First, check if user already has a subscription
+    const { data: existingSubscription, error: checkError } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+      
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Error checking for existing subscription:', checkError);
+      throw new Error('Failed to check for existing subscription');
+    }
+    
+    // If subscription exists, update it
+    if (existingSubscription) {
+      console.log('Updating existing subscription:', existingSubscription.id);
+      const { data: updatedSubscription, error: updateError } = await supabase
+        .from('subscriptions')
+        .update({
+          status: 'active',
+          plan_id: planId,
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+          cancel_at_period_end: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingSubscription.id)
+        .select()
+        .single();
+        
+      if (updateError) {
+        console.error('Error updating subscription:', updateError);
+        throw new Error('Failed to update subscription');
+      }
+      
+      return updatedSubscription;
+    }
+    
+    // Otherwise, create a new subscription
+    const { data: newSubscription, error: insertError } = await supabase
+      .from('subscriptions')
+      .insert({
+        user_id: userId,
+        status: 'active',
+        plan_id: planId,
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days from now
+        cancel_at_period_end: false
+      })
+      .select()
+      .single();
+      
+    if (insertError) {
+      console.error('Error creating subscription:', insertError);
+      throw new Error('Failed to create subscription');
+    }
+    
+    // Update user profile to reflect the subscription
+    const { error: profileError } = await supabase
+      .from('user_profiles')
+      .update({
+        subscription_status: 'active',
+        subscription_plan: planId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userId);
+      
+    if (profileError) {
+      console.error('Error updating user profile:', profileError);
+      // Don't throw here, the subscription was created successfully
+    }
+    
+    return newSubscription;
+  } catch (error) {
+    console.error('Error in createSubscription:', error);
+    throw error;
   }
 };
