@@ -243,10 +243,22 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         if (event === 'SIGNED_IN' && session) {
           setUser(session.user);
           
+          // Sync anonymous readings when user signs in
+          try {
+            await syncAnonymousReadings(session.user.id);
+            console.log('Anonymous readings synced successfully');
+          } catch (error) {
+            console.error('Error syncing anonymous readings:', error);
+          }
+          
           // Fetch user profile
           const profileData = await fetchUserProfile(session.user.id);
           if (profileData) {
             setProfile(profileData);
+            
+            // Update readings remaining based on profile
+            const totalReadings = getTotalReadingsRemaining(session.user, profileData);
+            setReadingsRemaining(totalReadings);
           }
           
           // Fetch user subscription
@@ -339,6 +351,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     };
     
     updateReadingsRemaining();
+  }, [user]);
+
+  // Update readings remaining when profile changes
+  useEffect(() => {
+    if (user && profile) {
+      const totalReadings = getTotalReadingsRemaining(user, profile);
+      setReadingsRemaining(totalReadings);
+    }
   }, [user, profile]);
 
   // Sync anonymous readings when a user signs in
