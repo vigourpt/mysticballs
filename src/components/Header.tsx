@@ -97,20 +97,24 @@ const Header: React.FC<HeaderProps> = ({
                   </span>
                 </div>
 
-                {/* Reading History Button */}
-                <button
-                  onClick={onViewReadingHistory}
-                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
-                >
-                  Reading History
-                </button>
+                {/* Reading History Button - Only show for premium users */}
+                {isPremium && (
+                  <button
+                    onClick={onViewReadingHistory}
+                    className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
+                  >
+                    Reading History
+                  </button>
+                )}
 
-                {/* Manage Subscription Button */}
+                {/* Manage Subscription or Upgrade Button */}
                 <button
                   onClick={onManageSubscription}
-                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
+                  className={`text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors ${
+                    subscriptionStatus === 'active' ? '' : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+                  }`}
                 >
-                  Manage Subscription
+                  {subscriptionStatus === 'active' ? 'Manage Subscription' : 'Upgrade'}
                 </button>
 
                 {/* Sign Out Button */}
@@ -121,10 +125,26 @@ const Header: React.FC<HeaderProps> = ({
                   Sign Out
                 </button>
 
-                {/* User Avatar */}
-                <div className="relative ml-3">
+                {/* User Avatar with Email and Readings */}
+                <div className="relative ml-3 group">
                   <div className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-500 to-fuchsia-500 flex items-center justify-center text-white font-medium">
                     {user.email ? user.email.charAt(0).toUpperCase() : '?'}
+                  </div>
+                  
+                  {/* Tooltip with user info */}
+                  <div className="absolute right-0 mt-2 w-64 bg-gray-800 rounded-lg shadow-lg p-4 z-50 hidden group-hover:block">
+                    <p className="text-white text-sm mb-2">
+                      <span className="font-semibold">Email:</span> {user.email}
+                    </p>
+                    <p className="text-white text-sm">
+                      <span className="font-semibold">Readings Left:</span> {
+                        isPremium ? 
+                          'Unlimited' : 
+                          profile?.readings_remaining !== undefined ? 
+                            profile.readings_remaining : 
+                            'Loading...'
+                      }
+                    </p>
                   </div>
                 </div>
               </>
@@ -213,26 +233,30 @@ const Header: React.FC<HeaderProps> = ({
                   </span>
                 </div>
 
-                {/* Reading History Button */}
-                <button
-                  onClick={() => {
-                    onViewReadingHistory();
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors"
-                >
-                  Reading History
-                </button>
+                {/* Reading History Button - Only show for premium users */}
+                {isPremium && (
+                  <button
+                    onClick={() => {
+                      onViewReadingHistory();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors"
+                  >
+                    Reading History
+                  </button>
+                )}
 
-                {/* Manage Subscription Button */}
+                {/* Manage Subscription or Upgrade Button */}
                 <button
                   onClick={() => {
                     onManageSubscription();
                     setIsMenuOpen(false);
                   }}
-                  className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors"
+                  className={`w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors ${
+                    subscriptionStatus === 'active' ? '' : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+                  }`}
                 >
-                  Manage Subscription
+                  {subscriptionStatus === 'active' ? 'Manage Subscription' : 'Upgrade'}
                 </button>
 
                 {/* Sign Out Button */}

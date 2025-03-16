@@ -25,7 +25,7 @@ interface UserContextType {
   refreshUserData: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<boolean>;
 }
 
 export const UserContext = createContext<UserContextType>({
@@ -36,7 +36,7 @@ export const UserContext = createContext<UserContextType>({
   refreshUserData: async () => {},
   refreshProfile: async () => {},
   refreshSubscription: async () => {},
-  signOut: async () => {},
+  signOut: async () => true,
 });
 
 interface UserProviderProps {
@@ -139,23 +139,28 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
   };
 
-  // Sign out user
+  // Sign out function
   const signOut = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      // Clear Supabase session
+      await supabase.auth.signOut();
       
+      // Clear all user-related state
       setUser(null);
       setProfile(null);
       setSubscription(null);
       
-      // Clear any local storage items that might be persisting user state
+      // Clear any local storage items that might persist user state
       localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('mysticballs.user');
+      localStorage.removeItem('mysticballs.profile');
+      localStorage.removeItem('mysticballs.session');
       
-      // Force reload to clear any cached state
-      window.location.href = '/';
+      console.log('User signed out successfully');
+      return true;
     } catch (error) {
       console.error('Error signing out:', error);
+      throw error;
     }
   };
 
