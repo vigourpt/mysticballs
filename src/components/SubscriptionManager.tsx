@@ -27,6 +27,7 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ user, isDarkM
         
         // First try to use the subscription from context
         if (contextSubscription) {
+          console.log('Using subscription from context:', contextSubscription);
           setSubscription(contextSubscription);
           setIsLoading(false);
           return;
@@ -34,11 +35,14 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ user, isDarkM
         
         // Otherwise fetch from the database
         try {
+          console.log('Fetching subscription from database for user:', user.id);
           const subscriptionData = await getSubscription(user.id);
+          console.log('Subscription data retrieved:', subscriptionData);
           setSubscription(subscriptionData);
         } catch (fetchError) {
           console.error('Error fetching subscription:', fetchError);
           // Don't set error here, we'll show a default state instead
+          setSubscription(null); // Explicitly set to null to indicate no subscription
         }
       } finally {
         setIsLoading(false);
@@ -51,7 +55,7 @@ const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({ user, isDarkM
     const subscription = supabase
       .channel('subscription-status')
       .on('postgres_changes', 
-        { event: 'UPDATE', schema: 'public', table: 'subscriptions', filter: `user_id=eq.${user.id}` }, 
+        { event: '*', schema: 'public', table: 'subscriptions', filter: `user_id=eq.${user.id}` }, 
         (payload) => {
           console.log('Subscription status updated:', payload.new);
           setSubscription(payload.new as Subscription);
