@@ -12,6 +12,7 @@ import LoginModal from './components/LoginModal';
 import BackgroundEffects from './components/BackgroundEffects';
 import SubscriptionManager from './components/SubscriptionManager';
 import { UserContext } from './context/UserContext';
+import { incrementReadingCount, incrementFreeReadingUsed } from './services/supabase';
 
 import { READING_TYPES } from './data/readingTypes';
 import { ReadingType } from './types';
@@ -19,7 +20,7 @@ import { ReadingType } from './types';
 const App: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, signOut, refreshUserData } = useContext(UserContext);
+  const { user, profile, signOut, refreshUserData, readingsRemaining } = useContext(UserContext);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedReadingType, setSelectedReadingType] = useState<ReadingType | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -235,11 +236,11 @@ const App: React.FC = () => {
                 READING_TYPES={READING_TYPES}
                 handleReadingTypeSelect={(readingType) => {
                   setSelectedReadingType(readingType);
-                  navigate('/');
+                  navigate(`/reading/${readingType.id}`);
                 }}
                 isDarkMode={isDarkMode}
                 isPremium={profile?.is_premium || false}
-                freeReadingsRemaining={profile?.readings_remaining || 0}
+                freeReadingsRemaining={readingsRemaining}
               />
 
               {/* How to Get the Best From Your Reading */}
@@ -332,6 +333,25 @@ const App: React.FC = () => {
                   onSubmit={async (formInputs) => {
                     try {
                       setIsLoading(true);
+                      
+                      // Check if user has readings remaining
+                      if (user) {
+                        // For signed-in users, increment reading count in database
+                        if (profile && !profile.is_premium) {
+                          // Only increment for non-premium users
+                          await incrementReadingCount(user.id);
+                          // Refresh user data to update readings count
+                          await refreshUserData();
+                        }
+                      } else {
+                        // For non-signed-in users, increment local storage count
+                        const remaining = incrementFreeReadingUsed();
+                        if (remaining <= 0) {
+                          toast.info('You have used all your free readings. Sign in for more!', {
+                            autoClose: 5000
+                          });
+                        }
+                      }
                       
                       // Simulate API call
                       await new Promise((resolve) => setTimeout(resolve, 2000));

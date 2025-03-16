@@ -428,3 +428,62 @@ export const clearAllAuthState = async () => {
     throw error;
   }
 };
+
+// Free readings management for non-signed-in users
+export const getFreeReadingsRemaining = (): number => {
+  try {
+    // Check if we have a stored count in localStorage
+    const usedReadings = localStorage.getItem('mysticballs_free_readings_used');
+    const freeReadingsLimit = 2; // Non-signed-in users get 2 free readings
+    
+    if (usedReadings === null) {
+      // First time user, initialize with 0 used readings
+      localStorage.setItem('mysticballs_free_readings_used', '0');
+      return freeReadingsLimit;
+    }
+    
+    const usedCount = parseInt(usedReadings, 10);
+    return Math.max(0, freeReadingsLimit - usedCount);
+  } catch (error) {
+    console.error('Error getting free readings count:', error);
+    return 0; // Default to 0 if there's an error
+  }
+};
+
+export const incrementFreeReadingUsed = (): number => {
+  try {
+    const usedReadings = localStorage.getItem('mysticballs_free_readings_used');
+    const usedCount = usedReadings ? parseInt(usedReadings, 10) : 0;
+    const newCount = usedCount + 1;
+    
+    localStorage.setItem('mysticballs_free_readings_used', newCount.toString());
+    
+    // Return remaining readings
+    const freeReadingsLimit = 2;
+    return Math.max(0, freeReadingsLimit - newCount);
+  } catch (error) {
+    console.error('Error incrementing free readings count:', error);
+    return 0;
+  }
+};
+
+// Get total readings remaining based on user status
+export const getTotalReadingsRemaining = (user: any, profile: any): number => {
+  if (!user) {
+    // Non-signed-in user
+    return getFreeReadingsRemaining();
+  }
+  
+  // Signed-in user
+  if (profile?.is_premium) {
+    // Premium users have unlimited readings
+    return Infinity;
+  } else if (profile) {
+    // Basic plan users get 50 readings per month
+    const basicPlanLimit = 50;
+    return Math.max(0, basicPlanLimit - (profile.readings_count || 0));
+  } else {
+    // Signed-in but no profile yet - they get 3 additional readings
+    return 3;
+  }
+};

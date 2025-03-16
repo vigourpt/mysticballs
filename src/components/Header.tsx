@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({
   onViewReadingHistory
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { profile, subscription } = useContext(UserContext);
+  const { profile, subscription, readingsRemaining } = useContext(UserContext);
   
   // Determine subscription status from context
   const isPremium = profile?.is_premium || false;
@@ -39,6 +39,17 @@ const Header: React.FC<HeaderProps> = ({
       return 'Basic';
     } else {
       return 'Free';
+    }
+  };
+
+  // Function to display readings remaining
+  const getReadingsDisplay = () => {
+    if (isPremium) {
+      return 'Unlimited';
+    } else if (readingsRemaining === Infinity) {
+      return 'Unlimited';
+    } else {
+      return readingsRemaining;
     }
   };
 
@@ -97,6 +108,13 @@ const Header: React.FC<HeaderProps> = ({
                   </span>
                 </div>
 
+                {/* Readings Remaining Badge */}
+                <div className="flex items-center">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-900/60 text-white">
+                    {getReadingsDisplay()} {readingsRemaining !== Infinity ? 'Readings Left' : ''}
+                  </span>
+                </div>
+
                 {/* Reading History Button - Only show for premium users */}
                 {isPremium && (
                   <button
@@ -150,10 +168,17 @@ const Header: React.FC<HeaderProps> = ({
               </>
             ) : (
               <>
+                {/* Readings Remaining Badge for non-signed-in users */}
+                <div className="flex items-center">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-900/60 text-white mr-2">
+                    {readingsRemaining} Free Readings Left
+                  </span>
+                </div>
+                
                 {/* Sign In Button */}
                 <button
                   onClick={onLogin}
-                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
+                  className="text-white bg-gradient-to-r from-purple-500 to-fuchsia-500 hover:from-purple-600 hover:to-fuchsia-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 >
                   Sign In
                 </button>
@@ -233,6 +258,13 @@ const Header: React.FC<HeaderProps> = ({
                   </span>
                 </div>
 
+                {/* Readings Remaining Badge for mobile - signed-in users */}
+                <div className="w-full text-left px-3 py-2 text-base font-medium">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-900/60 text-white">
+                    {getReadingsDisplay()} {readingsRemaining !== Infinity ? 'Readings Left' : ''}
+                  </span>
+                </div>
+
                 {/* Reading History Button - Only show for premium users */}
                 {isPremium && (
                   <button
@@ -272,6 +304,13 @@ const Header: React.FC<HeaderProps> = ({
               </>
             ) : (
               <>
+                {/* Readings Remaining Badge for mobile - non-signed-in users */}
+                <div className="w-full text-left px-3 py-2 text-base font-medium">
+                  <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-900/60 text-white">
+                    {readingsRemaining} Free Readings Left
+                  </span>
+                </div>
+                
                 {/* Sign In Button */}
                 <button
                   onClick={() => {

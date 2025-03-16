@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from '../services/supabase';
+import { supabase, getFreeReadingsRemaining, getTotalReadingsRemaining } from '../services/supabase';
 import { UserProfile } from '../types';
 
 interface SubscriptionData {
@@ -22,6 +22,7 @@ interface UserContextType {
   profile: UserProfile | null;
   subscription: SubscriptionData | null;
   loading: boolean;
+  readingsRemaining: number;
   refreshUserData: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
@@ -33,6 +34,7 @@ export const UserContext = createContext<UserContextType>({
   profile: null,
   subscription: null,
   loading: true,
+  readingsRemaining: 2, // Default for non-signed-in users
   refreshUserData: async () => {},
   refreshProfile: async () => {},
   refreshSubscription: async () => {},
@@ -48,6 +50,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [readingsRemaining, setReadingsRemaining] = useState<number>(getFreeReadingsRemaining());
 
   // Fetch user profile from Supabase
   const fetchUserProfile = async (userId: string) => {
@@ -298,6 +301,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     };
   }, [user?.id]);
 
+  // Update readings remaining whenever user or profile changes
+  useEffect(() => {
+    setReadingsRemaining(getTotalReadingsRemaining(user, profile));
+  }, [user, profile]);
+
   return (
     <UserContext.Provider
       value={{
@@ -305,6 +313,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         profile,
         subscription,
         loading,
+        readingsRemaining,
         refreshUserData,
         refreshProfile,
         refreshSubscription,
