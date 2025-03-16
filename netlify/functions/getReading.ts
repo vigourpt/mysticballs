@@ -1,4 +1,4 @@
-import { Handler } from '@netlify/functions';
+import { Handler, HandlerEvent, HandlerContext, HandlerResponse } from '@netlify/functions';
 import OpenAI from 'openai';
 import { rateLimiter } from './utils/rateLimiter';
 import { createClient } from '@supabase/supabase-js';
@@ -177,7 +177,7 @@ interface UserProfile {
   last_reading_date?: string;
 }
 
-const handler: Handler = async (event, context) => {
+export const handler = async (event: HandlerEvent, context: HandlerContext): Promise<HandlerResponse> => {
   console.log('Received event:', JSON.stringify(event));
   try {
     // Apply rate limiting
@@ -226,7 +226,8 @@ const handler: Handler = async (event, context) => {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Headers': 'Content-Type, Authorization',
           'Access-Control-Allow-Methods': 'POST, OPTIONS'
-        }
+        },
+        body: ''
       };
     }
 
@@ -257,7 +258,7 @@ const handler: Handler = async (event, context) => {
     try {
       // Parse request body
       const parsedBody = JSON.parse(event.body || '{}');
-      const { readingType, userInput, isAnonymous } = parsedBody;
+      const { readingType, userInput, isAnonymous, anonymousReadingsUsed, deviceId: clientDeviceId } = parsedBody;
       
       // Check for required parameters
       if (!readingType || !userInput) {
@@ -281,79 +282,139 @@ const handler: Handler = async (event, context) => {
       let freeReadingsRemaining = MAX_FREE_READINGS;
       
       // Handle authenticated users
-      if (!isAnonymous && event.headers.authorization) {
-        const authHeader = event.headers.authorization;
+      if (!isAnonymous) {
+        // Check for authorization header (case-insensitive)
+        const authHeader = event.headers.authorization || event.headers.Authorization;
         
-        // Get user profile
-        const { data: userData, error: authError } = await supabase.auth.getUser(
-          authHeader.replace('Bearer ', '')
-        );
+        if (authHeader) {
+          try {
+            // Get user profile
+            const { data: userData, error: authError } = await supabase.auth.getUser(
+              authHeader.replace('Bearer ', '')
+            );
 
-        if (authError || !userData.user) {
-          console.error('Supabase auth error:', authError);
-          throw new Error('Unauthorized');
-        }
-        
-        user = userData.user;
-        
-        // Check if user is admin
-        isAdmin = user.email === ADMIN_EMAIL;
+            if (authError || !userData.user) {
+              console.error('Supabase auth error:', authError);
+              return {
+                statusCode: 401,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Access-Control-Allow-Origin': '*'
+                },
+                body: JSON.stringify({ error: 'Unauthorized: Invalid token' })
+              };
+            }
+            
+            user = userData.user;
+            
+            // Check if user is admin
+            isAdmin = user.email === ADMIN_EMAIL;
 
-        // Get user profile with readings count
-        const { data: profileData, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
+            // Get user profile with readings count
+            const { data: profileData, error: profileError } = await supabase
+              .from('user_profiles')
+              .select('*')
+              .eq('id', user.id)
+              .single();
 
-        if (profileError) {
-          console.error('Supabase Profile Error:', profileError);
-          throw new Error('Failed to get user profile');
-        }
-        
-        profile = profileData as UserProfile;
-        isPremium = profile.is_premium;
-        readingsCount = profile.readings_count || 0;
-        freeReadingsRemaining = Math.max(0, MAX_FREE_READINGS - readingsCount);
-        
-        // Check if user is premium or has free readings left
-        if (!isPremium && readingsCount >= MAX_FREE_READINGS) {
-          console.log('Free trial ended for user:', user.id);
+            if (profileError) {
+              console.error('Supabase Profile Error:', profileError);
+              return {
+                statusCode: 500,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Access-Control-Allow-Origin': '*'
+                },
+                body: JSON.stringify({ error: 'Failed to get user profile' })
+              };
+            }
+            
+            profile = profileData as UserProfile;
+            isPremium = profile.is_premium;
+            readingsCount = profile.readings_count || 0;
+            freeReadingsRemaining = Math.max(0, MAX_FREE_READINGS - readingsCount);
+            
+            // Check if user is premium or has free readings left
+            if (!isPremium && readingsCount >= MAX_FREE_READINGS) {
+              console.log('Free trial ended for user:', user.id);
+              return {
+                statusCode: 402,
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Access-Control-Allow-Origin': '*'
+                },
+                body: JSON.stringify({ error: 'Free trial ended' })
+              };
+            }
+          } catch (error) {
+            console.error('Supabase auth error:', error);
+            return {
+              statusCode: 401,
+              headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+              },
+              body: JSON.stringify({ error: 'Unauthorized: Invalid token' })
+            };
+          }
+        } else {
+          console.error('Missing authorization header');
           return {
-            statusCode: 402,
+            statusCode: 401,
             headers: {
               'Content-Type': 'application/json',
               'Access-Control-Allow-Origin': '*'
             },
-            body: JSON.stringify({
-              error: 'Free trial ended',
-              message: 'You have used all your free readings. Please upgrade to continue.',
-              requiresUpgrade: true
-            })
+            body: JSON.stringify({ error: 'Missing authorization header' })
           };
         }
       }
       
-      // For anonymous users, check if they've exceeded their free readings limit
+      // Handle anonymous users
       if (isAnonymous) {
-        // Get free readings used from request body
-        const anonymousReadingsUsed = userInput.anonymousReadingsUsed || 0;
+        console.log('Anonymous user reading request');
         
-        // If they've used all anonymous free readings, prompt to login
-        if (anonymousReadingsUsed >= ANONYMOUS_FREE_READINGS_LIMIT && !isAdmin) {
-          console.log('Anonymous user exceeded free readings limit');
+        // For anonymous users, validate using device ID
+        const { data: validationData, error: validationError } = await supabase.rpc('validate_reading_limit', {
+          p_user_id: null,
+          p_device_id: clientDeviceId
+        });
+
+        if (validationError) {
+          console.error('Error validating reading limit:', validationError);
           return {
-            statusCode: 402,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*'
-            },
-            body: JSON.stringify({
-              error: 'Free anonymous readings limit reached',
-              message: 'You have used all your free anonymous readings. Please create an account to get 3 more free readings!',
-              requiresLogin: true
-            })
+            statusCode: 500,
+            body: JSON.stringify({ error: 'Error validating reading limit', details: validationError })
           };
+        }
+
+        // If validation fails, return error
+        if (!validationData) {
+          console.log('Reading limit exceeded for anonymous user with device ID:', clientDeviceId);
+          return {
+            statusCode: 403,
+            body: JSON.stringify({ error: 'Reading limit exceeded. Please sign up for more readings.' })
+          };
+        }
+        
+        // Track the anonymous reading
+        try {
+          // Increment the reading count in localStorage
+          const currentReadingsUsed = parseInt(event.headers['x-readings-used'] || '0', 10);
+          const newReadingsUsed = currentReadingsUsed + 1;
+          
+          // Try to increment the anonymous reading count in the database
+          const { error: incrementError } = await supabase.rpc('increment_anonymous_reading_count', {
+            p_device_id: clientDeviceId
+          });
+          
+          if (incrementError) {
+            console.error('Error incrementing anonymous reading count:', incrementError);
+            // Continue anyway, don't block the reading
+          }
+        } catch (error) {
+          console.error('Error tracking anonymous reading:', error);
+          // Continue anyway, don't block the reading
         }
       }
       
@@ -460,122 +521,156 @@ const handler: Handler = async (event, context) => {
         };
       }
 
-      const completion = await openai.chat.completions.create({
-        model: process.env.NODE_ENV === 'production' ? "gpt-4o" : "gpt-3.5-turbo",
-        messages: [
-          { role: "system", content: config.systemPrompt },
-          { role: "user", content: prompt }
-        ],
-        temperature: config.temperature,
-        max_tokens: config.maxTokens
-      });
-
-      // Update readings count for authenticated non-premium users
-      if (user !== null && profile !== null && !isPremium) {
-        const { error: updateError } = await supabase
-          .from('user_profiles')
-          .update({
-            readings_count: readingsCount + 1,
-            last_reading_date: new Date().toISOString()
-          })
-          .eq('id', user.id);
-
-        if (updateError) {
-          console.error('Failed to update readings count:', updateError);
-        }
-      }
-      
-      // Store reading in history table for authenticated users
-      if (user !== null && completion.choices && completion.choices[0] && completion.choices[0].message && completion.choices[0].message.content) {
-        const readingOutput = completion.choices[0].message.content.trim();
+      try {
+        console.log('Sending request to OpenAI for reading type:', readingType);
         
-        const { error: historyError } = await supabase
-          .from('reading_history')
-          .insert([{
-            user_id: user.id,
-            reading_type: readingType,
-            user_input: userInput,
-            reading_output: readingOutput
-          }]);
-
-        if (historyError) {
-          console.error('Failed to store reading history:', historyError);
-        }
-      }
-
-      const responseBody: { reading?: string; error?: string; readingsRemaining?: number | null } = { };
-
-      if (completion.choices && completion.choices[0] && completion.choices[0].message && completion.choices[0].message.content) {
-          responseBody.reading = completion.choices[0].message.content.trim();
-      } else {
-          console.error('No response received from OpenAI');
-          responseBody.error = 'No response received';
-      }
-
-      // For authenticated users, return readings remaining
-      if (user !== null && profile !== null && !isPremium) {
-          responseBody.readingsRemaining = Math.max(0, MAX_FREE_READINGS - (readingsCount + 1));
-      } else if (isAnonymous) {
-          // For anonymous users, we don't track readings in the database
-          responseBody.readingsRemaining = null;
-      } else {
-          // For premium users
-          responseBody.readingsRemaining = null;
-      }
-
-      let statusCode = 200;
-      const headers = {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      };
-
-      return {
-        statusCode,
-        headers,
-        body: JSON.stringify(responseBody)
-      };
-    } catch (error: any) {
-      console.error('Full OpenAI Error:', error);
-      let errorMessage = 'Reading generation failed';
-      let statusCode = 500;
-      let retryAfter: string | undefined = undefined;
-      if (error instanceof Error) { // Type guard to check if error is an instance of Error
-        console.error('OpenAI Error:', {
-          message: error.message,
-          code: (error as Record<string, any>).code,
-          status: (error as Record<string, any>).status,
-          stack: error.stack
+        // Add timeout handling for OpenAI requests
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('OpenAI request timeout')), 30000); // 30 second timeout
         });
 
-        if (error.message.includes('API key')) {
-          errorMessage = 'Invalid OpenAI API key';
-        } else if (error.message.includes('rate limit') || (error as any).status === 429) {
-          statusCode = 429;
-          errorMessage = 'Too many requests - please try again later';
-          retryAfter = '60';
-        } else {
-          errorMessage = error.message;
+        let completion: OpenAI.Chat.Completions.ChatCompletion | null = null;
+        
+        try {
+          const openaiPromise = openai.chat.completions.create({
+            model: process.env.NODE_ENV === 'production' ? "gpt-4o" : "gpt-3.5-turbo",
+            messages: [
+              { role: "system", content: config.systemPrompt },
+              { role: "user", content: prompt }
+            ],
+            temperature: config.temperature,
+            max_tokens: config.maxTokens
+          });
+
+          // Race the OpenAI request against the timeout
+          completion = await Promise.race([openaiPromise, timeoutPromise]);
+        } catch (error) {
+          console.error('OpenAI API error:', error);
+          return {
+            statusCode: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({ 
+              error: 'Failed to generate reading',
+              message: error instanceof Error ? error.message : 'Unknown error'
+            })
+          };
         }
+
+        if (!completion || !completion.choices || completion.choices.length === 0 || !completion.choices[0].message) {
+          console.error('OpenAI returned an empty response');
+          return {
+            statusCode: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({ error: 'Failed to generate reading: Empty response from AI service' })
+          };
+        }
+
+        // Update readings count for authenticated non-premium users
+        if (user !== null && profile !== null && !isPremium) {
+          const { error: updateError } = await supabase
+            .from('user_profiles')
+            .update({
+              readings_count: readingsCount + 1,
+              last_reading_date: new Date().toISOString()
+            })
+            .eq('id', user.id);
+
+          if (updateError) {
+            console.error('Failed to update readings count:', updateError);
+          }
+        }
+        
+        // Store reading in history table for authenticated users
+        if (user !== null && completion.choices && completion.choices[0] && completion.choices[0].message && completion.choices[0].message.content) {
+          const readingOutput = completion.choices[0].message.content.trim();
+          
+          const { error: historyError } = await supabase
+            .from('reading_history')
+            .insert([{
+              user_id: user.id,
+              reading_type: readingType,
+              user_input: userInput,
+              reading_output: readingOutput
+            }]);
+
+          if (historyError) {
+            console.error('Failed to store reading history:', historyError);
+          }
+        }
+
+        const responseBody: { reading?: string; error?: string; readingsRemaining?: number | null } = { };
+
+        if (completion.choices && completion.choices[0] && completion.choices[0].message && completion.choices[0].message.content) {
+            responseBody.reading = completion.choices[0].message.content.trim();
+        } else {
+            console.error('No response received from OpenAI');
+            responseBody.error = 'No response received';
+        }
+
+        // For authenticated users, return readings remaining
+        if (user !== null && profile !== null && !isPremium) {
+            responseBody.readingsRemaining = Math.max(0, MAX_FREE_READINGS - (readingsCount + 1));
+        } else if (isAnonymous) {
+            // For anonymous users, we don't track readings in the database
+            responseBody.readingsRemaining = null;
+        } else {
+            // For premium users
+            responseBody.readingsRemaining = null;
+        }
+
+        let statusCode = 200;
+        const headers = {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        };
+
+        return {
+          statusCode,
+          headers,
+          body: JSON.stringify(responseBody)
+        };
+      } catch (error) {
+        console.error('Error generating reading:', error);
+        
+        // Check if it's an OpenAI API error
+        if (error.response && error.response.status) {
+          console.error('OpenAI API error:', error.response.status, error.response.data);
+          return {
+            statusCode: error.response.status,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            },
+            body: JSON.stringify({ 
+              error: 'OpenAI API error', 
+              message: error.response.data?.error?.message || 'Failed to generate reading'
+            })
+          };
+        }
+        
+        return {
+          statusCode: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          },
+          body: JSON.stringify({ error: 'Failed to generate reading', message: error.message })
+        };
       }
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      };
-
-      const responseBody: { error: string; retryAfter?: string } = { error: errorMessage };
-      if (retryAfter) {
-        responseBody.retryAfter = retryAfter;
-        headers['Retry-After'] = retryAfter;
-      }
-
+    } catch (error) {
+      console.error('Outer error:', error);
       return {
-        statusCode,
-        headers,
-        body: JSON.stringify(responseBody)
+        statusCode: 500,
+        body: JSON.stringify({ error: 'An unexpected error occurred' })
       };
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('Outer error:', error);
     return {
       statusCode: 500,
@@ -588,5 +683,3 @@ const handler: Handler = async (event, context) => {
 setInterval(() => {
   rateLimiter.cleanup();
 }, 60000);
-
-export { handler };

@@ -46,10 +46,10 @@ const TourGuide: React.FC<TourGuideProps> = ({
       <div className="relative w-full h-full">
         {currentStep && (
           <div
-            className={`absolute ${getPositionStyles(currentStep.placement)} ${getSizeStyles(size)} bg-indigo-800 text-white rounded-lg shadow-xl p-4 pointer-events-auto`}
+            className={`absolute ${getPositionStyles(currentStep.placement)} ${getSizeStyles(size)} bg-indigo-700/80 backdrop-blur-sm text-white rounded-lg shadow-xl p-4 pointer-events-auto`}
             style={{
-              left: currentStep.target ? document.querySelector(currentStep.target)?.getBoundingClientRect().left : 0,
-              top: currentStep.target ? document.querySelector(currentStep.target)?.getBoundingClientRect().top : 0,
+              left: 0, // Position at the left edge
+              top: 80, // Fixed position just under the header (header height + small margin)
             }}
           >
             <button
@@ -65,10 +65,10 @@ const TourGuide: React.FC<TourGuideProps> = ({
               </svg>
             </button>
             <div className="mt-1">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              <h3 className="text-lg font-medium text-white">
                 {currentStep.title}
               </h3>
-              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-2 text-sm text-indigo-100">
                 {currentStep.content}
               </p>
             </div>

@@ -29,6 +29,7 @@ export interface UserProfile {
   last_name?: string;
   avatar_url?: string;
   is_premium: boolean;
+  is_admin?: boolean;
   plan_type: 'free' | 'basic' | 'premium';
   readings_count: number;
   readings_remaining: number;

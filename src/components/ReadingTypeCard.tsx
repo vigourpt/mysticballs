@@ -17,8 +17,15 @@ export const ReadingTypeCard = ({ readingType, onClick, selected, isDarkMode }: 
         isDarkMode 
           ? 'bg-indigo-900/40 hover:bg-indigo-800/40' 
           : 'bg-white/90 hover:bg-white'
-      } ${selected ? 'ring-2 ring-purple-400' : ''}`}
+      } ${selected ? 'ring-2 ring-purple-400' : ''} relative`}
     >
+      {readingType.premiumOnly && (
+        <div className="absolute top-3 right-3">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-amber-500 to-amber-300 text-amber-900">
+            Premium
+          </span>
+        </div>
+      )}
       <div className={`p-4 mb-4 rounded-xl group-hover:bg-opacity-80 ${
         isDarkMode 
           ? 'bg-indigo-800/40 group-hover:bg-indigo-700/40' 

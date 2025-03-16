@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-opacity-30 backdrop-blur-md bg-black fixed w-full z-50 transition-all duration-300">
+    <header className="bg-opacity-30 backdrop-blur-md bg-black fixed w-full z-50 transition-all duration-300 border-b border-indigo-900/30">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
@@ -64,10 +64,15 @@ const Header: React.FC<HeaderProps> = ({
             <a href="/" className="flex items-center">
               <div className="relative">
                 <div className="absolute -inset-1 bg-fuchsia-500/30 blur-md rounded-full"></div>
-                <div className="relative">
-                  <span className="text-2xl font-bold text-white">
-                    <span className="text-fuchsia-400">Mystic</span>
-                    <span className="text-purple-300">Balls</span>
+                <div className="relative flex items-center">
+                  <img 
+                    src="/MysticBalls-logo.png" 
+                    alt="Mystic Balls Logo" 
+                    className="h-10 w-auto mr-2 inline-block" 
+                  />
+                  <span className="text-2xl font-bold text-white inline-flex">
+                    <span className="text-fuchsia-400 glow-text">Mystic</span>
+                    <span className="text-purple-300 glow-text">Balls</span>
                   </span>
                 </div>
               </div>
@@ -128,7 +133,7 @@ const Header: React.FC<HeaderProps> = ({
                 )}
 
                 {/* Admin Dashboard Button - Only show for admin users */}
-                {profile?.is_admin && onViewAdminDashboard && (
+                {profile && profile.is_admin && onViewAdminDashboard && (
                   <button
                     onClick={onViewAdminDashboard}
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
@@ -291,7 +296,7 @@ const Header: React.FC<HeaderProps> = ({
                 )}
 
                 {/* Admin Dashboard Button - Only show for admin users */}
-                {profile?.is_admin && onViewAdminDashboard && (
+                {profile && profile.is_admin && onViewAdminDashboard && (
                   <button
                     onClick={() => {
                       onViewAdminDashboard();

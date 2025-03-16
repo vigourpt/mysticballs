@@ -1,12 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-
-interface Step {
-  target: string;
-  title: string;
-  content: string;
-  position: 'top' | 'bottom' | 'left' | 'right';
-}
+import { Step } from '../types';
 
 interface Props {
   steps: Step[];
@@ -28,13 +22,13 @@ const OnboardingOverlay: React.FC<Props> = ({ steps, isOpen, onComplete, isDarkM
         const tooltipHeight = 160; // Approximate height of tooltip
         const tooltipWidth = 300; // Width of tooltip
         
-        // Center in viewport if no element is found
+        // Position in the middle left of the screen by default
         let top = Math.max(20, (viewportHeight - tooltipHeight) / 2);
-        let left = (window.innerWidth - tooltipWidth) / 2;
+        let left = 50; // Position on the left side with some margin
 
         if (rect.height > 0) {
           // If element exists and is visible, position relative to it
-          switch (steps[currentStep].position) {
+          switch (steps[currentStep].placement) {
             case 'top':
               top = rect.top - tooltipHeight - 10;
               left = rect.left + (rect.width - tooltipWidth) / 2;
@@ -102,9 +96,9 @@ const OnboardingOverlay: React.FC<Props> = ({ steps, isOpen, onComplete, isDarkM
         </button>
         
         <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">{step.title}</h3>
+          <h3 className="text-lg font-semibold mb-2">{step?.title}</h3>
           <p className={isDarkMode ? 'text-indigo-200' : 'text-gray-600'}>
-            {step.content}
+            {step?.content}
           </p>
         </div>
         

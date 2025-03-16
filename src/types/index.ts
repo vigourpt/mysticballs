@@ -16,11 +16,12 @@ export interface UserProfile {
   display_name: string | null;
   readings_count: number;
   is_premium: boolean;
-  is_admin?: boolean;
+  is_admin: boolean;
   plan_type?: string;
   last_reading_date: string | null;
   created_at: string;
   updated_at: string;
+  free_readings_used?: number;
 }
 
 // Form Types
@@ -76,6 +77,7 @@ export interface PricingPlan {
   features: string[];
   readingsPerMonth: number;
   recommended?: boolean;
+  interval: string;
 }
 
 export type Step = {

@@ -22,7 +22,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    debug: true // Enable debug mode to log auth operations
+    debug: import.meta.env.DEV // Only enable debug in development
   },
   global: {
     headers: {
@@ -465,7 +465,7 @@ export const syncAnonymousReadings = async (userId: string): Promise<void> => {
     const usedReadings = localStorage.getItem('mysticballs_free_readings_used');
     const readingsCount = usedReadings ? parseInt(usedReadings, 10) : 0;
     
-    // Call the Supabase function to sync readings
+    // Call the Supabase function to sync readings with the correct parameter names
     const { error } = await supabase.rpc('sync_anonymous_readings', {
       p_user_id: userId,
       p_device_id: deviceId,
@@ -479,6 +479,7 @@ export const syncAnonymousReadings = async (userId: string): Promise<void> => {
     
     // Clear localStorage readings after syncing
     localStorage.removeItem('mysticballs_free_readings_used');
+    console.log('Anonymous readings synced successfully for user:', userId);
   } catch (error) {
     console.error('Error syncing anonymous readings:', error);
   }
@@ -541,7 +542,11 @@ export const incrementAnonymousReadingCount = async (): Promise<number> => {
     // Update localStorage to match server state
     const freeReadingsLimit = 2;
     const remainingReadings = Math.max(0, freeReadingsLimit - (data || 0));
-    localStorage.setItem('mysticballs_free_readings_used', data.toString());
+    
+    // Ensure data is a number before converting to string
+    if (data !== null && data !== undefined) {
+      localStorage.setItem('mysticballs_free_readings_used', data.toString());
+    }
     
     return remainingReadings;
   } catch (error) {
