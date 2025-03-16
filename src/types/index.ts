@@ -16,6 +16,8 @@ export interface UserProfile {
   display_name: string | null;
   readings_count: number;
   is_premium: boolean;
+  is_admin?: boolean;
+  plan_type?: string;
   last_reading_date: string | null;
   created_at: string;
   updated_at: string;

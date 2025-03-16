@@ -11,6 +11,7 @@ import ReadingHistory from './components/ReadingHistory';
 import LoginModal from './components/LoginModal';
 import BackgroundEffects from './components/BackgroundEffects';
 import SubscriptionManager from './components/SubscriptionManager';
+import AdminDashboard from './components/AdminDashboard';
 import { UserContext } from './context/UserContext';
 import { incrementReadingCount, incrementFreeReadingUsed } from './services/supabase';
 
@@ -193,11 +194,11 @@ const App: React.FC = () => {
         isDarkMode={isDarkMode}
         onDarkModeToggle={() => setIsDarkMode(!isDarkMode)}
         onSignOut={() => {
-          if (signOut) {
+          if (user) {
             signOut().then((success) => {
               if (success) {
-                toast.success('You have been signed out');
                 navigate('/');
+                toast.success('Signed out successfully');
               } else {
                 toast.error('Failed to sign out');
               }
@@ -208,6 +209,7 @@ const App: React.FC = () => {
         onManageSubscription={() => setIsSubscriptionModalOpen(true)}
         onSubscribe={() => navigate('/pricing')}
         onViewReadingHistory={() => navigate('/history')}
+        onViewAdminDashboard={() => navigate('/admin')}
       />
       
       <main className="flex-grow container mx-auto px-4 py-8 mt-16">
@@ -378,12 +380,14 @@ const App: React.FC = () => {
           } />
 
           <Route path="/history" element={
-            <ReadingHistory
-              isDarkMode={isDarkMode}
-              onBack={() => navigate('/')}
-            />
+            user ? <ReadingHistory isDarkMode={isDarkMode} onBack={() => navigate('/')} /> : <Navigate to="/" replace />
           } />
-
+          
+          {/* Admin Dashboard Route - Only accessible to admin users */}
+          <Route path="/admin" element={
+            user && profile?.is_admin ? <AdminDashboard /> : <Navigate to="/" replace />
+          } />
+          
           <Route path="/pricing" element={renderPricingPage()} />
 
           <Route

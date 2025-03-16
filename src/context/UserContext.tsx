@@ -1,6 +1,12 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase, getFreeReadingsRemaining, getTotalReadingsRemaining } from '../services/supabase';
+import { 
+  supabase, 
+  getFreeReadingsRemaining,
+  getTotalReadingsRemaining, 
+  syncAnonymousReadings,
+  trackConversionEvent
+} from '../services/supabase';
 import { UserProfile } from '../types';
 
 interface SubscriptionData {
@@ -34,7 +40,7 @@ export const UserContext = createContext<UserContextType>({
   profile: null,
   subscription: null,
   loading: true,
-  readingsRemaining: 2, // Default for non-signed-in users
+  readingsRemaining: 0,
   refreshUserData: async () => {},
   refreshProfile: async () => {},
   refreshSubscription: async () => {},
@@ -50,7 +56,24 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [readingsRemaining, setReadingsRemaining] = useState<number>(getFreeReadingsRemaining());
+  const [readingsRemaining, setReadingsRemaining] = useState<number>(0);
+
+  // Initialize free readings count for non-signed-in users
+  useEffect(() => {
+    const initFreeReadings = async () => {
+      if (!user) {
+        try {
+          const freeReadings = await getFreeReadingsRemaining();
+          setReadingsRemaining(freeReadings);
+        } catch (error) {
+          console.error('Error initializing free readings:', error);
+          setReadingsRemaining(2); // Default fallback
+        }
+      }
+    };
+    
+    initFreeReadings();
+  }, [user]);
 
   // Fetch user profile from Supabase
   const fetchUserProfile = async (userId: string) => {
@@ -303,8 +326,34 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   // Update readings remaining whenever user or profile changes
   useEffect(() => {
-    setReadingsRemaining(getTotalReadingsRemaining(user, profile));
+    const updateReadingsRemaining = async () => {
+      if (user && profile) {
+        // For signed-in users with a profile
+        const total = getTotalReadingsRemaining(user, profile);
+        setReadingsRemaining(total);
+      } else if (user) {
+        // For signed-in users without a profile yet
+        setReadingsRemaining(3); // New users get 3 free readings
+      }
+      // For non-signed-in users, handled by the initFreeReadings effect
+    };
+    
+    updateReadingsRemaining();
   }, [user, profile]);
+
+  // Sync anonymous readings when a user signs in
+  useEffect(() => {
+    if (user?.id) {
+      syncAnonymousReadings(user.id)
+        .then(() => {
+          // Track conversion event for sign in
+          trackConversionEvent('sign_in', user.id);
+        })
+        .catch(error => {
+          console.error('Error syncing anonymous readings:', error);
+        });
+    }
+  }, [user?.id]);
 
   return (
     <UserContext.Provider

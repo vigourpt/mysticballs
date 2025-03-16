@@ -11,6 +11,7 @@ interface HeaderProps {
   onManageSubscription: () => void;
   onSubscribe: () => void;
   onViewReadingHistory: () => void;
+  onViewAdminDashboard?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -21,7 +22,8 @@ const Header: React.FC<HeaderProps> = ({
   onLogin,
   onManageSubscription,
   onSubscribe,
-  onViewReadingHistory
+  onViewReadingHistory,
+  onViewAdminDashboard
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { profile, subscription, readingsRemaining } = useContext(UserContext);
@@ -122,6 +124,16 @@ const Header: React.FC<HeaderProps> = ({
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
                   >
                     Reading History
+                  </button>
+                )}
+
+                {/* Admin Dashboard Button - Only show for admin users */}
+                {profile?.is_admin && onViewAdminDashboard && (
+                  <button
+                    onClick={onViewAdminDashboard}
+                    className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-700/30 transition-colors"
+                  >
+                    Admin Dashboard
                   </button>
                 )}
 
@@ -275,6 +287,19 @@ const Header: React.FC<HeaderProps> = ({
                     className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors"
                   >
                     Reading History
+                  </button>
+                )}
+
+                {/* Admin Dashboard Button - Only show for admin users */}
+                {profile?.is_admin && onViewAdminDashboard && (
+                  <button
+                    onClick={() => {
+                      onViewAdminDashboard();
+                      setIsMenuOpen(false);
+                    }}
+                    className="w-full text-left text-gray-300 hover:text-white px-3 py-2 rounded-md text-base font-medium hover:bg-gray-700/30 transition-colors"
+                  >
+                    Admin Dashboard
                   </button>
                 )}
 

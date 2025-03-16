@@ -430,14 +430,139 @@ export const clearAllAuthState = async () => {
 };
 
 // Free readings management for non-signed-in users
-export const getFreeReadingsRemaining = (): number => {
+export const getDeviceId = (): string => {
   try {
-    // Check if we have a stored count in localStorage
+    let deviceId = localStorage.getItem('mysticballs_device_id');
+    if (!deviceId) {
+      // Generate a new device ID using a timestamp and random string
+      deviceId = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+      localStorage.setItem('mysticballs_device_id', deviceId);
+    }
+    return deviceId;
+  } catch (error) {
+    console.error('Error getting device ID:', error);
+    return `fallback-${Date.now()}`;
+  }
+};
+
+export const syncAnonymousReadings = async (userId: string): Promise<void> => {
+  try {
+    const deviceId = getDeviceId();
     const usedReadings = localStorage.getItem('mysticballs_free_readings_used');
-    const freeReadingsLimit = 2; // Non-signed-in users get 2 free readings
+    const readingsCount = usedReadings ? parseInt(usedReadings, 10) : 0;
+    
+    // Call the Supabase function to sync readings
+    const { error } = await supabase.rpc('sync_anonymous_readings', {
+      p_user_id: userId,
+      p_device_id: deviceId,
+      p_readings_count: readingsCount
+    });
+    
+    if (error) {
+      console.error('Error syncing anonymous readings:', error);
+      throw error;
+    }
+    
+    // Clear localStorage readings after syncing
+    localStorage.removeItem('mysticballs_free_readings_used');
+  } catch (error) {
+    console.error('Error syncing anonymous readings:', error);
+  }
+};
+
+export const trackConversionEvent = async (
+  eventType: string,
+  userId?: string,
+  metadata?: Record<string, any>
+): Promise<void> => {
+  try {
+    const deviceId = getDeviceId();
+    
+    // Call the Supabase function to track the event
+    const { error } = await supabase.rpc('track_conversion_event', {
+      p_user_id: userId || null,
+      p_event_type: eventType,
+      p_device_id: deviceId,
+      p_metadata: metadata || null
+    });
+    
+    if (error) {
+      console.error('Error tracking conversion event:', error);
+      throw error;
+    }
+  } catch (error) {
+    console.error('Error tracking conversion event:', error);
+  }
+};
+
+export const incrementAnonymousReadingCount = async (): Promise<number> => {
+  try {
+    const deviceId = getDeviceId();
+    
+    // First, validate if the user has readings remaining
+    const { data: validationData, error: validationError } = await supabase.rpc('validate_reading_limit', {
+      p_user_id: null,
+      p_device_id: deviceId
+    });
+    
+    if (validationError) {
+      console.error('Error validating reading limit:', validationError);
+      throw validationError;
+    }
+    
+    if (!validationData) {
+      throw new Error('Reading limit exceeded');
+    }
+    
+    // If validation passes, increment the count
+    const { data, error } = await supabase.rpc('increment_anonymous_reading_count', {
+      p_device_id: deviceId
+    });
+    
+    if (error) {
+      console.error('Error incrementing anonymous reading count:', error);
+      throw error;
+    }
+    
+    // Update localStorage to match server state
+    const freeReadingsLimit = 2;
+    const remainingReadings = Math.max(0, freeReadingsLimit - (data || 0));
+    localStorage.setItem('mysticballs_free_readings_used', data.toString());
+    
+    return remainingReadings;
+  } catch (error) {
+    console.error('Error incrementing anonymous reading count:', error);
+    
+    // Fallback to local increment if server fails
+    return incrementFreeReadingUsed();
+  }
+};
+
+// Asynchronous version of getFreeReadingsRemaining
+export const getFreeReadingsRemaining = async (): Promise<number> => {
+  try {
+    const deviceId = getDeviceId();
+    
+    // Try to get the count from the server first
+    const { data, error } = await supabase.rpc('validate_reading_limit', {
+      p_user_id: null,
+      p_device_id: deviceId
+    });
+    
+    if (error) {
+      throw error;
+    }
+    
+    // If server validation fails, user has no readings left
+    if (data === false) {
+      return 0;
+    }
+    
+    // Fall back to localStorage if server doesn't have specific count
+    const usedReadings = localStorage.getItem('mysticballs_free_readings_used');
+    const freeReadingsLimit = 2;
     
     if (usedReadings === null) {
-      // First time user, initialize with 0 used readings
       localStorage.setItem('mysticballs_free_readings_used', '0');
       return freeReadingsLimit;
     }
@@ -445,11 +570,14 @@ export const getFreeReadingsRemaining = (): number => {
     const usedCount = parseInt(usedReadings, 10);
     return Math.max(0, freeReadingsLimit - usedCount);
   } catch (error) {
-    console.error('Error getting free readings count:', error);
-    return 0; // Default to 0 if there's an error
+    console.error('Error getting free readings count from server:', error);
+    
+    // Fall back to localStorage only
+    return getFreeReadingsRemainingSync();
   }
 };
 
+// Increment free reading used - synchronous version
 export const incrementFreeReadingUsed = (): number => {
   try {
     const usedReadings = localStorage.getItem('mysticballs_free_readings_used');
@@ -467,11 +595,12 @@ export const incrementFreeReadingUsed = (): number => {
   }
 };
 
-// Get total readings remaining based on user status
+// Get total readings remaining based on user status - synchronous version for initial state
 export const getTotalReadingsRemaining = (user: any, profile: any): number => {
   if (!user) {
-    // Non-signed-in user
-    return getFreeReadingsRemaining();
+    // For non-signed-in users, return a default value
+    // The actual value will be updated asynchronously
+    return 2;
   }
   
   // Signed-in user
@@ -485,5 +614,24 @@ export const getTotalReadingsRemaining = (user: any, profile: any): number => {
   } else {
     // Signed-in but no profile yet - they get 3 additional readings
     return 3;
+  }
+};
+
+// Synchronous version of getFreeReadingsRemaining for initial state
+export const getFreeReadingsRemainingSync = (): number => {
+  try {
+    const usedReadings = localStorage.getItem('mysticballs_free_readings_used');
+    const freeReadingsLimit = 2;
+    
+    if (usedReadings === null) {
+      localStorage.setItem('mysticballs_free_readings_used', '0');
+      return freeReadingsLimit;
+    }
+    
+    const usedCount = parseInt(usedReadings, 10);
+    return Math.max(0, freeReadingsLimit - usedCount);
+  } catch (error) {
+    console.error('Error getting free readings count:', error);
+    return 0;
   }
 };
