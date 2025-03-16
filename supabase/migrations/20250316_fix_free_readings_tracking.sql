@@ -15,11 +15,20 @@ CREATE INDEX IF NOT EXISTS idx_anonymous_readings_device_id ON public.anonymous_
 -- Enable Row Level Security
 ALTER TABLE public.anonymous_readings ENABLE ROW LEVEL SECURITY;
 
--- Create policy for service role only
-CREATE POLICY "Service role can manage anonymous_readings"
-  ON public.anonymous_readings
-  USING (true)
-  WITH CHECK (true);
+-- Create policy for service role only if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'anonymous_readings' 
+    AND policyname = 'Service role can manage anonymous_readings'
+  ) THEN
+    CREATE POLICY "Service role can manage anonymous_readings"
+      ON public.anonymous_readings
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Grant permissions to service role
 GRANT ALL ON public.anonymous_readings TO service_role;
@@ -44,20 +53,38 @@ CREATE INDEX IF NOT EXISTS idx_conversion_events_created_at ON public.conversion
 ALTER TABLE public.conversion_events ENABLE ROW LEVEL SECURITY;
 
 -- Create policy for admin users to read conversion events
-CREATE POLICY "Admin users can read conversion events"
-  ON public.conversion_events
-  FOR SELECT
-  TO authenticated
-  USING (EXISTS (
-    SELECT 1 FROM public.user_profiles
-    WHERE id = auth.uid() AND is_admin = true
-  ));
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'conversion_events' 
+    AND policyname = 'Admin users can read conversion events'
+  ) THEN
+    CREATE POLICY "Admin users can read conversion events"
+      ON public.conversion_events
+      FOR SELECT
+      TO authenticated
+      USING (EXISTS (
+        SELECT 1 FROM public.user_profiles
+        WHERE id = auth.uid() AND is_admin = true
+      ));
+  END IF;
+END $$;
 
--- Create policy for service role
-CREATE POLICY "Service role can manage conversion events"
-  ON public.conversion_events
-  USING (true)
-  WITH CHECK (true);
+-- Create policy for service role if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'conversion_events' 
+    AND policyname = 'Service role can manage conversion events'
+  ) THEN
+    CREATE POLICY "Service role can manage conversion events"
+      ON public.conversion_events
+      USING (true)
+      WITH CHECK (true);
+  END IF;
+END $$;
 
 -- Grant permissions to service role
 GRANT ALL ON public.conversion_events TO service_role;
