@@ -77,7 +77,7 @@ export interface PricingPlan {
   features: string[];
   readingsPerMonth: number;
   recommended?: boolean;
-  interval: string;
+  interval: 'month' | 'year';
 }
 
 export type Step = {

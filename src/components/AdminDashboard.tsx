@@ -101,17 +101,21 @@ const AdminDashboard: React.FC = () => {
 
       // Group conversions by type
       const conversionsByType: Record<string, number> = {};
-      allEventsData?.forEach(event => {
-        const eventType = event.event_type;
-        conversionsByType[eventType] = (conversionsByType[eventType] || 0) + 1;
-      });
+      if (allEventsData) {
+        allEventsData.forEach(event => {
+          const eventType = event.event_type;
+          conversionsByType[eventType] = (conversionsByType[eventType] || 0) + 1;
+        });
+      }
 
       // Group conversions by day
       const conversionsByDay: Record<string, number> = {};
-      allEventsData?.forEach(event => {
-        const date = new Date(event.event_time).toISOString().split('T')[0];
-        conversionsByDay[date] = (conversionsByDay[date] || 0) + 1;
-      });
+      if (allEventsData) {
+        allEventsData.forEach(event => {
+          const date = new Date(event.event_time).toISOString().split('T')[0];
+          conversionsByDay[date] = (conversionsByDay[date] || 0) + 1;
+        });
+      }
 
       // Get recent events
       const recentEvents = allEventsData?.slice(0, 10) || [];

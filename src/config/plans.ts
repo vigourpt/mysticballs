@@ -17,7 +17,7 @@ export const PAYMENT_PLANS: PricingPlan[] = [
       'Email notifications'
     ],
     readingsPerMonth: 50,
-    interval: 'month'
+    interval: 'month' as 'month' | 'year'
   },
   {
     id: 'premium',
@@ -36,6 +36,6 @@ export const PAYMENT_PLANS: PricingPlan[] = [
     ],
     readingsPerMonth: Infinity,
     recommended: true,
-    interval: 'month'
+    interval: 'month' as 'month' | 'year'
   }
 ];
