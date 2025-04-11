@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true,
+    "lib": ["esnext"], // Remove deno.ns, rely on Deno extension
+    "module": "esnext",
+    "moduleResolution": "node", // Keep as node for compatibility, Deno LSP handles Deno specifics
+    "noEmit": true,
+    "noImplicitAny": false, // Allow implicit any for now to reduce noise, can be revisited
+    "resolveJsonModule": true,
+    "strict": true,
+    "target": "esnext"
+    // Remove explicit types reference, rely on deno.ns lib
+  },
+  "include": [
+    "**/*.ts"
+  ]
+}

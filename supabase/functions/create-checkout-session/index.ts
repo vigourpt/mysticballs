@@ -1,255 +1,178 @@
+// supabase/functions/create-checkout-session/index.ts
+
 import { createClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
-import { Handler } from '@netlify/functions';
+// Use the full URL import and ignore potential TS resolution issues in editor
+// @ts-ignore
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 
-// Initialize Stripe with the appropriate key based on the mode
-let stripe: Stripe;
-
-// Function to initialize Stripe with the appropriate key
-const initializeStripe = (isTestMode: boolean): Stripe => {
-  // Try to get the requested key
-  let secretKey = isTestMode 
-    ? process.env.STRIPE_TEST_SECRET_KEY 
-    : process.env.STRIPE_SECRET_KEY;
-  
-  // If no keys are available at all
-  if (!secretKey) {
-    throw new Error(`Stripe ${isTestMode ? 'test' : 'live'} secret key is missing. Please check your environment variables.`);
-  }
-  
-  // Log which key we're using
-  console.log(`Using Stripe ${isTestMode ? 'test' : 'live'} mode with key: ${secretKey.substring(0, 8)}...`);
-  
-  return new Stripe(secretKey, {
-    apiVersion: '2025-01-27.acacia',
-    timeout: 30000, // Increase timeout to 30 seconds
-    maxNetworkRetries: 3 // Automatically retry failed requests
-  });
-};
+interface RequestData {
+  priceId: string;
+  successUrl: string;
+  cancelUrl: string;
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-export const handler: Handler = async (event) => {
-  // Log the incoming request for debugging
-  console.log('Received request:', {
-    method: event.httpMethod,
-    path: event.path,
-    headers: event.headers,
-    body: event.body ? JSON.parse(event.body) : null
-  });
-
-  // Handle CORS preflight requests
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
-      headers: corsHeaders
-    };
+serve(async (req: Request) => {
+  // Handle CORS
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Check if we're in test mode
-    // First check the header
-    const isTestMode = event.headers['x-stripe-test-mode'] === 'true';
-    console.log('Stripe mode:', isTestMode ? 'TEST' : 'LIVE');
-    
-    // Log the request headers for debugging
-    console.log('Request headers:', {
-      testModeHeader: event.headers['x-stripe-test-mode'],
-      origin: event.headers.origin,
-      referer: event.headers.referer
-    });
-    
-    try {
-      // Initialize Stripe with the appropriate key
-      stripe = initializeStripe(isTestMode);
-    } catch (error) {
-      console.error('Stripe initialization error:', error);
-      return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({ 
-          error: 'Payment service configuration error. Please contact support.',
-          details: error instanceof Error ? error.message : 'Unknown error'
-        })
-      };
-    }
-    
-    // Validate Supabase environment variables
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+    // Get request body
+    const { priceId, successUrl, cancelUrl } = await req.json() as RequestData;
 
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Missing Supabase environment variables');
-      throw new Error('Server configuration error: Missing Supabase environment variables');
+    // Validate input
+    if (!priceId || !successUrl || !cancelUrl) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Missing required parameters: priceId, successUrl, or cancelUrl' 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
     // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+    if (!supabaseUrl || !supabaseKey) {
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error: Missing Supabase environment variables' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get the authorization header
-    const authHeader = event.headers.authorization;
+    // Get authorization header
+    const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
-      console.error('Missing authorization header');
-      throw new Error('Authentication required: Missing authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Get the authenticated user
-    const {
-      data: { user },
-      error: authError
-    } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+    // Get user ID from the token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
 
-    if (authError) {
-      console.error('Auth error:', authError);
-      throw new Error(`Authentication error: ${authError.message}`);
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    if (!user) {
-      console.error('No user found');
-      throw new Error('Authentication error: No user found');
+    // Initialize Stripe
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY') ?? '';
+    if (!stripeSecretKey) {
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error: Missing Stripe secret key' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    // Validate request body
-    if (!event.body) {
-      console.error('Missing request body');
-      throw new Error('Invalid request: Missing request body');
-    }
-
-    // Parse request body
-    const { priceId, customerId, planName } = JSON.parse(event.body);
-    
-    if (!priceId) {
-      console.error('Missing priceId in request body');
-      throw new Error('Invalid request: Missing priceId');
-    }
-
-    // Use the user ID from the authenticated user if customerId is not provided
-    const userId = customerId || user.id;
-    
-    console.log('Creating checkout session for user:', userId, 'with price:', priceId);
-
-    // Get user profile to check if they already have a Stripe customer ID
-    const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-
-    if (profileError) {
-      console.error('Error fetching user profile:', profileError);
-      // If profile doesn't exist, create one
-      if (profileError.code === 'PGRST116') {
-        console.log('Profile not found, creating new profile');
-        await supabase
-          .from('user_profiles')
-          .insert([{
-            id: userId,
-            email: user.email,
-            readings_count: 0,
-            is_premium: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }]);
-      } else {
-        throw new Error(`Database error: ${profileError.message}`);
-      }
-    }
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: '2025-01-27.acacia', // Use the compatible API version
+    });
 
     // Get or create Stripe customer
-    let stripeCustomerId = profile?.stripe_customer_id;
+    let stripeCustomerId: string;
+    
+    // Check if user already has a Stripe customer ID
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('stripe_customer_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
 
-    if (!stripeCustomerId) {
-      console.log('Creating new Stripe customer for user:', userId);
-      
-      // Create a new Stripe customer
+    if (subscription?.stripe_customer_id) {
+      stripeCustomerId = subscription.stripe_customer_id;
+    } else {
+      // Get user profile to use name in Stripe
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      // Create a new customer in Stripe
       const customer = await stripe.customers.create({
         email: user.email,
+        name: profile?.full_name || undefined,
         metadata: {
-          supabaseUserId: userId
+          user_id: user.id
         }
       });
-
+      
       stripeCustomerId = customer.id;
-
-      // Update user profile with Stripe customer ID
-      await supabase
-        .from('user_profiles')
-        .update({ stripe_customer_id: stripeCustomerId })
-        .eq('id', userId);
-        
-      console.log('Created Stripe customer:', stripeCustomerId);
     }
 
-    // Get the origin for success/cancel URLs
-    const origin = event.headers.origin || 'https://mysticballs.com';
-
-    // Create checkout session
+    // Create checkout session with the customer
     const session = await stripe.checkout.sessions.create({
       customer: stripeCustomerId,
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: [{
+        price: priceId,
+        quantity: 1,
+      }],
       mode: 'subscription',
-      success_url: `${origin}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/payment/cancel`,
-      client_reference_id: userId,
+      success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: cancelUrl,
       metadata: {
-        userId: userId,
-        planName: planName || 'Premium Plan',
-        isTestMode: isTestMode ? 'true' : 'false' // Add test mode flag to metadata
+        user_id: user.id
       },
-      allow_promotion_codes: true, // This enables coupon code support
+      subscription_data: {
+        metadata: {
+          user_id: user.id
+        }
+      }
     });
 
-    console.log('Created checkout session:', session.id);
+    // If we created a new customer, store their ID in our database
+    if (!subscription?.stripe_customer_id) {
+      await supabase.from('subscriptions').upsert({
+        user_id: user.id,
+        stripe_customer_id: stripeCustomerId,
+        status: 'incomplete', // Will be updated by webhook when payment completes
+        current_period_start: new Date().toISOString(),
+        current_period_end: new Date().toISOString(),
+        plan_id: priceId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    }
 
-    // Return the checkout session URL
-    return {
-      statusCode: 200,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
+    return new Response(
+      JSON.stringify({ 
         url: session.url,
         sessionId: session.id
       }),
-    };
-  } catch (error: unknown) {
-    console.error('Checkout session error:', error);
-    
-    let statusCode = 400; // Default status code
-    let errorMessage = 'Checkout session failed'; // Default error message
-
-    if (error instanceof Error) {
-      errorMessage = error.message;
-      
-      // Set appropriate status code based on error type
-      if (errorMessage.includes('Authentication')) {
-        statusCode = 401;
-      } else if (errorMessage.includes('configuration')) {
-        statusCode = 500;
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
-    } else {
-      console.error('Unknown error:', error);
-      statusCode = 500;
-      errorMessage = 'Checkout session failed due to an unknown error.';
-    }
-    
-    return {
-      statusCode,
-      headers: {
-        ...corsHeaders,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ error: errorMessage }),
-    };
+    );
+  } catch (error) {
+    console.error('Error creating checkout session:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
-};
+});
