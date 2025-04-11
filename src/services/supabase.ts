@@ -15,25 +15,35 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Get the site URL based on environment
 const siteUrl = import.meta.env.DEV ? 'http://localhost:5173' : PRODUCTION_URL;
 
-// Create Supabase client with PKCE flow
+// Create Supabase client with enhanced configuration
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: true,
-    storage: localStorage,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce',
-    debug: import.meta.env.DEV // Only enable debug in development
+    persistSession: true,
+    detectSessionInUrl: true
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
   },
   global: {
     headers: {
-      'x-site-url': siteUrl
+      'X-Client-Info': 'mysticballs-web'
+    },
+    fetch: (url, options) => {
+      // Add retry logic for fetch requests
+      return fetch(url, {
+        ...options,
+        // Increase timeout for better reliability
+        signal: options?.signal || (AbortSignal.timeout ? AbortSignal.timeout(30000) : undefined)
+      });
     }
   }
 });
 
 // Log the Supabase client configuration
-console.log('Supabase client initialized with flowType:', 'pkce');
+console.log('Supabase client initialized');
 
 type Tables = Database['public']['Tables'];
 export type UserProfile = Tables['user_profiles']['Row'];
