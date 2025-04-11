@@ -1,24 +1,22 @@
 import { loadStripe } from '@stripe/stripe-js';
 import { STRIPE_CONFIG } from '../config/stripe';
-import { supabase } from './supabase';
+import { getApiUrl } from '../utils/api';
 
 export const createCheckoutSession = async (priceId: string, userId: string, userEmail: string) => {
   try {
     console.log('Creating checkout session with:', { priceId, userId, userEmail });
     
-    // Get the current session to retrieve the access token
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session || !session.access_token) {
-      throw new Error('No active session found. Please log in again.');
+    const token = localStorage.getItem('sb-access-token');
+    if (!token) {
+      throw new Error('User not authenticated');
     }
     
     // First, create a checkout session on the server
-    const response = await fetch('/.netlify/functions/create-checkout-session', {
+    const response = await fetch(getApiUrl('/.netlify/functions/create-checkout-session'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({
         priceId,

@@ -40,6 +40,13 @@ export default defineConfig({
     hmr: {
       overlay: true
     },
+    proxy: {
+      '/.netlify/functions': {
+        target: 'http://localhost:8888',
+        changeOrigin: true,
+        rewrite: (path) => path
+      }
+    },
     headers: {
       'Content-Security-Policy': [
         "default-src 'self'",

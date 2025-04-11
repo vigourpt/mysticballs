@@ -29,3 +29,6 @@ dist-ssr
 
 .envDocker.dmg
 .qodo
+
+# Local Netlify folder
+.netlify

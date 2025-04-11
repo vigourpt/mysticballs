@@ -29,6 +29,7 @@ import { UserContext } from './context/UserContext';
 import { createCheckoutSession } from './services/stripe';
 import { supabase, incrementAnonymousReadingCount, syncAnonymousReadings } from './services/supabase';
 import { ONBOARDING_STEPS } from './config/tutorial';
+import { getApiUrl } from './utils/api';
 
 interface UserProfile {
   is_premium: boolean;
@@ -196,7 +197,7 @@ const App: React.FC = () => {
       }
       
       // Call the Netlify function to generate a reading
-      const response = await fetch('/.netlify/functions/getReading', {
+      const response = await fetch(getApiUrl('/.netlify/functions/getReading'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

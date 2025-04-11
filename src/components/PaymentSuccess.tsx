@@ -2,6 +2,7 @@ import React, { useEffect, useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 import { createSubscription } from '../services/supabase';
+import { getApiUrl } from '../utils/api';
 
 interface PaymentSuccessProps {
   onComplete?: () => void;
@@ -33,10 +34,19 @@ const PaymentSuccess: React.FC<PaymentSuccessProps> = ({ onComplete }) => {
         if (sessionId) {
           try {
             // Call the verify-payment function
-            const response = await fetch('/.netlify/functions/verify-payment', {
+            const token = localStorage.getItem('sb-access-token');
+            
+            if (!token) {
+              setVerificationStatus('error');
+              setErrorMessage('Authentication required. Please log in again.');
+              return;
+            }
+            
+            const response = await fetch(getApiUrl('/.netlify/functions/verify-payment'), {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
               },
               body: JSON.stringify({ sessionId, userId: user.id }),
             });

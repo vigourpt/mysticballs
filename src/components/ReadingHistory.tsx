@@ -5,6 +5,7 @@ import { READING_TYPES } from '../data/readingTypes';
 import { Sparkles, Calendar, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 import ReadingOutput from './ReadingOutput';
+import { getApiUrl } from '../utils/api';
 
 interface ReadingHistoryProps {
   isDarkMode: boolean;
@@ -75,10 +76,9 @@ const ReadingHistory: React.FC<ReadingHistoryProps> = ({ isDarkMode, onBack }) =
       }
       
       // Fetch reading history
-      const response = await fetch(`/.netlify/functions/getReadingHistory?${queryParams.toString()}`, {
+      const response = await fetch(`${getApiUrl('/.netlify/functions/getReadingHistory')}?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       });

@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/supabase';
 import { PRODUCTION_URL } from '../config/constants';
+import { getApiUrl } from '../utils/api';
 
 // Get environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -78,7 +79,7 @@ const generateCodeVerifier = () => {
 };
 
 // Store the code verifier in localStorage and on the server
-const storeCodeVerifier = async (email: string, codeVerifier: string) => {
+const storeCodeVerifier = async (email: string, codeVerifier: string, codeChallenge: string) => {
   // Store locally
   localStorage.setItem('pkce_code_verifier', codeVerifier);
   sessionStorage.setItem('pkce_code_verifier', codeVerifier);
@@ -86,12 +87,12 @@ const storeCodeVerifier = async (email: string, codeVerifier: string) => {
   
   // Store on the server
   try {
-    const response = await fetch('/.netlify/functions/store-code-verifier', {
+    const response = await fetch(getApiUrl('/.netlify/functions/store-code-verifier'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ email, codeVerifier })
+      body: JSON.stringify({ email, codeVerifier, codeChallenge })
     });
     
     if (!response.ok) {
@@ -110,7 +111,7 @@ export const getCodeVerifierFromServer = async (email: string): Promise<string |
     
     // Use retryFetch with 3 retries (4 total attempts)
     const response = await retryFetch(
-      `/.netlify/functions/get-code-verifier?email=${encodeURIComponent(email)}`,
+      getApiUrl(`/.netlify/functions/get-code-verifier?email=${encodeURIComponent(email)}`),
       {
         method: 'GET',
         headers: {
@@ -154,7 +155,8 @@ export const signUpWithEmail = async (email: string, password: string) => {
     
     // Generate and store the code verifier
     const codeVerifier = generateCodeVerifier();
-    await storeCodeVerifier(email.trim(), codeVerifier);
+    const codeChallenge = '';
+    await storeCodeVerifier(email.trim(), codeVerifier, codeChallenge);
     console.log('Generated and stored code verifier for PKCE flow');
     
     // Use the standard redirect URL (without code_verifier in the URL)
@@ -323,7 +325,7 @@ export const cancelSubscription = async (subscriptionId: string): Promise<void> 
     }
     
     // Call the Netlify function to cancel the subscription
-    const response = await fetch('/.netlify/functions/cancel-subscription', {
+    const response = await fetch(getApiUrl('/.netlify/functions/cancel-subscription'), {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
@@ -362,7 +364,7 @@ export const updateSubscriptionPaymentMethod = async (subscriptionId: string, pa
     }
     
     // Call the Netlify function to update the payment method
-    const response = await fetch('/.netlify/functions/update-payment-method', {
+    const response = await fetch(getApiUrl('/.netlify/functions/update-payment-method'), {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',

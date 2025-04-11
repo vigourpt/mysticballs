@@ -1,4 +1,5 @@
 import { ReadingTypeId, ReadingType } from '../types';
+import { getApiUrl } from '../utils/api';
 
 // Validate required fields before making the request
 const validateRequiredFields = (readingType: ReadingTypeId, userInput: Record<string, string>) => {
@@ -47,14 +48,16 @@ export const getReading = async (
     console.log('Processing reading type:', readingType, 'with input:', userInput);
     
     // Get the access token from local storage
-    const accessToken = localStorage.getItem('sb-access-token');
-    const isAnonymous = !accessToken;
+    const token = localStorage.getItem('sb-access-token');
+    const isAnonymous = !token;
     const deviceId = getOrInitDeviceId();
     
     // Track anonymous readings in localStorage
     let anonymousReadingsUsed = 0;
-    if (isAnonymous) {
+    try {
       anonymousReadingsUsed = parseInt(localStorage.getItem('mysticballs_free_readings_used') || '0', 10);
+    } catch (e) {
+      console.error('Error accessing localStorage:', e);
     }
 
     // Prepare headers
@@ -62,18 +65,16 @@ export const getReading = async (
       'Content-Type': 'application/json',
     };
 
-    // Only add authorization header if user is signed in
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
-    }
-
-    // Add readings count header for anonymous users
-    if (isAnonymous) {
+    // Add authorization header if user is logged in
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      // Add readings count header for anonymous users
       headers['X-Readings-Used'] = anonymousReadingsUsed.toString();
     }
 
     // Make the API call
-    const response = await fetch('/.netlify/functions/getReading', {
+    const response = await fetch(getApiUrl('/.netlify/functions/getReading'), {
       method: 'POST',
       headers,
       body: JSON.stringify({
