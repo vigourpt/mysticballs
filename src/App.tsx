@@ -203,24 +203,32 @@ const App: React.FC = () => {
         await refreshUserData();
       }
       
-      // Call the Netlify function to generate a reading
-      const response = await fetch(getApiUrl('/.netlify/functions/getReading'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(user && session ? { 'Authorization': `Bearer ${session.access_token}` } : {})
-        },
-        body: JSON.stringify({
-          readingType: selectedReadingType.id,
-          userInput: formInputs,
-          isAnonymous: !user,
-          anonymousReadingsUsed: anonymousReadingsUsed,
-          deviceId: initializeDeviceId()
-        })
+      // Client-side timeout for the fetch call
+      const clientTimeoutPromise = new Promise<Response>((_, reject) => {
+        setTimeout(() => reject(new Error('Request timed out. Please try again.')), 15000); // 15 seconds
       });
+
+      // Call the Netlify function to generate a reading, raced with client-side timeout
+      const response = await Promise.race([
+        fetch(getApiUrl('/.netlify/functions/getReading'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(user && session ? { 'Authorization': `Bearer ${session.access_token}` } : {})
+          },
+          body: JSON.stringify({
+            readingType: selectedReadingType.id,
+            userInput: formInputs,
+            isAnonymous: !user,
+            anonymousReadingsUsed: anonymousReadingsUsed,
+            deviceId: initializeDeviceId()
+          })
+        }),
+        clientTimeoutPromise
+      ]);
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Failed to generate reading' }));
+        const errorData = await response.json().catch(() => ({ error: 'Failed to generate reading. Invalid JSON response.' }));
         console.error('Reading generation failed with status:', response.status, errorData);
         
         // Handle specific error cases
@@ -240,24 +248,28 @@ const App: React.FC = () => {
           setIsSubscriptionModalOpen(true);
           toast.info('You need to upgrade to continue using this feature.');
         } else {
-          throw new Error(errorData.error || `Failed to generate reading (${response.status})`);
+          // Use errorData.message if available, otherwise errorData.error
+          throw new Error(errorData.message || errorData.error || `Failed to generate reading (${response.status})`);
         }
         
-        setIsLoading(false);
+        setIsLoading(false); // Ensure loading is stopped before returning
         return;
       }
       
       const data = await response.json();
       
       if (data.error) {
-        throw new Error(data.error);
+        // Use data.message if available from the server's JSON response
+        throw new Error(data.message || data.error);
       }
       
       toast.success(`Your ${selectedReadingType.name} reading has been generated!`);
       setReadingResult(data.reading);
     } catch (error: any) {
       console.error('Error submitting reading:', error);
-      toast.error(error.message || 'Failed to generate reading');
+      // error.message here will now be the more detailed message from the throw statements above,
+      // or "Request timed out. Please try again." from the clientTimeoutPromise.
+      toast.error(error.message || 'Failed to generate reading. An unknown error occurred.');
     } finally {
       setIsLoading(false);
     }

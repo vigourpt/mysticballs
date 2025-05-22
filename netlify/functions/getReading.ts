@@ -526,7 +526,7 @@ export const handler = async (event: HandlerEvent, context: HandlerContext): Pro
         
         // Add timeout handling for OpenAI requests
         const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error('OpenAI request timeout')), 30000); // 30 second timeout
+          setTimeout(() => reject(new Error('OpenAI request timeout')), 9000); // 9 second timeout
         });
 
         let completion: OpenAI.Chat.Completions.ChatCompletion | null = null;
