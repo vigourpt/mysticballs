@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import type { FC } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { signInWithGoogle, supabase, updateUserReadingsCount } from '../services/supabase';
+import { UserContext } from '../context/UserContext';
+import { signInWithEmail, signUpWithEmail, signInWithGoogle, supabase, updateUserReadingsCount } from '../services/supabase';
 import { FREE_READINGS_LIMIT, ANONYMOUS_FREE_READINGS_LIMIT } from '../config/constants';
 import ReactConfetti from 'react-confetti';
 import { Mail } from 'lucide-react';
@@ -24,8 +24,8 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
     width: window.innerWidth,
     height: window.innerHeight
   });
-  
-  const { signIn, signUp, loading: authLoading, confirmEmail, user } = useAuth();
+
+  const { refreshUserData, user } = useContext(UserContext); // Get refreshUserData and user from context
 
   // Update window dimensions when window is resized
   useEffect(() => {
@@ -67,11 +67,11 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading || authLoading) return;
-    
+    if (isLoading) return;
+
     setError(null);
     setIsLoading(true);
-    
+
     try {
       if (!email || !password) {
         throw new Error('Please enter both email and password');
@@ -83,27 +83,37 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
 
       if (isSignUp) {
         console.log('Attempting to sign up with email:', email);
-        const result = await signUp(email, password);
+        const result = await signUpWithEmail(email, password); // Use imported function
         console.log('Sign up result:', result);
-        
-        // Always show email confirmation screen after sign up
-        setShowEmailConfirmation(true);
-        
-        // Log that we're showing the email confirmation screen
-        console.log('Showing email confirmation screen for:', email);
+
+        // Check if email confirmation is required from the result
+        if (result && (result as any).requiresEmailConfirmation) {
+          setShowEmailConfirmation(true);
+          console.log('Showing email confirmation screen for:', email);
+        } else {
+          // If sign-up doesn't require email confirmation or is auto-confirmed
+          await refreshUserData(); // Refresh user data in context
+          setShowSuccessAnimation(true);
+          setShowConfetti(true);
+          console.log('Showing success animation for sign up');
+          setTimeout(() => {
+            setShowConfetti(false);
+            setTimeout(() => {
+              setShowSuccessAnimation(false);
+              onClose();
+            }, 1000);
+          }, 3000);
+        }
       } else {
         console.log('Attempting to sign in with email:', email);
-        const result = await signIn(email, password);
-        console.log('Sign in result:', result);
+        await signInWithEmail(email, password); // Use imported function
+        console.log('Sign in successful');
         
-        // Show success animation on successful sign in
+        await refreshUserData(); // Refresh user data in context
+
         setShowSuccessAnimation(true);
         setShowConfetti(true);
-        
-        // Log that we're showing the success animation
         console.log('Showing success animation for sign in');
-        
-        // Keep animation visible for a moment before closing
         setTimeout(() => {
           setShowConfetti(false);
           setTimeout(() => {
@@ -116,13 +126,16 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
       console.error('Auth error:', err);
       const authErrorMessage = 'An error occurred during authentication';
       if (err instanceof Error) {
-        if (err.message?.toLowerCase().includes('already registered')) {
+        if (err.message?.toLowerCase().includes('already registered') || err.message?.toLowerCase().includes('user already registered')) {
           setError('This email is already registered. Please sign in instead.');
           setIsSignUp(false); // Switch to sign in mode
         } else if (err.message?.toLowerCase().includes('invalid login credentials')) {
           setError('Invalid email or password. Please try again.');
         } else if (err.message?.toLowerCase().includes('email link is invalid or has expired')) {
           setError('The confirmation link is invalid or has expired. Please try signing up again.');
+        } else if (err.message?.toLowerCase().includes('email not confirmed')) {
+            setError('Your email address has not been confirmed. Please check your inbox for a confirmation link.');
+            setShowEmailConfirmation(true); // Show email confirmation screen
         } else {
           setError(err.message);
         }
@@ -136,20 +149,21 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
   };
 
   const handleGoogleSignIn = async () => {
-    if (isLoading || authLoading) return;
-    
+    if (isLoading) return;
+
     setError(null);
     setIsLoading(true);
-    
+
     try {
-      const { error } = await signInWithGoogle();
-      if (error) throw error;
-      
-      // Show success animation on successful sign in
+      const { error: googleError } = await signInWithGoogle(); // Use imported function
+      if (googleError) throw googleError;
+
+      // onAuthStateChange in UserContext should handle setting the user.
+      // Calling refreshUserData() here might be redundant but ensures data is fresh.
+      await refreshUserData(); 
+
       setShowSuccessAnimation(true);
       setShowConfetti(true);
-      
-      // Keep animation visible for a moment before closing
       setTimeout(() => {
         setShowConfetti(false);
         setTimeout(() => {
@@ -159,30 +173,31 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
       }, 3000);
     } catch (err: unknown) {
       console.error('Google sign in error:', err);
-      const googleErrorMessage = 'Failed to sign in with Google';
+      const googleErrorMessage = 'Failed to sign in with Google. Please try again.';
       if (err instanceof Error) {
         setError(err.message || googleErrorMessage);
       } else {
         console.error('Unknown error:', err);
         setError(googleErrorMessage);
       }
-      setIsLoading(false);
+    } finally {
+      setIsLoading(false); // Ensure loading is set to false in Google Sign-In
     }
   };
 
-  // Close modal if user is authenticated
+  // Close modal if user is authenticated and not showing confirmation
   React.useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      // Only close if we have a successful auth AND no errors
-      // Don't close if we're showing email confirmation screen
-      if (!isLoading && !error && !confirmEmail && user && !showEmailConfirmation) {
-        onClose();
-      }
-    };
-    
-    checkUser();
-  }, [isLoading, error, confirmEmail, onClose, showEmailConfirmation]);
+    // The UserContext now manages the user state.
+    // We rely on onAuthStateChange to update the user object in UserContext.
+    // If the user object is present (meaning successful login/signup and session establishment),
+    // and we are not waiting for email confirmation, then close the modal.
+    if (user && !showEmailConfirmation && !isLoading) {
+        // Check if we are in the success animation phase
+        if (!showSuccessAnimation) {
+             onClose();
+        }
+    }
+  }, [user, showEmailConfirmation, onClose, isLoading, showSuccessAnimation]);
 
   // Function to check and reset localStorage if needed
   const checkAndResetLocalStorage = () => {
@@ -362,12 +377,12 @@ const LoginModal: FC<Props> = ({ isOpen, onClose }) => {
 
           <button
             type="submit"
-            disabled={isLoading || authLoading}
+            disabled={isLoading}
             className={`w-full py-3 px-4 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
-              (isLoading || authLoading) ? 'opacity-50 cursor-not-allowed' : ''
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {isLoading || authLoading ? (
+            {isLoading ? (
               <span className="flex items-center justify-center">
                 <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

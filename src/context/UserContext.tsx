@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js'; // Import Session
 import { 
   supabase, 
   getFreeReadingsRemaining,
@@ -26,6 +26,7 @@ interface SubscriptionData {
 interface UserContextType {
   user: User | null;
   profile: UserProfile | null;
+  session: Session | null; // Add session here
   subscription: SubscriptionData | null;
   loading: boolean;
   readingsRemaining: number;
@@ -38,6 +39,7 @@ interface UserContextType {
 export const UserContext = createContext<UserContextType>({
   user: null,
   profile: null,
+  session: null, // Add session: null here
   subscription: null,
   loading: true,
   readingsRemaining: 0,
@@ -54,6 +56,7 @@ interface UserProviderProps {
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null); // Add session state
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [readingsRemaining, setReadingsRemaining] = useState<number>(0);
@@ -169,23 +172,18 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const signOut = async () => {
     try {
       // Clear Supabase session
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error signing out from Supabase:', error);
+        throw error; 
+      }
       
-      // Clear all user-related state
-      setUser(null);
-      setProfile(null);
-      setSubscription(null);
-      
-      // Clear any local storage items that might persist user state
-      localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('mysticballs.user');
-      localStorage.removeItem('mysticballs.profile');
-      localStorage.removeItem('mysticballs.session');
-      
+      // If Supabase signout is successful, the onAuthStateChange listener will handle clearing state.
       console.log('User signed out successfully');
       return true;
     } catch (error) {
       console.error('Error signing out:', error);
+      // The error is re-thrown so the calling component can handle it.
       throw error;
     }
   };
@@ -205,6 +203,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         }
         
         if (session) {
+          setSession(session); // Set session state here
           setUser(session.user);
           
           // Fetch user profile
@@ -241,6 +240,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     const authListener = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
+          setSession(session); // Set session state here
           setUser(session.user);
           
           // Sync anonymous readings when user signs in
@@ -267,9 +267,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             setSubscription(subscriptionData);
           }
         } else if (event === 'SIGNED_OUT') {
+          setSession(null); // Clear session state here
           setUser(null);
           setProfile(null);
           setSubscription(null);
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          setSession(session); // Update session state here
         }
       }
     );
@@ -380,6 +383,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       value={{
         user,
         profile,
+        session, // Expose session here
         subscription,
         loading,
         readingsRemaining,

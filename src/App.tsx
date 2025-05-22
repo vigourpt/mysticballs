@@ -39,6 +39,7 @@ interface UserProfile {
 interface UserContextProps {
   user: User | null;
   profile: UserProfile | null;
+  session: Session | null; // Add session here
   signOut: () => Promise<boolean>;
   refreshUserData: () => Promise<void>;
   readingsRemaining: number;
@@ -47,7 +48,7 @@ interface UserContextProps {
 const App: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, signOut, refreshUserData, readingsRemaining } = useContext(UserContext) as UserContextProps;
+  const { user, profile, signOut: contextSignOut, refreshUserData, readingsRemaining, session } = useContext(UserContext) as UserContextProps; // Renamed signOut to contextSignOut
   
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [selectedReadingType, setSelectedReadingType] = useState<ReadingType | null>(null);
@@ -56,7 +57,7 @@ const App: React.FC = () => {
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState<string | null>(null);
   const [readingResult, setReadingResult] = useState<string | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  // const [session, setSession] = useState<Session | null>(null); // Remove this line
   const [isTutorialActive, setIsTutorialActive] = useState(false);
   const [currentTutorialStep, setCurrentTutorialStep] = useState(0);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -92,26 +93,12 @@ const App: React.FC = () => {
         setSelectedReadingType(foundReadingType);
       }
     }
-    
-    // Check for auth session
-    const getSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (!error && data.session) {
-        setSession(data.session);
-      }
-    };
-    
-    getSession();
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-    
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [location.pathname, selectedReadingType]);
+    // Auth related session logic is now handled by UserContext.tsx
+    // The dependency array might need adjustment. If selectedReadingType is only set here
+    // and not used as a dependency for other logic within this specific useEffect,
+    // then [location.pathname] might be more appropriate.
+    // However, selectedReadingType IS used in the condition, so keeping it.
+  }, [location.pathname, selectedReadingType]); // Keeping selectedReadingType for now.
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -298,6 +285,16 @@ const App: React.FC = () => {
     }
   }, [location.pathname]);
 
+  const handleSignOut = async () => {
+    try {
+      await contextSignOut();
+      // Success is implicitly handled by onAuthStateChange updating context and UI.
+    } catch (error) {
+      console.error('Sign-out error caught in App.tsx:', error);
+      toast.error('Sign-out failed. Please try again.'); // User-facing error
+    }
+  };
+
   return (
     <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gray-900 text-white bg-gradient-dark' : 'bg-gray-100 text-gray-900 bg-gradient-light'}`}>
       <BackgroundEffects isDarkMode={isDarkMode} />
@@ -306,7 +303,7 @@ const App: React.FC = () => {
         isDarkMode={isDarkMode} 
         onDarkModeToggle={toggleDarkMode}
         user={user}
-        onSignOut={signOut}
+        onSignOut={handleSignOut} // Pass the new handler
         onLogin={() => setIsLoginModalOpen(true)}
         onManageSubscription={() => setIsSubscriptionModalOpen(true)}
         onSubscribe={() => setIsSubscriptionModalOpen(true)}
