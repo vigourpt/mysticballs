@@ -121,6 +121,15 @@ const App: React.FC = () => {
     }
   }, [isDarkMode]);
 
+  // Effect to clear readingResult when selectedReadingType changes
+  useEffect(() => {
+    // This effect runs whenever selectedReadingType changes.
+    // When a new reading type is selected (or selection is cleared),
+    // we should clear any previous reading result to ensure the form is shown.
+    console.log('Selected reading type changed, clearing previous result.'); // Optional: for debugging
+    setReadingResult(null);
+  }, [selectedReadingType]); // Dependency: selectedReadingType
+
   // Sync anonymous readings when user signs in
   useEffect(() => {
     if (user && localStorage.getItem('freeReadingsUsed')) {
