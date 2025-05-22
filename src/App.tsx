@@ -140,6 +140,14 @@ const App: React.FC = () => {
         setIsSubscriptionModalOpen(false);
         return;
       }
+
+      if (!session || !session.access_token) {
+        toast.error('Authentication session not found. Please sign in again.');
+        // Optionally, force sign out or redirect to login here if session is expected but missing
+        setIsLoginModalOpen(true); // Prompt to login again
+        setIsSubscriptionModalOpen(false);
+        return;
+      }
       
       // Use the stripePriceId directly from the plan object
       const priceId = plan.stripePriceId;
@@ -147,11 +155,23 @@ const App: React.FC = () => {
       await createCheckoutSession(
         priceId,
         user.id,
-        user.email || ''
+        user.email || '',
+        session.access_token // Pass the access token
       );
     } catch (error: any) {
       console.error('Subscription error:', error);
-      toast.error(error.message || 'Failed to process subscription');
+      // Check if the error message is already "User not authenticated" from createCheckoutSession
+      // to avoid redundant or confusing messages.
+      if (error.message && error.message.includes('User not authenticated')) {
+          toast.error('Authentication failed. Please sign in again.');
+      } else {
+          toast.error(error.message || 'Failed to process subscription. Please try again.');
+      }
+      // Consider if further action is needed, e.g. if it's an auth error, also open login modal
+      if (error.message && error.message.toLowerCase().includes('authenticated')) {
+          setIsLoginModalOpen(true);
+          setIsSubscriptionModalOpen(false);
+      }
     }
   };
 
