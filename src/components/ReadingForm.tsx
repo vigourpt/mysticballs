@@ -9,6 +9,7 @@ interface Props {
 }
 
 export const ReadingForm = ({ readingType, onSubmit, isDarkMode = true, isLoading = false }: Props) => {
+  console.log('[ReadingForm Render] Props received - isLoading:', isLoading, 'readingType:', readingType ? readingType.id : 'None'); // ADDED
   const [formData, setFormData] = useState<Record<string, string>>({});
 
   const handleChange = (field: ReadingField, value: string) => {
@@ -23,11 +24,14 @@ export const ReadingForm = ({ readingType, onSubmit, isDarkMode = true, isLoadin
     : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500';
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('[ReadingForm handleSubmit] Form submission attempted. isLoading currently:', isLoading); // ADDED
     e.preventDefault();
     try {
+      console.log('[ReadingForm handleSubmit] About to call props.onSubmit(formData).'); // ADDED
       await onSubmit(formData);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.log('[ReadingForm handleSubmit] Error caught locally in ReadingForm:', error); // ADDED
+      console.error('Error submitting form:', error); // Existing log
     }
   };
 

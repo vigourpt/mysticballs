@@ -80,6 +80,7 @@ const App: React.FC = () => {
 
   // Set initial reading type and page
   useEffect(() => {
+    console.log('[useEffect location.pathname] Path changed to:', location.pathname, 'Current selectedReadingType:', selectedReadingType ? selectedReadingType.id : null);
     if (location.pathname === '/') {
       setCurrentPage('home');
     } else if (location.pathname.startsWith('/reading/')) {
@@ -89,8 +90,11 @@ const App: React.FC = () => {
       const readingTypeId = location.pathname.split('/').pop() as ReadingTypeId;
       const foundReadingType = READING_TYPES.find(rt => rt.id === readingTypeId);
       
-      if (foundReadingType && !selectedReadingType) {
-        setSelectedReadingType(foundReadingType);
+      if (foundReadingType) {
+        if (!selectedReadingType || selectedReadingType.id !== foundReadingType.id) {
+          console.log('[useEffect location.pathname] Setting selectedReadingType to:', foundReadingType.id);
+          setSelectedReadingType(foundReadingType);
+        }
       }
     }
     // Auth related session logic is now handled by UserContext.tsx
@@ -126,7 +130,7 @@ const App: React.FC = () => {
     // This effect runs whenever selectedReadingType changes.
     // When a new reading type is selected (or selection is cleared),
     // we should clear any previous reading result to ensure the form is shown.
-    console.log('Selected reading type changed, clearing previous result.'); // Optional: for debugging
+    console.log('[useEffect selectedReadingType] selectedReadingType changed to:', selectedReadingType ? selectedReadingType.id : null, '. Clearing previous readingResult.');
     setReadingResult(null);
   }, [selectedReadingType]); // Dependency: selectedReadingType
 
@@ -186,11 +190,14 @@ const App: React.FC = () => {
 
   // Function to handle reading submission
   const handleSubmitReading = async (formInputs: Record<string, string>) => {
+    console.log('[handleSubmitReading] Called. Current selectedReadingType:', selectedReadingType ? selectedReadingType.id : 'None');
     if (!selectedReadingType) return;
     
     try {
+      console.log('[handleSubmitReading] Setting isLoading to true.');
       setIsLoading(true);
       setReadingResult(null);
+      console.log('[handleSubmitReading] isLoading is now true, readingResult is null.');
       
       // For non-signed-in users, increment local storage count before making the API call
       // This ensures the count is updated even if the API call fails
@@ -235,10 +242,13 @@ const App: React.FC = () => {
         }),
         clientTimeoutPromise
       ]);
+      console.log('[handleSubmitReading] Fetch response received. ok:', response.ok, 'status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Failed to generate reading. Invalid JSON response.' }));
         console.error('Reading generation failed with status:', response.status, errorData);
+        // errorData would have been logged by the console.error just above it
+        console.log('[handleSubmitReading] Response not OK. Error data logged above. About to throw.');
         
         // Handle specific error cases
         if (response.status === 401) {
@@ -265,22 +275,28 @@ const App: React.FC = () => {
         return;
       }
       
+      console.log('[handleSubmitReading] Response is OK. Attempting to parse JSON.');
       const data = await response.json();
       
       if (data.error) {
+        console.log('[handleSubmitReading] Server returned data with error:', data.message || data.error);
         // Use data.message if available from the server's JSON response
         throw new Error(data.message || data.error);
       }
       
+      console.log('[handleSubmitReading] Success from server. Setting readingResult with data:', data.reading ? data.reading.substring(0, 30) + '...' : null);
       toast.success(`Your ${selectedReadingType.name} reading has been generated!`);
       setReadingResult(data.reading);
     } catch (error: any) {
+      console.log('[handleSubmitReading] Caught error:', error.message);
       console.error('Error submitting reading:', error);
       // error.message here will now be the more detailed message from the throw statements above,
       // or "Request timed out. Please try again." from the clientTimeoutPromise.
       toast.error(error.message || 'Failed to generate reading. An unknown error occurred.');
     } finally {
+      console.log('[handleSubmitReading] In finally block. Setting isLoading to false.');
       setIsLoading(false);
+      console.log('[handleSubmitReading] isLoading should now be false.');
     }
   };
 
@@ -336,6 +352,7 @@ const App: React.FC = () => {
     }
   };
 
+  console.log('[App Render] isLoading:', isLoading, 'readingResult:', readingResult ? readingResult.substring(0, 30) + '...' : null, 'selectedReadingType:', selectedReadingType ? selectedReadingType.id : null);
   return (
     <div className={`min-h-screen flex flex-col ${isDarkMode ? 'bg-gray-900 text-white bg-gradient-dark' : 'bg-gray-100 text-gray-900 bg-gradient-light'}`}>
       <BackgroundEffects isDarkMode={isDarkMode} />
